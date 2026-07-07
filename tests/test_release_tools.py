@@ -83,7 +83,17 @@ def test_artifact_backed_promotion_can_pass(tmp_path: Path) -> None:
     specification_path = tmp_path / manifest["protocol"]["specification"]
     specification_path.parent.mkdir(parents=True)
     specification_path.write_text(
-        json.dumps({"frozen": True, "validation_level": "directional"}),
+        json.dumps(
+            {
+                "frozen": True,
+                "validation_level": "directional",
+                "tiers": {
+                    "calibration": {"cells": 1, "repetitions": 2},
+                    "directional_validation": {"cells": 1, "repetitions": 2},
+                    "directional_robustness": {"cells": 1, "repetitions": 2},
+                },
+            }
+        ),
         encoding="utf-8",
     )
     candidate_path = tmp_path / manifest["protocol"]["threshold_candidates"]
@@ -99,6 +109,24 @@ def test_artifact_backed_promotion_can_pass(tmp_path: Path) -> None:
     artifact_paths["packaged_thresholds"].parent.mkdir(parents=True)
     artifact_paths["packaged_thresholds"].write_text(json.dumps(threshold), encoding="utf-8")
     specification_hash = sha256(specification_path.read_bytes()).hexdigest()
+    for role, tier in (
+        ("calibration_shards", "calibration"),
+        ("validation_shards", "directional_validation"),
+        ("robustness_shards", "directional_robustness"),
+    ):
+        _write_hashed(
+            artifact_paths[role],
+            {
+                "tier": tier,
+                "git_commit": "abc123",
+                "specification_sha256": specification_hash,
+                "threshold_artifact_sha256": (
+                    None if role == "calibration_shards" else threshold["sha256"]
+                ),
+                "record_count": 2,
+            },
+            "sha256",
+        )
     for role, tier in (
         ("validation_summary", "directional_validation"),
         ("robustness_summary", "directional_robustness"),

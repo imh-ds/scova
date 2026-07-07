@@ -16,6 +16,9 @@
   "artifacts": {
     "thresholds": "release/artifacts/stage3-directional-thresholds.json",
     "packaged_thresholds": "src/scova/experimental/data/stage3_thresholds.json",
+    "calibration_shards": "release/artifacts/calibration-shards-manifest.json",
+    "validation_shards": "release/artifacts/validation-shards-manifest.json",
+    "robustness_shards": "release/artifacts/robustness-shards-manifest.json",
     "validation_summary": "release/artifacts/stage3-directional-validation.json",
     "robustness_summary": "release/artifacts/stage3-directional-robustness.json",
     "jax_minimum": "release/artifacts/jax-0.4.38.json",

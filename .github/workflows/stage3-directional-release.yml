@@ -1,0 +1,319 @@
+name: Stage 3 directional release validation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage3-directional-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  calibration-shards:
+    name: Calibration shard ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -e .
+      - run: >-
+          python benchmarks/stage3_campaign.py
+          --tier calibration
+          --seed-set calibration
+          --shard-index ${{ matrix.shard }}
+          --shard-count 8
+          --output shards/calibration-${{ matrix.shard }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage3-calibration-${{ matrix.shard }}
+          path: shards/*
+          if-no-files-found: error
+          retention-days: 30
+
+  lock-thresholds:
+    name: Verify calibration and lock thresholds
+    needs: calibration-shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -e .
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: stage3-calibration-*
+          path: calibration-shards
+          merge-multiple: true
+      - run: >-
+          python scripts/verify_stage3_shards.py calibration-shards/*.json
+          --tier calibration
+          --seed-set calibration
+          --output handoff/calibration-shards-manifest.json
+      - run: >-
+          python benchmarks/calibrate_stage3_gates.py calibration-shards/*.json
+          --output handoff/stage3-directional-thresholds.json
+          --package-output handoff/stage3-packaged-thresholds.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage3-locked-thresholds
+          path: handoff/*
+          if-no-files-found: error
+          retention-days: 90
+
+  validation-shards:
+    name: Validation shard ${{ matrix.shard }}
+    needs: lock-thresholds
+    runs-on: ubuntu-latest
+    timeout-minutes: 480
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -e .
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage3-locked-thresholds
+          path: locked
+      - run: >-
+          python benchmarks/stage3_campaign.py
+          --tier directional_validation
+          --seed-set validation
+          --thresholds locked/stage3-directional-thresholds.json
+          --shard-index ${{ matrix.shard }}
+          --shard-count 8
+          --output shards/validation-${{ matrix.shard }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage3-validation-${{ matrix.shard }}
+          path: shards/*
+          if-no-files-found: error
+          retention-days: 30
+
+  robustness-shards:
+    name: Robustness shard ${{ matrix.shard }}
+    needs: lock-thresholds
+    runs-on: ubuntu-latest
+    timeout-minutes: 600
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -e .
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage3-locked-thresholds
+          path: locked
+      - run: >-
+          python benchmarks/stage3_campaign.py
+          --tier directional_robustness
+          --seed-set validation
+          --thresholds locked/stage3-directional-thresholds.json
+          --shard-index ${{ matrix.shard }}
+          --shard-count 8
+          --output shards/robustness-${{ matrix.shard }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage3-robustness-${{ matrix.shard }}
+          path: shards/*
+          if-no-files-found: error
+          retention-days: 30
+
+  jax-matrices:
+    name: JAX ${{ matrix.version }} matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python: "3.11"
+            version: "0.4.38"
+          - python: "3.13"
+            version: "0.10.2"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install -e ".[dev]" "jax==${{ matrix.version }}"
+      - run: >-
+          python benchmarks/jax_gradient_matrix.py
+          --cases 2000
+          --output jax-artifact/jax-${{ matrix.version }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage3-jax-${{ matrix.version }}
+          path: jax-artifact/*
+          if-no-files-found: error
+          retention-days: 30
+
+  engineering-evidence:
+    name: Coverage, build, and memory evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -e ".[dev]"
+      - run: >-
+          pytest --cov=scova --cov-report=term-missing
+          --cov-report=json:engineering/coverage.json -q
+      - run: python scripts/check_critical_coverage.py engineering/coverage.json
+      - run: ruff check src tests examples benchmarks scripts
+      - run: mypy src/scova
+      - run: python -m build
+      - name: Record build outputs
+        shell: bash
+        run: |
+          wheel=$(find dist -maxdepth 1 -name '*.whl' -print -quit)
+          sdist=$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)
+          python scripts/write_build_artifact.py \
+            --wheel "$wheel" --sdist "$sdist" \
+            --output engineering/build.json
+      - run: >-
+          python benchmarks/stage3_memory.py
+          --output engineering/stage3-memory.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage3-engineering-evidence
+          path: engineering/*
+          if-no-files-found: error
+          retention-days: 30
+
+  aggregate-release-evidence:
+    name: Aggregate and verify release evidence
+    needs:
+      - lock-thresholds
+      - validation-shards
+      - robustness-shards
+      - jax-matrices
+      - engineering-evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -e ".[dev]"
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage3-locked-thresholds
+          path: locked
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: stage3-validation-*
+          path: validation-shards
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: stage3-robustness-*
+          path: robustness-shards
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: stage3-jax-*
+          path: jax-artifacts
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage3-engineering-evidence
+          path: engineering
+      - name: Verify and summarize validation shards
+        shell: bash
+        run: |
+          mkdir -p release/artifacts src/scova/experimental/data
+          cp locked/stage3-directional-thresholds.json \
+            release/artifacts/stage3-directional-thresholds.json
+          cp locked/stage3-packaged-thresholds.json \
+            src/scova/experimental/data/stage3_thresholds.json
+          cp locked/calibration-shards-manifest.json \
+            release/artifacts/calibration-shards-manifest.json
+          python scripts/verify_stage3_shards.py validation-shards/*.json \
+            --tier directional_validation --seed-set validation \
+            --thresholds release/artifacts/stage3-directional-thresholds.json \
+            --output release/artifacts/validation-shards-manifest.json
+          python scripts/verify_stage3_shards.py robustness-shards/*.json \
+            --tier directional_robustness --seed-set validation \
+            --thresholds release/artifacts/stage3-directional-thresholds.json \
+            --output release/artifacts/robustness-shards-manifest.json
+          python benchmarks/summarize_stage3.py validation-shards/*.json \
+            --output release/artifacts/stage3-directional-validation.json
+          python benchmarks/summarize_stage3.py robustness-shards/*.json \
+            --output release/artifacts/stage3-directional-robustness.json
+      - name: Assemble engineering evidence
+        shell: bash
+        run: |
+          cp jax-artifacts/jax-0.4.38.json release/artifacts/jax-0.4.38.json
+          cp jax-artifacts/jax-0.10.2.json release/artifacts/jax-0.10.2.json
+          cp engineering/stage3-memory.json release/artifacts/stage3-memory.json
+          cp engineering/coverage.json release/artifacts/coverage.json
+          cp engineering/build.json release/artifacts/build.json
+      - name: Generate evidence dossier
+        run: >-
+          python scripts/generate_stage3_evidence.py
+          --validation-summary release/artifacts/stage3-directional-validation.json
+          --robustness-summary release/artifacts/stage3-directional-robustness.json
+          --thresholds release/artifacts/stage3-directional-thresholds.json
+          --packaged-thresholds src/scova/experimental/data/stage3_thresholds.json
+          --calibration-shards release/artifacts/calibration-shards-manifest.json
+          --validation-shards release/artifacts/validation-shards-manifest.json
+          --robustness-shards release/artifacts/robustness-shards-manifest.json
+          --jax-minimum release/artifacts/jax-0.4.38.json
+          --jax-maximum release/artifacts/jax-0.10.2.json
+          --memory release/artifacts/stage3-memory.json
+          --coverage release/artifacts/coverage.json
+          --build release/artifacts/build.json
+          --output release/artifacts/stage3-evidence.json
+      - name: Create release bundle
+        shell: bash
+        run: |
+          mkdir -p stage3-release-bundle/release \
+            stage3-release-bundle/src/scova/experimental/data
+          cp -R release/artifacts stage3-release-bundle/release/
+          cp src/scova/experimental/data/stage3_thresholds.json \
+            stage3-release-bundle/src/scova/experimental/data/
+      - name: Enforce promotion gates
+        run: python scripts/check_stage3_release.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage3-directional-release-bundle
+          path: stage3-release-bundle/**
+          if-no-files-found: error
+          retention-days: 90

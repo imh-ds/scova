@@ -82,6 +82,32 @@ def blocking_reasons(manifest: dict, root: Path = Path(".")) -> list[str]:
     specification_hash = (
         sha256(specification_path.read_bytes()).hexdigest() if specification_path.exists() else None
     )
+    shard_commits = set()
+    for role, expected_tier in (
+        ("calibration_shards", "calibration"),
+        ("validation_shards", "directional_validation"),
+        ("robustness_shards", "directional_robustness"),
+    ):
+        shard_manifest = artifacts[role]
+        if shard_manifest is None:
+            continue
+        if not _verify_embedded_hash(shard_manifest, "sha256"):
+            reasons.append(f"{role} checksum is invalid")
+        if shard_manifest.get("tier") != expected_tier:
+            reasons.append(f"{role} has the wrong campaign tier")
+        if shard_manifest.get("specification_sha256") != specification_hash:
+            reasons.append(f"{role} does not match the frozen specification")
+        expected_threshold = None if role == "calibration_shards" else threshold_hash
+        if shard_manifest.get("threshold_artifact_sha256") != expected_threshold:
+            reasons.append(f"{role} has the wrong threshold provenance")
+        if specification is not None:
+            tier_spec = specification["tiers"][expected_tier]
+            expected_records = tier_spec["cells"] * tier_spec["repetitions"]
+            if shard_manifest.get("record_count") != expected_records:
+                reasons.append(f"{role} has the wrong record count")
+        shard_commits.add(shard_manifest.get("git_commit"))
+    if len(shard_commits) > 1 or None in shard_commits:
+        reasons.append("campaign shard manifests do not share one git commit")
     for role, expected_tier in (
         ("validation_summary", "directional_validation"),
         ("robustness_summary", "directional_robustness"),

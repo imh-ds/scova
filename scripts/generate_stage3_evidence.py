@@ -32,6 +32,9 @@ def main() -> None:
     parser.add_argument("--robustness-summary", type=Path)
     parser.add_argument("--thresholds", type=Path)
     parser.add_argument("--packaged-thresholds", type=Path)
+    parser.add_argument("--calibration-shards", type=Path)
+    parser.add_argument("--validation-shards", type=Path)
+    parser.add_argument("--robustness-shards", type=Path)
     parser.add_argument("--jax-minimum", type=Path)
     parser.add_argument("--jax-maximum", type=Path)
     parser.add_argument("--memory", type=Path)
@@ -48,6 +51,9 @@ def main() -> None:
         ("robustness_summary", args.robustness_summary),
         ("locked_thresholds", args.thresholds),
         ("packaged_thresholds", args.packaged_thresholds),
+        ("calibration_shards", args.calibration_shards),
+        ("validation_shards", args.validation_shards),
+        ("robustness_shards", args.robustness_shards),
         ("jax_minimum", args.jax_minimum),
         ("jax_maximum", args.jax_maximum),
         ("memory", args.memory),

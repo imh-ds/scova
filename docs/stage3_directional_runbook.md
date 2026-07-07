@@ -3,6 +3,30 @@
 This runbook produces engineering-directional evidence for `0.3.0`. It does not
 produce publication-ready validation.
 
+## Recommended GitHub Actions path
+
+Run **Stage 3 directional release validation** manually from the Actions tab.
+The workflow performs the complete sequence on GitHub-hosted Linux runners:
+
+1. eight calibration shards;
+2. checksum/provenance verification and threshold locking;
+3. eight held-out validation and eight robustness shards using that exact lock;
+4. pinned JAX, coverage, build, typing, lint, and memory jobs;
+5. shard aggregation, evidence generation, and the promotion checker.
+
+The final `stage3-directional-release-bundle` artifact contains the complete
+`release/artifacts` directory and the package threshold file. A failed promotion
+check remains a failed workflow, but the diagnostic bundle is uploaded whenever
+assembly reached the final job.
+
+The workflow never pushes commits or modifies the release branch. After a passing
+run, review and copy the bundle into the repository before performing the version
+and public-API promotion changes. GitHub artifact retention is 90 days for the
+final bundle and locked thresholds, and 30 days for intermediate shards.
+
+The commands below are the manual recovery path and are also useful for auditing
+individual workflow phases.
+
 ## 1. Calibration
 
 Run all eight calibration shards from the frozen specification:
@@ -45,7 +69,9 @@ Produce the two 2,000-case JAX matrices using exactly JAX 0.4.38 and 0.10.2,
 the memory artifact, branch-aware `coverage.json`, and wheel/sdist build record.
 Place them at the paths declared in `release/stage3_promotion.json`.
 
-Generate the evidence report with every required artifact argument, then run:
+Every aggregation must first run `scripts/verify_stage3_shards.py` against the
+complete shard set. Generate the evidence report with every required artifact
+argument, then run:
 
 ```text
 python scripts/check_stage3_release.py

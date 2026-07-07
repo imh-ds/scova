@@ -7,6 +7,7 @@ import pytest
 from benchmarks.calibrate_stage3_gates import calibrate
 from benchmarks.summarize_stage3 import summarize
 from scova.experimental import DiagnosticThresholds
+from scripts.verify_stage3_shards import verify_shards
 
 
 def _metrics() -> dict[str, float]:
@@ -143,3 +144,79 @@ def test_directional_summary_requires_locked_threshold_and_all_cells(tmp_path: P
     path.write_text(json.dumps(campaign), encoding="utf-8")
     with pytest.raises(ValueError, match="locked threshold"):
         summarize([path], specification)
+
+
+def test_shard_verifier_checks_complete_provenance(tmp_path: Path) -> None:
+    specification = {
+        "protocol": "test-directional",
+        "frozen": True,
+        "validation_level": "directional",
+        "calibration_seed_namespace": 1000,
+        "tiers": {
+            "calibration": {
+                "cells": 2,
+                "repetitions": 2,
+                "bootstrap": 9,
+                "cell_indices": [4, 7],
+            }
+        },
+    }
+    specification_path = tmp_path / "spec.json"
+    specification_path.write_text(json.dumps(specification), encoding="utf-8")
+    specification_hash = sha256(specification_path.read_bytes()).hexdigest()
+    manifest = [
+        {"source_cell_index": 4, "spec": {"cell": "a"}},
+        {"source_cell_index": 7, "spec": {"cell": "b"}},
+    ]
+    paths = []
+    for shard_index, source_index in enumerate((4, 7)):
+        records = []
+        for repetition in range(2):
+            records.append(
+                {
+                    "source_cell_index": source_index,
+                    "cell_id": shard_index,
+                    "repetition": repetition,
+                    "seed": 1000 + shard_index * 100_000 + repetition,
+                    "spec": manifest[shard_index]["spec"],
+                }
+            )
+        payload = {
+            "shard_count": 2,
+            "shard_index": shard_index,
+            "git_commit": "abc123",
+            "cell_manifest": manifest,
+            "tier": "calibration",
+            "seed_set": "calibration",
+            "seed_namespace": 1000,
+            "specification_sha256": specification_hash,
+            "validation_level": "directional",
+            "repetitions": 2,
+            "bootstrap": 9,
+            "threshold_artifact_sha256": None,
+            "records": records,
+        }
+        path = tmp_path / f"shard-{shard_index}.json"
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        path.with_suffix(".json.sha256").write_text(
+            sha256(path.read_bytes()).hexdigest() + "\n", encoding="ascii"
+        )
+        paths.append(path)
+    result = verify_shards(
+        paths,
+        specification_path=specification_path,
+        tier="calibration",
+        seed_set="calibration",
+        threshold_path=None,
+    )
+    assert result["record_count"] == 4
+    assert result["shard_count"] == 2
+    paths[0].with_suffix(".json.sha256").write_text("bad", encoding="ascii")
+    with pytest.raises(ValueError, match="checksum mismatch"):
+        verify_shards(
+            paths,
+            specification_path=specification_path,
+            tier="calibration",
+            seed_set="calibration",
+            threshold_path=None,
+        )

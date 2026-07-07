@@ -14,6 +14,8 @@ release blockers are tracked in
 [`docs/stage3_stabilization.md`](docs/stage3_stabilization.md). The executable
 campaign sequence is in the
 [`Stage 3 directional runbook`](docs/stage3_directional_runbook.md).
+The manually triggered `Stage 3 directional release validation` GitHub Actions
+workflow performs the complete sharded validation and evidence aggregation.
 
 ## Status and scope
 
