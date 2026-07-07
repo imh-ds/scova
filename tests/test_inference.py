@@ -150,11 +150,23 @@ def test_schema_one_migration_and_causal_semantics(tmp_path) -> None:
     with path.open("wb") as stream:
         np.savez_compressed(stream, **arrays)
     migrated = SCOVAResult.load(path)
-    assert migrated.schema_version == 2
+    assert migrated.schema_version == 3
     assert migrated.random_state == 0
     assert migrated.interpretation == "causal"
     assert migrated.verdict is Verdict.EXPLORATORY_ONLY
     assert migrated.inferences == {}
+
+    metadata["schema_version"] = 2
+    metadata["interpretation"] = "causal"
+    metadata["random_state"] = 41
+    metadata["inferences"] = {}
+    arrays["metadata"] = np.array(json.dumps(metadata))
+    schema_two_path = tmp_path / "schema-two.scova"
+    with schema_two_path.open("wb") as stream:
+        np.savez_compressed(stream, **arrays)
+    migrated_two = SCOVAResult.load(schema_two_path)
+    assert migrated_two.schema_version == 3
+    assert migrated_two.random_state == 41
 
 
 def test_diagnostic_warning_propagates() -> None:

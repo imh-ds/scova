@@ -3,9 +3,13 @@
 **Support-aware Covariate Overlap and Variance Analysis**
 
 SCOVA is an early-stage Python methodology and package for honest comparisons
-among naturally occurring groups. The current `0.2.0` milestone implements a
+among naturally occurring groups. The stable `0.2.0` core implements a
 fixed-study-population (`h(x) = 1`), cross-fitted, multi-group AIPW estimator
 for continuous outcomes with simultaneous finite-family inference.
+
+The `0.3.0.dev0` source tree also contains an experimental finite-grid smooth
+overlap path. It remains experimental pending external review and full pathwise
+coverage benchmarks.
 
 ## Status and scope
 
@@ -22,8 +26,9 @@ The current vertical slice provides:
 - deterministic simulation fixtures with oracle nuisances; and
 - versioned result persistence without pickle.
 
-Overlap paths, simultaneous inference, TMLE, comparability graphs, partial
-identification, and sensitivity surfaces are intentionally deferred. See
+TMLE, comparability graphs, partial identification, sensitivity surfaces, and
+continuum-uniform path inference are intentionally deferred. The finite-grid
+overlap path is available experimentally. See
 [the methodology plan](scova_methodology_plan.md) and
 [statistical contract](docs/statistical_contract.md).
 
@@ -41,6 +46,8 @@ For development:
 python -m pip install -e ".[dev]"
 pytest
 ```
+
+Install `.[jax]` only when running the optional automatic-gradient validation.
 
 ## Minimal example
 
@@ -68,6 +75,14 @@ print(result.diagnostics["effective_sample_sizes"])
 
 A complete three-group workflow is available in
 [`examples/three_group.py`](examples/three_group.py).
+
+An experimental target-path workflow is available in
+[`examples/overlap_path.py`](examples/overlap_path.py). It uses
+`PathDeclaration` and `fit_path` from `scova.experimental`, jointly controls a
+declared 21-point grid, and reports sign, stability, and target-drift output.
+The mathematical contract and novelty boundary are documented in
+[`estimated_tilt_eif.md`](docs/estimated_tilt_eif.md) and
+[`stage3_positioning.md`](docs/stage3_positioning.md).
 
 ## Interpretation
 

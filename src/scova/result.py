@@ -14,7 +14,7 @@ from scipy.stats import norm
 
 from .inference import SimultaneousInferenceResult, run_simultaneous_inference
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 class Verdict(str, Enum):
@@ -223,10 +223,10 @@ class SCOVAResult:
         with np.load(Path(path), allow_pickle=False) as archive:
             metadata = json.loads(str(archive["metadata"].item()))
             stored_schema = int(metadata["schema_version"])
-            if stored_schema not in (1, SCHEMA_VERSION):
+            if stored_schema not in (1, 2, SCHEMA_VERSION):
                 raise ValueError(
                     "Unsupported result schema "
-                    f"{stored_schema}; expected 1 or {SCHEMA_VERSION}"
+                    f"{stored_schema}; expected 1, 2, or {SCHEMA_VERSION}"
                 )
             stored_verdict = Verdict(metadata["verdict"])
             if stored_schema == 1 and stored_verdict is Verdict.CERTIFIED:
