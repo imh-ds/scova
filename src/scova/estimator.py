@@ -233,7 +233,7 @@ class SCOVA:
             labels,
         )
         verdict = (
-            Verdict.CERTIFIED
+            Verdict.EXPLORATORY_ONLY
             if declaration.interpretation == "causal"
             else Verdict.DESCRIPTIVE_ONLY
         )
@@ -249,6 +249,8 @@ class SCOVA:
             diagnostics=diagnostics,
             declaration_hash=declaration.declaration_hash,
             nuisance_metadata=nuisance_metadata,
+            interpretation=declaration.interpretation,
+            random_state=declaration.random_state,
             verdict=verdict,
             package_version=__version__,
         )

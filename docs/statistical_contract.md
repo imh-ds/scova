@@ -35,3 +35,24 @@ changes the target, or extrapolates. Missing or non-finite analysis values,
 invalid probability vectors, unsupported groups, and invalid contrasts are
 errors rather than implicit analytic choices.
 
+## Simultaneous inference
+
+For a finite fitted family, SCOVA stacks the contrast influence values and uses
+centered Gaussian multipliers. Each draw records the maximum absolute
+studentized statistic over the complete family. The empirical quantile gives
+simultaneous two-sided intervals, and exceedance probabilities use the finite
+bootstrap correction \((1+r)/(B+1)\). The default is 1,999 draws at 95%
+confidence, seeded from the analysis declaration and evaluated in bounded
+batches.
+
+The max-t global test addresses the intersection null that every contrast in
+the recorded family is zero. The Wald omnibus test uses the Moore–Penrose
+inverse of the contrast covariance; its chi-squared degrees of freedom equal
+the numerical rank, so redundant all-pairwise families do not inflate the
+reference dimension. These are asymptotic procedures and do not repair weak
+support, nuisance-model failure, or unmeasured confounding.
+
+Interpretation and computational inference status are distinct. A causal
+declaration remains `exploratory-only` until later SCOVA stages implement and
+pass declared design gates. Simultaneous inference reports `complete`,
+`warning`, or `refused` independently of that interpretation.

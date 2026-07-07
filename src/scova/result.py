@@ -12,7 +12,9 @@ from typing import Any
 import numpy as np
 from scipy.stats import norm
 
-SCHEMA_VERSION = 1
+from .inference import SimultaneousInferenceResult, run_simultaneous_inference
+
+SCHEMA_VERSION = 2
 
 
 class Verdict(str, Enum):
@@ -20,6 +22,7 @@ class Verdict(str, Enum):
 
     CERTIFIED = "certified"
     DESCRIPTIVE_ONLY = "descriptive-only"
+    EXPLORATORY_ONLY = "exploratory-only"
     REFUSED = "refused"
 
 
@@ -50,9 +53,12 @@ class SCOVAResult:
     diagnostics: dict[str, Any]
     declaration_hash: str
     nuisance_metadata: dict[str, Any]
+    interpretation: str
+    random_state: int
     verdict: Verdict
     package_version: str
     contrasts: dict[str, ContrastEstimate] = field(default_factory=dict)
+    inferences: dict[str, SimultaneousInferenceResult] = field(default_factory=dict)
     schema_version: int = SCHEMA_VERSION
 
     @property
@@ -121,6 +127,51 @@ class SCOVAResult:
             self.contrasts[name] = result
         return result
 
+    def infer(
+        self,
+        family: Sequence[str] | None = None,
+        *,
+        confidence_level: float = 0.95,
+        n_bootstrap: int = 1999,
+        random_state: int | None = None,
+        batch_size: int = 256,
+    ) -> SimultaneousInferenceResult:
+        """Run simultaneous inference from persisted influence values only."""
+        names = tuple(self.contrasts) if family is None else tuple(family)
+        if not names:
+            raise ValueError("Simultaneous inference requires at least one contrast")
+        if len(set(names)) != len(names):
+            raise ValueError("Simultaneous inference family cannot contain duplicate names")
+        unknown = [name for name in names if name not in self.contrasts]
+        if unknown:
+            raise ValueError(f"Unknown contrast names: {unknown}")
+        selected = tuple(self.contrasts[name] for name in names)
+        estimates = np.array([contrast.estimate for contrast in selected])
+        standard_errors = np.array([contrast.standard_error for contrast in selected])
+        influence = np.column_stack(
+            [contrast.influence_values for contrast in selected]
+        )
+        weights = np.vstack([contrast.weights for contrast in selected])
+        seed = self.random_state if random_state is None else random_state
+        diagnostic_warnings = self.diagnostics.get("warnings", [])
+        if not isinstance(diagnostic_warnings, list):
+            raise ValueError("diagnostics['warnings'] must be a list when present")
+        result = run_simultaneous_inference(
+            family=names,
+            estimates=estimates,
+            standard_errors=standard_errors,
+            influence_values=influence,
+            weights=weights,
+            group_covariance=self.covariance,
+            confidence_level=confidence_level,
+            n_bootstrap=n_bootstrap,
+            random_state=seed,
+            batch_size=batch_size,
+            warning_reasons=tuple(str(reason) for reason in diagnostic_warnings),
+        )
+        self.inferences[result.configuration_key] = result
+        return result
+
     def save(self, path: str | Path) -> None:
         """Save numeric results and JSON metadata without pickle."""
         destination = Path(path)
@@ -143,8 +194,13 @@ class SCOVAResult:
             "diagnostics": self.diagnostics,
             "declaration_hash": self.declaration_hash,
             "nuisance_metadata": self.nuisance_metadata,
+            "interpretation": self.interpretation,
+            "random_state": self.random_state,
             "verdict": self.verdict.value,
             "contrasts": contrast_metadata,
+            "inferences": {
+                key: inference.to_dict() for key, inference in self.inferences.items()
+            },
         }
         arrays: dict[str, np.ndarray] = {
             "metadata": np.array(json.dumps(metadata, sort_keys=True, allow_nan=False)),
@@ -166,11 +222,15 @@ class SCOVAResult:
         """Load a result, rejecting unknown future schemas."""
         with np.load(Path(path), allow_pickle=False) as archive:
             metadata = json.loads(str(archive["metadata"].item()))
-            if metadata["schema_version"] != SCHEMA_VERSION:
+            stored_schema = int(metadata["schema_version"])
+            if stored_schema not in (1, SCHEMA_VERSION):
                 raise ValueError(
                     "Unsupported result schema "
-                    f"{metadata['schema_version']}; expected {SCHEMA_VERSION}"
+                    f"{stored_schema}; expected 1 or {SCHEMA_VERSION}"
                 )
+            stored_verdict = Verdict(metadata["verdict"])
+            if stored_schema == 1 and stored_verdict is Verdict.CERTIFIED:
+                stored_verdict = Verdict.EXPLORATORY_ONLY
             result = cls(
                 group_labels=tuple(metadata["group_labels"]),
                 covariate_names=tuple(metadata["covariate_names"]),
@@ -183,9 +243,14 @@ class SCOVAResult:
                 diagnostics=metadata["diagnostics"],
                 declaration_hash=metadata["declaration_hash"],
                 nuisance_metadata=metadata["nuisance_metadata"],
-                verdict=Verdict(metadata["verdict"]),
+                interpretation=metadata.get(
+                    "interpretation",
+                    "causal" if metadata["verdict"] == "certified" else "descriptive",
+                ),
+                random_state=int(metadata.get("random_state", 0)),
+                verdict=stored_verdict,
                 package_version=metadata["package_version"],
-                schema_version=metadata["schema_version"],
+                schema_version=SCHEMA_VERSION,
             )
             for name, values in metadata["contrasts"].items():
                 result.contrasts[name] = ContrastEstimate(
@@ -198,4 +263,9 @@ class SCOVAResult:
                     p_value=float(values["p_value"]),
                     influence_values=archive[f"contrast_influence::{name}"].copy(),
                 )
+            for key, values in metadata.get("inferences", {}).items():
+                inference = SimultaneousInferenceResult.from_dict(values)
+                if key != inference.configuration_key:
+                    raise ValueError("Persisted inference key does not match its configuration")
+                result.inferences[key] = inference
         return result

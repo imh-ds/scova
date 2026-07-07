@@ -3,9 +3,9 @@
 **Support-aware Covariate Overlap and Variance Analysis**
 
 SCOVA is an early-stage Python methodology and package for honest comparisons
-among naturally occurring groups. The current `0.1.0` milestone implements a
+among naturally occurring groups. The current `0.2.0` milestone implements a
 fixed-study-population (`h(x) = 1`), cross-fitted, multi-group AIPW estimator
-for continuous outcomes.
+for continuous outcomes with simultaneous finite-family inference.
 
 ## Status and scope
 
@@ -16,6 +16,8 @@ The current vertical slice provides:
 - multinomial propensity and group-specific outcome models;
 - standardized group means, pairwise/custom contrasts, influence values, and
   pointwise Wald inference;
+- deterministic Gaussian multiplier-bootstrap intervals, max-t-adjusted
+  p-values, and max-t and rank-aware Wald global tests;
 - initial overlap, balance, effective-sample-size, and influence diagnostics;
 - deterministic simulation fixtures with oracle nuisances; and
 - versioned result persistence without pickle.
@@ -55,9 +57,12 @@ declaration = SCOVADeclaration(
     random_state=42,
 )
 result = SCOVA().fit(simulation.data, declaration)
+simultaneous = result.infer()
 
 print(dict(zip(result.group_labels, result.group_means, strict=True)))
 print(result.contrasts["g0 - g1"])
+print(simultaneous.contrast("g0 - g1"))
+print(simultaneous.global_test)
 print(result.diagnostics["effective_sample_sizes"])
 ```
 
@@ -67,11 +72,18 @@ A complete three-group workflow is available in
 ## Interpretation
 
 The default verdict is `descriptive-only`. Selecting a causal interpretation
-records the analyst's assumption claim; it does not make exchangeability or
-positivity empirically verifiable. SCOVA never silently clips propensity
-scores, trims observations, or changes the target population.
+records the analyst's assumption claim and produces `exploratory-only`; it does
+not make exchangeability or positivity empirically verifiable. `certified` is
+reserved for a future declared-gate system. SCOVA never silently clips
+propensity scores, trims observations, or changes the target population.
+
+`result.infer()` controls family-wise error over the exact fitted contrast
+family recorded in its return value. Pointwise intervals on `ContrastEstimate`
+and simultaneous intervals on `SimultaneousContrastResult` are intentionally
+separate. The max-t global test rejects when at least one family contrast is
+nonzero; the Wald test is an omnibus quadratic-form test whose degrees of
+freedom use the numerical rank of the contrast covariance.
 
 ## License
 
 SCOVA is licensed under GPL-3.0.
-

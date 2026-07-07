@@ -17,8 +17,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e ".[dev]"
-      - run: ruff check src tests examples
+      - run: ruff check src tests examples benchmarks
       - run: mypy src/scova
       - run: pytest --cov=scova --cov-report=term-missing
       - run: python examples/three_group.py
-
