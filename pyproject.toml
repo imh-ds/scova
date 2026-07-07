@@ -50,6 +50,7 @@ source = ["scova"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
+fail_under = 92
 
 [tool.ruff]
 line-length = 100

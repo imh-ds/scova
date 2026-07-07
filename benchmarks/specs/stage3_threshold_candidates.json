@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "profiles": [
+    {
+      "name": "least_restrictive",
+      "min_group_ess": 10,
+      "min_target_ess_ratio": 0.10,
+      "max_influence_share": 0.75,
+      "max_weight_concentration": 0.20,
+      "min_propensity_q01": 0.001,
+      "max_calibration_error": 0.20,
+      "max_balance": 0.50,
+      "max_crossfit_instability": 0.50
+    },
+    {
+      "name": "low",
+      "min_group_ess": 25,
+      "min_target_ess_ratio": 0.15,
+      "max_influence_share": 0.60,
+      "max_weight_concentration": 0.15,
+      "min_propensity_q01": 0.0025,
+      "max_calibration_error": 0.15,
+      "max_balance": 0.35,
+      "max_crossfit_instability": 0.40
+    },
+    {
+      "name": "moderate",
+      "min_group_ess": 50,
+      "min_target_ess_ratio": 0.25,
+      "max_influence_share": 0.40,
+      "max_weight_concentration": 0.10,
+      "min_propensity_q01": 0.005,
+      "max_calibration_error": 0.10,
+      "max_balance": 0.25,
+      "max_crossfit_instability": 0.30
+    },
+    {
+      "name": "high",
+      "min_group_ess": 75,
+      "min_target_ess_ratio": 0.35,
+      "max_influence_share": 0.30,
+      "max_weight_concentration": 0.075,
+      "min_propensity_q01": 0.01,
+      "max_calibration_error": 0.075,
+      "max_balance": 0.15,
+      "max_crossfit_instability": 0.20
+    },
+    {
+      "name": "most_restrictive",
+      "min_group_ess": 100,
+      "min_target_ess_ratio": 0.50,
+      "max_influence_share": 0.20,
+      "max_weight_concentration": 0.05,
+      "min_propensity_q01": 0.02,
+      "max_calibration_error": 0.05,
+      "max_balance": 0.10,
+      "max_crossfit_instability": 0.10
+    }
+  ]
+}
+

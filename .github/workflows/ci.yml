@@ -17,9 +17,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e ".[dev]"
-      - run: ruff check src tests examples benchmarks
+      - run: ruff check src tests examples benchmarks scripts
       - run: mypy src/scova
-      - run: pytest --cov=scova --cov-report=term-missing
+      - run: pytest --cov=scova --cov-report=term-missing --cov-report=json:coverage.json
+      - run: python scripts/check_critical_coverage.py coverage.json
       - run: python examples/three_group.py
 
   jax-gradient:
@@ -30,4 +31,4 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -e ".[dev,jax]"
-      - run: pytest tests/test_path_tilts.py -q
+      - run: pytest tests/test_path_tilts.py tests/test_jax_matrix.py -q

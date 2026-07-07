@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "candidate_version": "0.3.0.dev0",
+  "stable_version": "0.3.0",
+  "theory": {
+    "review_1_approved": false,
+    "review_2_approved": false,
+    "critical_comments_open": 0,
+    "major_comments_open": 0
+  },
+  "simulation": {
+    "specification_frozen": false,
+    "calibration_complete": false,
+    "release_campaign_complete": false,
+    "all_pass_criteria_met": false
+  },
+  "gates": {
+    "thresholds_calibrated": false,
+    "thresholds_locked": false,
+    "heldout_validation_passed": false
+  },
+  "jax": {
+    "pull_request_matrix_passed": false,
+    "nightly_matrix_passed": false
+  },
+  "quality": {
+    "critical_modules_branch_coverage": 0.97,
+    "package_branch_coverage": 0.961,
+    "build_passed": true
+  },
+  "evidence": {
+    "report_generated": false,
+    "signed": false
+  }
+}

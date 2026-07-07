@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "status": "preregistered-candidate",
+  "frozen": false,
+  "primary_factors": {
+    "n_groups": [2, 4, 8],
+    "n": [500, 2000],
+    "p": [5, 20],
+    "overlap": ["strong", "moderate", "weak", "near_violation"],
+    "outcome": ["linear", "nonlinear", "threshold"],
+    "imbalance": ["balanced", "rare"]
+  },
+  "tiers": {
+    "pull_request": {"cells": 24, "repetitions": 100, "bootstrap": 499},
+    "nightly": {"cells": 120, "repetitions": 500, "bootstrap": 999},
+    "release": {"cells": 288, "repetitions": 2000, "bootstrap": 1999},
+    "robustness": {"cells": 96, "repetitions": 2000, "bootstrap": 1999}
+  },
+  "pass_criteria": {
+    "simultaneous_coverage_min": 0.925,
+    "simultaneous_coverage_max": 0.975,
+    "fwer_upper_bound_max": 0.065,
+    "standardized_absolute_bias_max": 0.10,
+    "confidence_level": 0.95
+  },
+  "calibration_seed_namespace": 41000000,
+  "validation_seed_namespace": 73000000,
+  "notes": [
+    "Targets are matched separately for every estimator.",
+    "Threshold calibration uses calibration seeds only.",
+    "Release validation seeds are never used for threshold selection."
+  ]
+}
+

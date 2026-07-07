@@ -150,7 +150,7 @@ def test_schema_one_migration_and_causal_semantics(tmp_path) -> None:
     with path.open("wb") as stream:
         np.savez_compressed(stream, **arrays)
     migrated = SCOVAResult.load(path)
-    assert migrated.schema_version == 3
+    assert migrated.schema_version == 4
     assert migrated.random_state == 0
     assert migrated.interpretation == "causal"
     assert migrated.verdict is Verdict.EXPLORATORY_ONLY
@@ -165,7 +165,7 @@ def test_schema_one_migration_and_causal_semantics(tmp_path) -> None:
     with schema_two_path.open("wb") as stream:
         np.savez_compressed(stream, **arrays)
     migrated_two = SCOVAResult.load(schema_two_path)
-    assert migrated_two.schema_version == 3
+    assert migrated_two.schema_version == 4
     assert migrated_two.random_state == 41
 
 

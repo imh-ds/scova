@@ -7,6 +7,35 @@ from typing import Any
 import numpy as np
 
 
+def _multinomial_calibration(
+    group_codes: np.ndarray, propensity: np.ndarray, n_bins: int = 10
+) -> dict[str, Any]:
+    n, n_groups = propensity.shape
+    observed = np.eye(n_groups)[group_codes]
+    clipped = np.maximum(propensity[np.arange(n), group_codes], np.finfo(float).tiny)
+    log_loss = float(-np.mean(np.log(clipped)))
+    brier = float(np.mean(np.sum(np.square(propensity - observed), axis=1)))
+    classwise: list[float] = []
+    edges = np.linspace(0, 1, n_bins + 1)
+    for code in range(n_groups):
+        error = 0.0
+        for left, right in zip(edges[:-1], edges[1:], strict=True):
+            in_bin = (propensity[:, code] >= left) & (
+                (propensity[:, code] < right) | ((right == 1) & (propensity[:, code] <= right))
+            )
+            if np.any(in_bin):
+                error += float(np.mean(in_bin)) * abs(
+                    float(np.mean(observed[in_bin, code]) - np.mean(propensity[in_bin, code]))
+                )
+        classwise.append(error)
+    return {
+        "log_loss": log_loss,
+        "brier_score": brier,
+        "classwise_expected_calibration_error": classwise,
+        "worst_class_expected_calibration_error": float(max(classwise)),
+    }
+
+
 def compute_diagnostics(
     x: np.ndarray,
     group_codes: np.ndarray,
@@ -63,5 +92,12 @@ def compute_diagnostics(
         "weighted_balance": balance_by_covariate,
         "top_one_percent_influence_variance_share": concentration,
         "fold_group_counts": fold_group_counts,
+        "propensity_quantiles": {
+            str(label): {
+                "q01": float(np.quantile(propensity[:, code], 0.01)),
+                "q05": float(np.quantile(propensity[:, code], 0.05)),
+            }
+            for code, label in enumerate(group_labels)
+        },
+        "propensity_calibration": _multinomial_calibration(group_codes, propensity),
     }
-

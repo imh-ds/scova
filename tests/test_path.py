@@ -2,7 +2,13 @@ import numpy as np
 import pytest
 
 from scova import SCOVA, NuisancePredictions, SCOVADeclaration
-from scova.experimental import PathDeclaration, SCOVAPathResult, fit_path
+from scova.experimental import (
+    DiagnosticThresholds,
+    InferenceRefusedError,
+    PathDeclaration,
+    SCOVAPathResult,
+    fit_path,
+)
 from scova.simulate import generate_data
 
 
@@ -31,6 +37,11 @@ def test_lambda_zero_exactly_reduces_to_fixed_target() -> None:
     np.testing.assert_allclose(path.group_means[0], fixed.group_means, atol=1e-14)
     np.testing.assert_allclose(path.influence_values[:, 0], fixed.influence_values, atol=1e-13)
     assert path.diagnostics["inference_scope"] == "declared-finite-grid"
+    grid = path.diagnostics["path_gate_grid"]
+    assert grid["schema_version"] == 1
+    assert np.asarray(grid["group_effective_sample_size"]).shape == (5, 3)
+    assert np.asarray(grid["maximum_weighted_covariate_imbalance"]).shape == (5, 3)
+    assert set(grid["contrast_influence_variance_share"]) == set(path.contrasts)
     assert path.drift.standardized_mean_shifts.shape == (5, 3)
     np.testing.assert_allclose(path.drift.standardized_mean_shifts[0], 0, atol=1e-14)
 
@@ -84,6 +95,7 @@ def test_path_inference_determinism_certificates_and_persistence(tmp_path) -> No
     path.save(destination)
     loaded = SCOVAPathResult.load(destination)
     np.testing.assert_allclose(loaded.group_means, path.group_means)
+    assert loaded.diagnostics["path_gate_grid"] == path.diagnostics["path_gate_grid"]
     replay = loaded.infer(n_bootstrap=99, random_state=7, batch_size=17)
     np.testing.assert_allclose(replay.lower_bands, first.lower_bands)
 
@@ -121,3 +133,15 @@ def test_path_declaration_failures(kwargs, message) -> None:
     base = SCOVADeclaration("outcome", "group", ("x1",))
     with pytest.raises(ValueError, match=message):
         PathDeclaration(base, **kwargs)
+
+
+def test_hard_gate_suppresses_confirmatory_inference() -> None:
+    simulation, base, _, nuisance = setup_path()
+    strict = DiagnosticThresholds(
+        min_group_ess_warning=10_000,
+        min_group_ess_refuse=9_000,
+    )
+    declaration = PathDeclaration(base, lambdas=(0.0, 0.5, 1.0), thresholds=strict)
+    result = fit_path(simulation.data, declaration, nuisance_predictions=nuisance)
+    with pytest.raises(InferenceRefusedError):
+        result.infer(n_bootstrap=9)

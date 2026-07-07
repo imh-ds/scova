@@ -9,7 +9,9 @@ for continuous outcomes with simultaneous finite-family inference.
 
 The `0.3.0.dev0` source tree also contains an experimental finite-grid smooth
 overlap path. It remains experimental pending external review and full pathwise
-coverage benchmarks.
+coverage benchmarks. Its production-stabilization machinery and remaining
+release blockers are tracked in
+[`docs/stage3_stabilization.md`](docs/stage3_stabilization.md).
 
 ## Status and scope
 
@@ -48,6 +50,12 @@ pytest
 ```
 
 Install `.[jax]` only when running the optional automatic-gradient validation.
+
+Stage 3 uses provisional diagnostic thresholds until the calibration campaign
+is complete. Provisional thresholds may warn or refuse, but they cannot emit a
+confirmatory pass. A hard refusal suppresses simultaneous bands, adjusted
+p-values, global tests, and sign/stability certificates while retaining
+descriptive estimates and target-drift summaries.
 
 ## Minimal example
 

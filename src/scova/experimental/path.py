@@ -15,10 +15,17 @@ from .._version import __version__
 from ..declaration import JsonLabel, SCOVADeclaration
 from ..estimator import SCOVA, NuisancePredictions
 from ..inference import InferenceStatus
+from .gates import (
+    DiagnosticThresholds,
+    GateDecision,
+    GateStatus,
+    InferenceRefusedError,
+    evaluate_path_gates,
+)
 from .tilts import geometric_tilt_and_gradient
 
 PathTarget = Literal["kway", "pairwise", "subset", "study"]
-PATH_SCHEMA_VERSION = 3
+PATH_SCHEMA_VERSION = 4
 
 
 def _default_grid() -> tuple[float, ...]:
@@ -36,6 +43,7 @@ class PathDeclaration:
     contrast_names: tuple[str, ...] = ()
     confidence_level: float = 0.95
     random_state: int | None = None
+    thresholds: DiagnosticThresholds = field(default_factory=DiagnosticThresholds)
 
     def __post_init__(self) -> None:
         grid = tuple(float(value) for value in self.lambdas)
@@ -77,6 +85,7 @@ class PathDeclaration:
             "contrast_names": self.contrast_names,
             "confidence_level": self.confidence_level,
             "random_state": self.seed,
+            "thresholds": self.thresholds.to_dict(),
         }
         encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
         return sha256(encoded).hexdigest()
@@ -156,6 +165,8 @@ class SCOVAPathResult:
     drift: DriftProfile
     contrasts: dict[str, ContrastPathResult]
     diagnostics: dict[str, Any]
+    thresholds: DiagnosticThresholds
+    gate_decision: GateDecision
     random_state: int
     package_version: str
     inferences: list[PathInferenceResult] = field(default_factory=list)
@@ -170,6 +181,10 @@ class SCOVAPathResult:
         random_state: int | None = None,
         batch_size: int = 256,
     ) -> PathInferenceResult:
+        if self.gate_decision.status is GateStatus.REFUSE:
+            raise InferenceRefusedError(
+                "confirmatory path inference refused: " + "; ".join(self.gate_decision.reasons)
+            )
         names = tuple(self.contrasts) if family is None else tuple(family)
         if not names:
             raise ValueError("path inference requires at least one contrast")
@@ -253,7 +268,7 @@ class SCOVAPathResult:
                     reference_lambda=float(lambdas[-1]),
                 )
             )
-        warnings = tuple(str(item) for item in self.diagnostics.get("warnings", []))
+        warnings = tuple(self.gate_decision.reasons)
         result = PathInferenceResult(
             family=names,
             lambdas=tuple(float(value) for value in lambdas),
@@ -288,6 +303,8 @@ class SCOVAPathResult:
             "diagnostics": self.diagnostics,
             "random_state": self.random_state,
             "package_version": self.package_version,
+            "thresholds": self.thresholds.to_dict(),
+            "gate_decision": self.gate_decision.to_dict(),
         }
         arrays: dict[str, np.ndarray] = {
             "metadata": np.array(json.dumps(metadata, sort_keys=True, allow_nan=False)),
@@ -316,7 +333,8 @@ class SCOVAPathResult:
     def load(cls, path: str | Path) -> SCOVAPathResult:
         with np.load(Path(path), allow_pickle=False) as archive:
             metadata = json.loads(str(archive["metadata"].item()))
-            if metadata["schema_version"] != PATH_SCHEMA_VERSION:
+            stored_schema = int(metadata["schema_version"])
+            if stored_schema not in (3, PATH_SCHEMA_VERSION):
                 raise ValueError("unsupported experimental path schema")
             contrasts = {
                 name: ContrastPathResult(
@@ -337,6 +355,20 @@ class SCOVAPathResult:
                 top_one_percent_weight_share=archive["drift_concentration"].copy(),
                 target_mean_propensity=archive["drift_mean_propensity"].copy(),
             )
+            thresholds = DiagnosticThresholds.from_dict(
+                metadata.get("thresholds", DiagnosticThresholds().to_dict())
+            )
+            gate_decision = (
+                GateDecision.from_dict(metadata["gate_decision"])
+                if "gate_decision" in metadata
+                else GateDecision(
+                    status=GateStatus.WARNING,
+                    metrics=(),
+                    reasons=("migrated schema-3 result requires gate reevaluation",),
+                    threshold_version=thresholds.version,
+                    calibrated=False,
+                )
+            )
             return cls(
                 declaration_hash=metadata["declaration_hash"],
                 base_declaration_hash=metadata["base_declaration_hash"],
@@ -353,6 +385,8 @@ class SCOVAPathResult:
                 drift=drift,
                 contrasts=contrasts,
                 diagnostics=metadata["diagnostics"],
+                thresholds=thresholds,
+                gate_decision=gate_decision,
                 random_state=int(metadata["random_state"]),
                 package_version=metadata["package_version"],
             )
@@ -387,6 +421,7 @@ def fit_path(
     *,
     estimator: SCOVA | None = None,
     nuisance_predictions: NuisancePredictions | None = None,
+    crossfit_instability: float = 0.0,
 ) -> SCOVAPathResult:
     """Fit one experimental finite-grid target path without refitting nuisances."""
     engine = estimator or SCOVA()
@@ -465,6 +500,89 @@ def fit_path(
     diagnostics = dict(base_result.diagnostics)
     diagnostics["experimental"] = True
     diagnostics["inference_scope"] = "declared-finite-grid"
+    squared_influence = np.square(influence)
+    top_count = max(1, int(np.ceil(0.01 * len(data))))
+    influence_denominator = squared_influence.sum(axis=0)
+    influence_top = np.sort(squared_influence, axis=0)[-top_count:].sum(axis=0)
+    influence_share = np.divide(
+        influence_top,
+        influence_denominator,
+        out=np.zeros_like(influence_top),
+        where=influence_denominator > 0,
+    )
+    drift = _drift_profile(x, group_codes, propensity, tilt)
+    calibration = diagnostics["propensity_calibration"]
+    target_weights = tilt / denominator[None, :]
+    target_covariate_means = target_weights.T @ x
+    covariate_scale = np.where(x.std(axis=0, ddof=1) > 0, x.std(axis=0, ddof=1), 1.0)
+    path_balance = np.empty((len(lambdas), len(labels)))
+    for code in range(len(labels)):
+        raw_group_weights = (
+            (group_codes == code)[:, None] * tilt / propensity[:, code, None]
+        )
+        normalized_group_weights = raw_group_weights / raw_group_weights.sum(
+            axis=0, keepdims=True
+        )
+        group_covariate_means = normalized_group_weights.T @ x
+        path_balance[:, code] = np.max(
+            np.abs((group_covariate_means - target_covariate_means) / covariate_scale),
+            axis=1,
+        )
+    contrast_influence_share: dict[str, np.ndarray] = {}
+    for name, contrast in contrasts.items():
+        squared = np.square(contrast.influence_values)
+        total = squared.sum(axis=0)
+        top = np.sort(squared, axis=0)[-top_count:].sum(axis=0)
+        contrast_influence_share[name] = np.divide(
+            top,
+            total,
+            out=np.zeros_like(top),
+            where=total > 0,
+        )
+    maximum_contrast_influence_share = max(
+        float(np.max(values)) for values in contrast_influence_share.values()
+    )
+    diagnostics["path_gate_grid"] = {
+        "schema_version": 1,
+        "lambdas": lambdas.tolist(),
+        "target_ess_ratio": (drift.target_effective_sample_size / len(data)).tolist(),
+        "group_effective_sample_size": drift.group_effective_sample_size.tolist(),
+        "group_influence_variance_share": influence_share.tolist(),
+        "contrast_influence_variance_share": {
+            name: values.tolist() for name, values in contrast_influence_share.items()
+        },
+        "target_weight_concentration": drift.top_one_percent_weight_share.tolist(),
+        "maximum_weighted_covariate_imbalance": path_balance.tolist(),
+        "normalization_finite": np.isfinite(denominator).tolist(),
+        "group_variance_finite": np.isfinite(standard_errors).tolist(),
+        "contrast_variance_finite": {
+            name: np.isfinite(contrast.standard_errors).tolist()
+            for name, contrast in contrasts.items()
+        },
+    }
+    if not np.isfinite(crossfit_instability) or crossfit_instability < 0:
+        raise ValueError("crossfit_instability must be finite and nonnegative")
+    diagnostics["crossfit_instability"] = float(crossfit_instability)
+    gate_decision = evaluate_path_gates(
+        min_group_ess=float(np.min(drift.group_effective_sample_size)),
+        target_ess_ratio=float(np.min(drift.target_effective_sample_size) / len(data)),
+        max_influence_share=max(
+            float(np.max(influence_share)), maximum_contrast_influence_share
+        ),
+        max_weight_concentration=float(np.max(drift.top_one_percent_weight_share)),
+        min_propensity_q01=float(
+            min(item["q01"] for item in diagnostics["propensity_quantiles"].values())
+        ),
+        max_calibration_error=float(calibration["worst_class_expected_calibration_error"]),
+        max_balance=float(np.max(path_balance)),
+        crossfit_instability=float(crossfit_instability),
+        numerical_valid=bool(
+            np.all(np.isfinite(group_means))
+            and np.all(np.isfinite(influence))
+            and np.all(standard_errors > 0)
+        ),
+        thresholds=declaration.thresholds,
+    )
     return SCOVAPathResult(
         declaration_hash=declaration.declaration_hash,
         base_declaration_hash=declaration.base.declaration_hash,
@@ -478,9 +596,11 @@ def fit_path(
         influence_values=influence,
         naive_influence_values=naive_influence,
         standard_errors=standard_errors,
-        drift=_drift_profile(x, group_codes, propensity, tilt),
+        drift=drift,
         contrasts=contrasts,
         diagnostics=diagnostics,
+        thresholds=declaration.thresholds,
+        gate_decision=gate_decision,
         random_state=declaration.seed,
         package_version=__version__,
     )
