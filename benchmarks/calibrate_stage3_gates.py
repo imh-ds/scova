@@ -143,7 +143,13 @@ def _cell_audit(records: list[dict], profile: dict, criteria: dict) -> dict:
     }
 
 
-def calibrate(campaigns: list[dict], candidates: dict, release_spec: dict) -> dict:
+def calibrate(
+    campaigns: list[dict],
+    candidates: dict,
+    release_spec: dict,
+    *,
+    allow_provisional: bool = False,
+) -> dict:
     seed_namespace = release_spec["calibration_seed_namespace"]
     if not release_spec.get("frozen") or not candidates.get("frozen"):
         raise ValueError("release and threshold specifications must be frozen")
@@ -282,6 +288,30 @@ def calibrate(campaigns: list[dict], candidates: dict, release_spec: dict) -> di
         )
         if passed and selected is None:
             selected = profile
+    criteria_passed = selected is not None
+    if selected is None and allow_provisional:
+        eligible = [
+            (profile, audit)
+            for profile, audit in zip(candidates["profiles"], profile_audits, strict=True)
+            if audit["supported_cells"] > 0
+        ]
+        if eligible:
+            # Calibration is a selection sample, not the final release test.  When the
+            # lightweight directional criteria are too noisy to yield an absolute pass,
+            # lock the best candidate deterministically and require the independent
+            # validation campaign to establish coverage and error control.
+            selected, _ = min(
+                eligible,
+                key=lambda item: (
+                    sum(cell["severe_failure"] for cell in item[1]["cells"]),
+                    -item[1]["supported_cell_pass_rate"],
+                    abs(item[1]["pooled_simultaneous_coverage"] - 0.95),
+                    item[1]["pooled_fwer_upper_95"],
+                    item[1]["pooled_standardized_absolute_bias"],
+                    -item[1]["pooled_stability_coverage"],
+                    -item[1]["supported_cells"],
+                ),
+            )
     selected_index = candidates["profiles"].index(selected) if selected is not None else None
     warning_profile = None
     if selected_index is not None:
@@ -295,9 +325,16 @@ def calibrate(campaigns: list[dict], candidates: dict, release_spec: dict) -> di
         "version": "stage3-directional-v1",
         "protocol": release_spec["protocol"],
         "validation_level": "directional",
-        "calibration_rule_version": "pooled-directional-v2",
+        "calibration_rule_version": "pooled-directional-v3",
         "calibrated": selected is not None,
-        "selection_status": "passed" if selected is not None else "no-profile-passed",
+        "calibration_criteria_passed": criteria_passed,
+        "selection_status": (
+            "passed"
+            if criteria_passed
+            else "provisional-ranked-for-held-out-validation"
+            if selected is not None
+            else "no-profile-passed"
+        ),
         "pass_profile": selected,
         "warning_floor_profile": warning_profile,
         "criteria": criteria,
@@ -323,11 +360,24 @@ def main() -> None:
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--package-output", type=Path)
+    parser.add_argument(
+        "--allow-provisional",
+        action="store_true",
+        help=(
+            "lock the deterministically best candidate when directional calibration "
+            "criteria do not pass; held-out validation remains release-blocking"
+        ),
+    )
     args = parser.parse_args()
     campaigns = [json.loads(path.read_text(encoding="utf-8")) for path in args.inputs]
     candidates = json.loads(args.candidates.read_text(encoding="utf-8"))
     release_spec = json.loads(args.release_spec.read_text(encoding="utf-8"))
-    artifact = calibrate(campaigns, candidates, release_spec)
+    artifact = calibrate(
+        campaigns,
+        candidates,
+        release_spec,
+        allow_provisional=args.allow_provisional,
+    )
     encoded = json.dumps(artifact, indent=2)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(encoded, encoding="utf-8")

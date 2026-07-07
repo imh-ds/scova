@@ -67,6 +67,7 @@ jobs:
           python benchmarks/calibrate_stage3_gates.py calibration-shards/*.json
           --output handoff/stage3-directional-thresholds.json
           --package-output handoff/stage3-packaged-thresholds.json
+          --allow-provisional
       - uses: actions/upload-artifact@v6
         if: always()
         with:

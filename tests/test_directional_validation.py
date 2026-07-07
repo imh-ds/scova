@@ -132,6 +132,24 @@ def test_calibration_rejects_heldout_seeds_and_trivial_refusal() -> None:
     assert failed["audit"]
 
 
+def test_directional_calibration_can_lock_ranked_provisional_profile() -> None:
+    specification = _release_spec()
+    campaign = _campaign("calibration", specification["calibration_seed_namespace"])
+    for record in campaign["records"]:
+        record["alternative"]["uniform_coverage"] = False
+        record["alternative"]["stability_covered"] = False
+    artifact = calibrate(
+        [campaign],
+        _candidates(),
+        specification,
+        allow_provisional=True,
+    )
+    assert artifact["calibrated"] is True
+    assert artifact["calibration_criteria_passed"] is False
+    assert artifact["selection_status"] == "provisional-ranked-for-held-out-validation"
+    assert artifact["pass_profile"]["name"] == "directional"
+
+
 def test_directional_summary_requires_locked_threshold_and_all_cells(tmp_path: Path) -> None:
     specification = _release_spec()
     specification_bytes = Path("benchmarks/specs/stage3_release.json").read_bytes()

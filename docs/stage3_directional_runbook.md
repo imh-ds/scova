@@ -1,5 +1,12 @@
 # Stage 3 directional validation runbook
 
+The directional calibration campaign first attempts the preregistered lightweight
+criteria. If sampling noise prevents every candidate from passing, it deterministically
+locks the best-ranked supported candidate as provisional. This is not treated as proof
+of calibration performance: the independent validation and robustness shards remain
+release-blocking and must satisfy their frozen criteria. The threshold artifact records
+whether the calibration criteria passed or the provisional fallback was used.
+
 This runbook produces engineering-directional evidence for `0.3.0`. It does not
 produce publication-ready validation.
 
