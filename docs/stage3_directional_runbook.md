@@ -27,6 +27,40 @@ final bundle and locked thresholds, and 30 days for intermediate shards.
 The commands below are the manual recovery path and are also useful for auditing
 individual workflow phases.
 
+## Reduced local pilot
+
+When GitHub Actions capacity is unavailable, the restartable local pilot reuses
+the completed calibration shards and runs 12 validation plus 12 robustness cells
+with 25 repetitions and 199 bootstrap draws. It is directional only and cannot
+authorize stable promotion.
+
+Download and extract all eight `stage3-calibration-*` artifacts from the failed
+workflow into one directory. Nested artifact directories are supported. From a
+PowerShell prompt in the repository, run:
+
+```powershell
+python -m pip install -e ".[dev]"
+python scripts/run_stage3_local_pilot.py `
+  --calibration-dir "C:\path\to\extracted-calibration-artifacts" `
+  --workers 4
+```
+
+Use two workers on a memory-constrained laptop; four is the recommended default.
+Keep the machine awake and connected to power. The same command safely resumes
+completed shards after interruption. Use `--force` only to discard and recompute
+all local pilot shards.
+
+Outputs are written under `local-artifacts/stage3-pilot`, which is ignored by Git.
+After completion, retain and share:
+
+- `pilot-report.json`;
+- `stage3-directional-thresholds.json`;
+- `validation-summary.json`;
+- `robustness-summary.json`.
+
+If a calibrated threshold file already exists, replace `--calibration-dir` with
+`--thresholds C:\path\to\stage3-directional-thresholds.json`.
+
 ## 1. Calibration
 
 Run all eight calibration shards from the frozen specification:

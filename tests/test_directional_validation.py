@@ -122,12 +122,14 @@ def test_calibration_rejects_heldout_seeds_and_trivial_refusal() -> None:
         )
     candidates = _candidates()
     candidates["profiles"][0]["min_group_ess"] = 10_000
-    with pytest.raises(RuntimeError, match="no candidate"):
-        calibrate(
-            [_campaign("calibration", specification["calibration_seed_namespace"])],
-            candidates,
-            specification,
-        )
+    failed = calibrate(
+        [_campaign("calibration", specification["calibration_seed_namespace"])],
+        candidates,
+        specification,
+    )
+    assert failed["calibrated"] is False
+    assert failed["selection_status"] == "no-profile-passed"
+    assert failed["audit"]
 
 
 def test_directional_summary_requires_locked_threshold_and_all_cells(tmp_path: Path) -> None:

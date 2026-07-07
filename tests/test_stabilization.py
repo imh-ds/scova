@@ -1,5 +1,6 @@
 import json
 from dataclasses import replace
+from hashlib import sha256
 from pathlib import Path
 
 import numpy as np
@@ -161,6 +162,45 @@ def test_frozen_calibration_campaign_smoke(tmp_path) -> None:
     assert payload["validation_level"] == "directional"
     assert payload["threshold_version"] == "stage3-calibration-ungated-v1"
     assert len(payload["records"]) == 1
+
+
+def test_local_pilot_campaign_smoke(tmp_path) -> None:
+    profile = {
+        "name": "pilot",
+        "min_group_ess": 10,
+        "min_target_ess_ratio": 0.1,
+        "max_influence_share": 0.75,
+        "max_weight_concentration": 0.2,
+        "min_propensity_q01": 0.001,
+        "max_calibration_error": 0.2,
+        "max_balance": 0.5,
+        "max_crossfit_instability": 0.5,
+    }
+    artifact = {
+        "version": "pilot-test",
+        "calibrated": True,
+        "pass_profile": profile,
+        "warning_floor_profile": profile,
+    }
+    artifact["sha256"] = sha256(json.dumps(artifact, sort_keys=True).encode()).hexdigest()
+    threshold_path = tmp_path / "thresholds.json"
+    threshold_path.write_text(json.dumps(artifact), encoding="utf-8")
+    output = tmp_path / "pilot.json"
+    run_campaign(
+        tier="local_validation_pilot",
+        specification_path=Path("benchmarks/specs/stage3_local_pilot.json"),
+        output=output,
+        shard_index=0,
+        shard_count=12,
+        repetitions_override=1,
+        bootstrap_override=9,
+        seed_set="pilot",
+        threshold_path=threshold_path,
+    )
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["validation_level"] == "directional-pilot"
+    assert payload["seed_namespace"] == 83_000_000
+    assert payload["threshold_artifact_sha256"] == artifact["sha256"]
 
 
 def test_stabilization_input_failures() -> None:

@@ -134,7 +134,7 @@ def summarize(paths: list[Path], specification: dict) -> dict:
     all_passed = True
     for key, records in sorted(by_cell.items()):
         spec = json.loads(key)
-        if tier == "directional_robustness":
+        if tier in ("directional_robustness", "local_robustness_pilot"):
             cell = _robustness_cell(records, criteria, spec["nuisance"])
         else:
             cell = _primary_cell(records, criteria)

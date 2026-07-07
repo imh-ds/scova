@@ -68,6 +68,7 @@ jobs:
           --output handoff/stage3-directional-thresholds.json
           --package-output handoff/stage3-packaged-thresholds.json
       - uses: actions/upload-artifact@v6
+        if: always()
         with:
           name: stage3-locked-thresholds
           path: handoff/*

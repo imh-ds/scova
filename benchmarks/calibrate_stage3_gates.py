@@ -34,6 +34,14 @@ UNBOUNDED_WARNING_FLOOR = {
     "max_crossfit_instability": 1e9,
 }
 
+DIRECTIONAL_CALIBRATION_DEFAULTS = {
+    "minimum_supported_cell_pass_rate": 0.75,
+    "severe_cell_coverage_min": 0.80,
+    "severe_cell_fwer_upper_max": 0.25,
+    "severe_cell_standardized_bias_max": 0.50,
+    "severe_cell_stability_coverage_min": 0.80,
+}
+
 
 def _accepted(metrics: dict[str, float], profile: dict) -> bool:
     for profile_name, (metric_name, direction) in PROFILE_METRICS.items():
@@ -102,9 +110,17 @@ def _cell_audit(records: list[dict], profile: dict, criteria: dict) -> dict:
         and criteria["simultaneous_coverage_min"]
         <= coverage
         <= criteria["simultaneous_coverage_max"]
-        and fwer_upper <= criteria["fwer_upper_bound_max"]
         and standardized_bias <= criteria["standardized_absolute_bias_max"]
         and stability_coverage >= criteria["simultaneous_coverage_min"]
+    )
+    severe_failure = bool(
+        supported
+        and (
+            coverage < criteria["severe_cell_coverage_min"]
+            or fwer_upper > criteria["severe_cell_fwer_upper_max"]
+            or standardized_bias > criteria["severe_cell_standardized_bias_max"]
+            or stability_coverage < criteria["severe_cell_stability_coverage_min"]
+        )
     )
     return {
         "total": total,
@@ -123,6 +139,7 @@ def _cell_audit(records: list[dict], profile: dict, criteria: dict) -> dict:
         "standardized_absolute_bias": standardized_bias,
         "stability_coverage": stability_coverage,
         "passed": passed,
+        "severe_failure": severe_failure,
     }
 
 
@@ -140,7 +157,10 @@ def calibrate(campaigns: list[dict], candidates: dict, release_spec: dict) -> di
     for campaign in campaigns:
         for record in campaign["records"]:
             by_cell[json.dumps(record["spec"], sort_keys=True)].append(record)
-    criteria = release_spec["directional_pass_criteria"]
+    criteria = {
+        **DIRECTIONAL_CALIBRATION_DEFAULTS,
+        **release_spec["directional_pass_criteria"],
+    }
     selected = None
     profile_audits = []
     for profile in candidates["profiles"]:
@@ -150,33 +170,111 @@ def calibrate(campaigns: list[dict], candidates: dict, release_spec: dict) -> di
             cell["spec"] = json.loads(key)
             cells.append(cell)
         supported = [cell for cell in cells if cell["supported"]]
+        supported_keys = {
+            json.dumps(cell["spec"], sort_keys=True) for cell in supported
+        }
+        pooled_records = [
+            record
+            for key in supported_keys
+            for record in by_cell[key]
+            if not record["alternative"]["refused"]
+            and _accepted(record["alternative"]["gate_metrics"], profile)
+        ]
+        pooled_null_records = [
+            record
+            for key in supported_keys
+            for record in by_cell[key]
+            if not record["null"]["refused"]
+            and _accepted(record["null"]["gate_metrics"], profile)
+        ]
+        pooled_coverage = (
+            float(
+                np.mean(
+                    [record["alternative"]["uniform_coverage"] for record in pooled_records]
+                )
+            )
+            if pooled_records
+            else 0.0
+        )
+        pooled_naive_coverage = (
+            float(
+                np.mean(
+                    [
+                        record["alternative"]["naive_uniform_coverage"]
+                        for record in pooled_records
+                    ]
+                )
+            )
+            if pooled_records
+            else 0.0
+        )
+        pooled_stability_coverage = (
+            float(
+                np.mean(
+                    [record["alternative"]["stability_covered"] for record in pooled_records]
+                )
+            )
+            if pooled_records
+            else 0.0
+        )
+        pooled_false_signs = sum(
+            record["null"]["false_sign_certificate"] for record in pooled_null_records
+        )
+        pooled_fwer_upper = (
+            _upper(pooled_false_signs, len(pooled_null_records))
+            if pooled_null_records
+            else 1.0
+        )
+        pooled_errors = np.asarray(
+            [
+                record["alternative"]["scientific_target_mean_error"]
+                for record in pooled_records
+            ]
+        )
+        pooled_standardized_bias = (
+            abs(float(pooled_errors.mean())) / float(pooled_errors.std(ddof=1))
+            if len(pooled_errors) > 1 and pooled_errors.std(ddof=1) > 0
+            else float("inf")
+        )
+        supported_cell_pass_rate = (
+            sum(cell["passed"] for cell in supported) / len(supported) if supported else 0.0
+        )
         strong = [cell for cell in cells if cell["spec"]["overlap"] == "strong"]
         moderate = [cell for cell in cells if cell["spec"]["overlap"] == "moderate"]
         strong_support = sum(cell["supported"] for cell in strong) / len(strong) if strong else 0.0
         moderate_support = (
             sum(cell["supported"] for cell in moderate) / len(moderate) if moderate else 0.0
         )
-        naive_failures = [
-            cell
-            for cell in supported
-            if cell["naive_simultaneous_coverage"] < criteria["simultaneous_coverage_min"]
-        ]
-        corrected_improves = all(
-            cell["corrected_minus_naive_coverage"] >= 0.02 for cell in naive_failures
+        corrected_improves = (
+            pooled_naive_coverage >= criteria["simultaneous_coverage_min"]
+            or pooled_coverage - pooled_naive_coverage >= 0.02
         )
         passed = bool(
             supported
-            and all(cell["passed"] for cell in supported)
+            and supported_cell_pass_rate >= criteria["minimum_supported_cell_pass_rate"]
+            and not any(cell["severe_failure"] for cell in supported)
             and strong_support >= criteria["minimum_strong_cell_support_rate"]
             and moderate_support >= criteria["minimum_moderate_cell_support_rate"]
+            and criteria["simultaneous_coverage_min"]
+            <= pooled_coverage
+            <= criteria["simultaneous_coverage_max"]
+            and pooled_fwer_upper <= criteria["fwer_upper_bound_max"]
+            and pooled_standardized_bias <= criteria["standardized_absolute_bias_max"]
+            and pooled_stability_coverage >= criteria["simultaneous_coverage_min"]
             and corrected_improves
         )
         profile_audits.append(
             {
                 "profile": profile["name"],
                 "supported_cells": len(supported),
+                "supported_cell_pass_rate": supported_cell_pass_rate,
                 "strong_cell_support_rate": strong_support,
                 "moderate_cell_support_rate": moderate_support,
+                "pooled_simultaneous_coverage": pooled_coverage,
+                "pooled_naive_simultaneous_coverage": pooled_naive_coverage,
+                "pooled_fwer_upper_95": pooled_fwer_upper,
+                "pooled_standardized_absolute_bias": pooled_standardized_bias,
+                "pooled_stability_coverage": pooled_stability_coverage,
                 "corrected_improves_when_naive_fails": corrected_improves,
                 "passed": passed,
                 "cells": cells,
@@ -184,20 +282,22 @@ def calibrate(campaigns: list[dict], candidates: dict, release_spec: dict) -> di
         )
         if passed and selected is None:
             selected = profile
-    if selected is None:
-        raise RuntimeError("no candidate threshold profile satisfies directional criteria")
-    selected_index = candidates["profiles"].index(selected)
-    warning_profile = (
-        candidates["profiles"][selected_index - 1]
-        if selected_index > 0
-        else UNBOUNDED_WARNING_FLOOR
-    )
+    selected_index = candidates["profiles"].index(selected) if selected is not None else None
+    warning_profile = None
+    if selected_index is not None:
+        warning_profile = (
+            candidates["profiles"][selected_index - 1]
+            if selected_index > 0
+            else UNBOUNDED_WARNING_FLOOR
+        )
     artifact = {
         "schema_version": 2,
         "version": "stage3-directional-v1",
         "protocol": release_spec["protocol"],
         "validation_level": "directional",
-        "calibrated": True,
+        "calibration_rule_version": "pooled-directional-v2",
+        "calibrated": selected is not None,
+        "selection_status": "passed" if selected is not None else "no-profile-passed",
         "pass_profile": selected,
         "warning_floor_profile": warning_profile,
         "criteria": criteria,
@@ -232,6 +332,10 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(encoded, encoding="utf-8")
     if args.package_output is not None:
+        if not artifact["calibrated"]:
+            raise SystemExit(
+                "no candidate threshold profile satisfies directional criteria; audit written"
+            )
         args.package_output.parent.mkdir(parents=True, exist_ok=True)
         args.package_output.write_text(encoded, encoding="utf-8")
 

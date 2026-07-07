@@ -140,7 +140,7 @@ def main() -> None:
     parser.add_argument("--tier", required=True)
     parser.add_argument(
         "--seed-set",
-        choices=("calibration", "validation", "publication"),
+        choices=("calibration", "validation", "publication", "pilot"),
         required=True,
     )
     parser.add_argument("--thresholds", type=Path)

@@ -323,7 +323,12 @@ def run_campaign(
         thresholds = _ungated_calibration_thresholds()
     else:
         thresholds = DiagnosticThresholds()
-    if tier in ("directional_validation", "directional_robustness") and not thresholds.calibrated:
+    if tier in (
+        "directional_validation",
+        "directional_robustness",
+        "local_validation_pilot",
+        "local_robustness_pilot",
+    ) and not thresholds.calibrated:
         raise ValueError("directional validation requires a locked calibrated threshold artifact")
     repetitions = repetitions_override or tier_spec["repetitions"]
     bootstrap = bootstrap_override or tier_spec["bootstrap"]
@@ -418,6 +423,8 @@ def main() -> None:
             "calibration",
             "directional_validation",
             "directional_robustness",
+            "local_validation_pilot",
+            "local_robustness_pilot",
             "nightly",
             "publication_release",
             "publication_robustness",
@@ -432,7 +439,7 @@ def main() -> None:
     parser.add_argument("--bootstrap", type=int)
     parser.add_argument(
         "--seed-set",
-        choices=("calibration", "validation", "publication"),
+        choices=("calibration", "validation", "publication", "pilot"),
         default="validation",
     )
     parser.add_argument("--thresholds", type=Path)
