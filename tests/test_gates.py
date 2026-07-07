@@ -97,3 +97,17 @@ def test_threshold_validation() -> None:
     }
     with pytest.raises(ValueError, match="checksum"):
         DiagnosticThresholds.from_calibration_artifact(artifact)
+
+
+def test_user_thresholds_cannot_weaken_locked_defaults() -> None:
+    baseline = DiagnosticThresholds()
+    stricter = DiagnosticThresholds(
+        min_group_ess_warning=60,
+        min_group_ess_refuse=20,
+        max_balance_warning=0.15,
+        max_balance_refuse=0.4,
+    )
+    stricter.assert_at_least_as_strict_as(baseline)
+    weaker = DiagnosticThresholds(max_balance_warning=0.3)
+    with pytest.raises(ValueError, match="cannot weaken"):
+        weaker.assert_at_least_as_strict_as(baseline)

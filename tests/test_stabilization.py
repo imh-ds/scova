@@ -1,9 +1,16 @@
+import json
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import pytest
 
-from benchmarks.stage3_campaign import primary_cells, robustness_cells, select_cells
+from benchmarks.stage3_campaign import (
+    primary_cells,
+    robustness_cells,
+    run_campaign,
+    select_cells,
+)
 from scova import SCOVADeclaration
 from scova.experimental import PathDeclaration
 from scova.experimental.nuisance import (
@@ -134,6 +141,26 @@ def test_campaign_cell_counts_and_selection() -> None:
     assert len(set(robustness)) == 96
     assert len(select_cells(primary, 24)) == 24
     assert select_cells(primary, 999) == primary
+
+
+def test_frozen_calibration_campaign_smoke(tmp_path) -> None:
+    output = tmp_path / "calibration.json"
+    run_campaign(
+        tier="calibration",
+        specification_path=Path("benchmarks/specs/stage3_release.json"),
+        output=output,
+        shard_index=0,
+        shard_count=24,
+        repetitions_override=1,
+        bootstrap_override=9,
+        seed_set="calibration",
+        threshold_path=None,
+    )
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["tier"] == "calibration"
+    assert payload["validation_level"] == "directional"
+    assert payload["threshold_version"] == "stage3-calibration-ungated-v1"
+    assert len(payload["records"]) == 1
 
 
 def test_stabilization_input_failures() -> None:

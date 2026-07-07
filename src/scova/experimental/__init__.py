@@ -6,6 +6,7 @@ from .gates import (
     GateMetric,
     GateStatus,
     InferenceRefusedError,
+    production_thresholds,
 )
 from .nuisance import (
     CrossFitStability,
@@ -33,6 +34,7 @@ __all__ = [
     "GateMetric",
     "GateStatus",
     "InferenceRefusedError",
+    "production_thresholds",
     "CrossFitStability",
     "LearnerProfile",
     "assess_crossfit_stability",

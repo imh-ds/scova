@@ -1,4 +1,5 @@
 import json
+from hashlib import sha256
 from pathlib import Path
 
 from benchmarks.stage3_campaign import _failed_fit
@@ -29,12 +30,12 @@ def test_coverage_gate_accepts_and_rejects_reports() -> None:
     assert "expected exactly one" in coverage_failures(missing)[0]
 
 
-def test_promotion_checker_preserves_external_blockers() -> None:
+def test_promotion_checker_uses_artifacts_without_review_blockers() -> None:
     manifest = json.loads(Path("release/stage3_promotion.json").read_text(encoding="utf-8"))
     reasons = blocking_reasons(manifest)
-    assert "theory.review_1_approved is false" in reasons
-    assert not any("coverage is below" in reason for reason in reasons)
-    assert "quality.build_passed is false" not in reasons
+    assert not any("review" in reason for reason in reasons)
+    assert any("missing thresholds artifact" in reason for reason in reasons)
+    assert any("missing validation_summary artifact" in reason for reason in reasons)
 
 
 def test_evidence_and_campaign_failures_are_explicit(tmp_path: Path) -> None:
@@ -57,3 +58,89 @@ def test_evidence_and_campaign_failures_are_explicit(tmp_path: Path) -> None:
         "type": "RuntimeError",
         "message": "deliberate",
     }
+
+
+def _write_hashed(
+    path: Path,
+    values: dict,
+    field: str,
+    *,
+    indent: int | None = None,
+    allow_nan: bool = True,
+) -> dict:
+    payload = dict(values)
+    encoded = json.dumps(
+        payload, indent=indent, sort_keys=True, allow_nan=allow_nan
+    ).encode()
+    payload[field] = sha256(encoded).hexdigest()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return payload
+
+
+def test_artifact_backed_promotion_can_pass(tmp_path: Path) -> None:
+    manifest = json.loads(Path("release/stage3_promotion.json").read_text(encoding="utf-8"))
+    specification_path = tmp_path / manifest["protocol"]["specification"]
+    specification_path.parent.mkdir(parents=True)
+    specification_path.write_text(
+        json.dumps({"frozen": True, "validation_level": "directional"}),
+        encoding="utf-8",
+    )
+    candidate_path = tmp_path / manifest["protocol"]["threshold_candidates"]
+    candidate_path.write_text(json.dumps({"frozen": True}), encoding="utf-8")
+    artifact_paths = {
+        name: tmp_path / value for name, value in manifest["artifacts"].items()
+    }
+    threshold = _write_hashed(
+        artifact_paths["thresholds"],
+        {"calibrated": True, "validation_level": "directional"},
+        "sha256",
+    )
+    artifact_paths["packaged_thresholds"].parent.mkdir(parents=True)
+    artifact_paths["packaged_thresholds"].write_text(json.dumps(threshold), encoding="utf-8")
+    specification_hash = sha256(specification_path.read_bytes()).hexdigest()
+    for role, tier in (
+        ("validation_summary", "directional_validation"),
+        ("robustness_summary", "directional_robustness"),
+    ):
+        _write_hashed(
+            artifact_paths[role],
+            {
+                "all_cells_passed": True,
+                "tier": tier,
+                "specification_sha256": specification_hash,
+                "threshold_artifact_sha256": threshold["sha256"],
+            },
+            "summary_sha256",
+            allow_nan=False,
+        )
+    for role, version in (
+        ("jax_minimum", "0.4.38"),
+        ("jax_maximum", "0.10.2"),
+    ):
+        _write_hashed(
+            artifact_paths[role],
+            {"jax_version": version, "cases": 2000, "failures": []},
+            "sha256",
+            indent=2,
+        )
+    _write_hashed(
+        artifact_paths["memory"],
+        {
+            "peak_below_unbatched_multiplier_cube": True,
+            "nuisance_refit_possible_from_result": False,
+        },
+        "sha256",
+    )
+    _write_hashed(
+        artifact_paths["build"], {"passed": True}, "sha256"
+    )
+    artifact_paths["coverage"].parent.mkdir(parents=True, exist_ok=True)
+    artifact_paths["coverage"].write_text(json.dumps(_coverage_report()), encoding="utf-8")
+    _write_hashed(
+        artifact_paths["evidence"],
+        {"complete": True, "validation_level": "directional"},
+        "report_sha256",
+        indent=2,
+    )
+    assert blocking_reasons(manifest, tmp_path) == []

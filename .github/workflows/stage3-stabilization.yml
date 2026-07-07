@@ -8,7 +8,7 @@ on:
     inputs:
       tier:
         type: choice
-        options: [nightly, release, robustness]
+        options: [calibration, directional_validation, directional_robustness, nightly, publication_release, publication_robustness]
         default: nightly
 
 jobs:
@@ -35,13 +35,26 @@ jobs:
           else
             echo "value=${{ inputs.tier }}" >> "$GITHUB_OUTPUT"
           fi
-      - run: >-
-          python benchmarks/stage3_campaign.py
-          --tier ${{ steps.tier.outputs.value }}
-          --seed-set validation
-          --shard-index ${{ matrix.shard }}
-          --shard-count 8
-          --output benchmark_artifacts/stage3-${{ steps.tier.outputs.value }}-${{ matrix.shard }}.json
+      - name: Run campaign shard
+        shell: bash
+        run: |
+          tier="${{ steps.tier.outputs.value }}"
+          seed_set="validation"
+          threshold_args=()
+          if [[ "$tier" == "calibration" ]]; then
+            seed_set="calibration"
+          elif [[ "$tier" == publication_* ]]; then
+            seed_set="publication"
+          elif [[ "$tier" == "directional_validation" || "$tier" == "directional_robustness" ]]; then
+            threshold_args=(--thresholds release/artifacts/stage3-directional-thresholds.json)
+          fi
+          python benchmarks/stage3_campaign.py \
+            --tier "$tier" \
+            --seed-set "$seed_set" \
+            --shard-index "${{ matrix.shard }}" \
+            --shard-count 8 \
+            --output "benchmark_artifacts/stage3-${tier}-${{ matrix.shard }}.json" \
+            "${threshold_args[@]}"
       - uses: actions/upload-artifact@v4
         with:
           name: stage3-${{ steps.tier.outputs.value }}-${{ matrix.shard }}
@@ -57,17 +70,23 @@ jobs:
             jax: "jax==0.4.38"
             label: minimum
           - python: "3.13"
-            jax: "jax"
-            label: latest
+            jax: "jax==0.10.2"
+            label: maximum
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - run: python -m pip install -e ".[dev]" "${{ matrix.jax }}"
-      - run: >-
-          python benchmarks/jax_gradient_matrix.py --cases 10000
-          --output benchmark_artifacts/jax-${{ matrix.label }}.json
+      - name: Run pinned JAX matrix
+        shell: bash
+        run: |
+          cases=2000
+          if [[ "${{ inputs.tier }}" == publication_* ]]; then
+            cases=10000
+          fi
+          python benchmarks/jax_gradient_matrix.py --cases "$cases" \
+            --output "benchmark_artifacts/jax-${{ matrix.label }}.json"
       - uses: actions/upload-artifact@v4
         with:
           name: jax-${{ matrix.label }}

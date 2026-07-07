@@ -19,6 +19,7 @@ import scipy
 import scova
 from scova import SCOVADeclaration
 from scova.experimental import (
+    DiagnosticThresholds,
     InferenceRefusedError,
     PathDeclaration,
     StabilizationData,
@@ -27,6 +28,29 @@ from scova.experimental import (
     generate_stabilization_data,
     make_learner_profile,
 )
+
+
+def _ungated_calibration_thresholds() -> DiagnosticThresholds:
+    """Permit statistical calculations while retaining numerical refusals."""
+    return DiagnosticThresholds(
+        version="stage3-calibration-ungated-v1",
+        min_group_ess_warning=0.0,
+        min_group_ess_refuse=0.0,
+        min_target_ess_ratio_warning=0.0,
+        min_target_ess_ratio_refuse=0.0,
+        max_influence_share_warning=1.0,
+        max_influence_share_refuse=1.0,
+        max_weight_concentration_warning=1.0,
+        max_weight_concentration_refuse=1.0,
+        min_propensity_q01_warning=1e-15,
+        min_propensity_q01_refuse=1e-15,
+        max_calibration_error_warning=1.0,
+        max_calibration_error_refuse=1.0,
+        max_balance_warning=1e9,
+        max_balance_refuse=1e9,
+        max_crossfit_instability_warning=1e9,
+        max_crossfit_instability_refuse=1e9,
+    )
 
 
 def _git_commit() -> str:
@@ -146,10 +170,16 @@ def _uniform_band(
     return estimates - critical * errors, estimates + critical * errors
 
 
-def _fit_one(data: StabilizationData, spec: StabilizationSpec, seed: int, bootstrap: int) -> dict:
+def _fit_one(
+    data: StabilizationData,
+    spec: StabilizationSpec,
+    seed: int,
+    bootstrap: int,
+    thresholds: DiagnosticThresholds,
+) -> dict:
     covariates = tuple(column for column in data.data if column.startswith("x"))
     base = SCOVADeclaration("outcome", "group", covariates, n_splits=5, random_state=seed)
-    declaration = PathDeclaration(base)
+    declaration = PathDeclaration(base, thresholds=thresholds)
     nuisance = data.nuisance_predictions(spec.nuisance)
     profile_name = "linear" if spec.outcome == "linear" else "nonlinear"
     if spec.nuisance in ("flexible", "correct_both"):
@@ -176,6 +206,7 @@ def _fit_one(data: StabilizationData, spec: StabilizationSpec, seed: int, bootst
         "pseudo_target_rmse": float(
             np.sqrt(np.mean(np.square(contrast.estimates - pseudo_truth)))
         ),
+        "scientific_pseudo_target_max_drift": float(np.max(np.abs(truth - pseudo_truth))),
         "refused": False,
         "uniform_coverage": None,
         "false_sign_certificate": None,
@@ -240,6 +271,7 @@ def _failed_fit(error: Exception) -> dict:
         "scientific_target_mean_error": None,
         "mean_standard_error": None,
         "pseudo_target_rmse": None,
+        "scientific_pseudo_target_max_drift": None,
         "naive_uniform_coverage": None,
         "naive_target_rmse": None,
     }
@@ -255,19 +287,50 @@ def run_campaign(
     repetitions_override: int | None,
     bootstrap_override: int | None,
     seed_set: str,
+    threshold_path: Path | None,
 ) -> None:
     specification_bytes = specification_path.read_bytes()
     specification = json.loads(specification_bytes)
     tier_spec = specification["tiers"][tier]
-    source_cells = robustness_cells() if tier == "robustness" else primary_cells(specification)
-    cells = select_cells(source_cells, tier_spec["cells"])
-    cells = [cell for index, cell in enumerate(cells) if index % shard_count == shard_index]
+    if not specification.get("frozen"):
+        raise ValueError("campaign specification must be frozen before execution")
+    source_cells = (
+        robustness_cells()
+        if tier_spec.get("source") == "robustness"
+        else primary_cells(specification)
+    )
+    if "cell_indices" in tier_spec:
+        selected_indices = list(tier_spec["cell_indices"])
+        if len(selected_indices) != tier_spec["cells"] or len(set(selected_indices)) != len(
+            selected_indices
+        ):
+            raise ValueError("explicit cell manifest has the wrong size or duplicates")
+        if any(index < 0 or index >= len(source_cells) for index in selected_indices):
+            raise ValueError("explicit cell manifest contains an invalid source index")
+    else:
+        selected = select_cells(source_cells, tier_spec["cells"])
+        selected_indices = [source_cells.index(cell) for cell in selected]
+    selected_pairs = [
+        (source_index, source_cells[source_index]) for source_index in selected_indices
+    ]
+    selected_pairs = [
+        pair for index, pair in enumerate(selected_pairs) if index % shard_count == shard_index
+    ]
+    if threshold_path is not None:
+        threshold_values = json.loads(threshold_path.read_text(encoding="utf-8"))
+        thresholds = DiagnosticThresholds.from_calibration_artifact(threshold_values)
+    elif seed_set == "calibration":
+        thresholds = _ungated_calibration_thresholds()
+    else:
+        thresholds = DiagnosticThresholds()
+    if tier in ("directional_validation", "directional_robustness") and not thresholds.calibrated:
+        raise ValueError("directional validation requires a locked calibrated threshold artifact")
     repetitions = repetitions_override or tier_spec["repetitions"]
     bootstrap = bootstrap_override or tier_spec["bootstrap"]
     seed_namespace = specification[f"{seed_set}_seed_namespace"]
     started = time.perf_counter()
     records = []
-    for local_cell, cell in enumerate(cells):
+    for local_cell, (source_cell_index, cell) in enumerate(selected_pairs):
         cell_id = shard_index + local_cell * shard_count
         print(
             f"stage3 campaign tier={tier} shard={shard_index}/{shard_count} "
@@ -278,7 +341,7 @@ def run_campaign(
             seed = seed_namespace + cell_id * 100_000 + repetition
             try:
                 data = generate_stabilization_data(cell, seed=seed)
-                alternative = _fit_one(data, cell, seed, bootstrap)
+                alternative = _fit_one(data, cell, seed, bootstrap, thresholds)
             except Exception as error:  # campaign artifact must retain the failing cell
                 data = None
                 alternative = _failed_fit(error)
@@ -288,12 +351,15 @@ def run_campaign(
                 )
             else:
                 try:
-                    null_record = _fit_one(_null_data(data, seed), cell, seed + 1, bootstrap)
+                    null_record = _fit_one(
+                        _null_data(data, seed), cell, seed + 1, bootstrap, thresholds
+                    )
                 except Exception as error:  # campaign artifact must retain the failing cell
                     null_record = _failed_fit(error)
             records.append(
                 {
                     "cell_id": cell_id,
+                    "source_cell_index": source_cell_index,
                     "repetition": repetition,
                     "seed": seed,
                     "spec": asdict(cell),
@@ -316,6 +382,13 @@ def run_campaign(
         "bootstrap": bootstrap,
         "seed_set": seed_set,
         "seed_namespace": seed_namespace,
+        "validation_level": specification["validation_level"],
+        "threshold_version": thresholds.version,
+        "threshold_artifact_sha256": thresholds.artifact_sha256,
+        "cell_manifest": [
+            {"source_cell_index": index, "spec": asdict(source_cells[index])}
+            for index in selected_indices
+        ],
         "specification_sha256": sha256(specification_bytes).hexdigest(),
         "git_commit": _git_commit(),
         "environment": {
@@ -340,7 +413,15 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--tier",
-        choices=("pull_request", "nightly", "release", "robustness"),
+        choices=(
+            "pull_request",
+            "calibration",
+            "directional_validation",
+            "directional_robustness",
+            "nightly",
+            "publication_release",
+            "publication_robustness",
+        ),
         required=True,
     )
     parser.add_argument("--spec", type=Path, default=Path("benchmarks/specs/stage3_release.json"))
@@ -349,7 +430,12 @@ def main() -> None:
     parser.add_argument("--shard-count", type=int, default=1)
     parser.add_argument("--repetitions", type=int)
     parser.add_argument("--bootstrap", type=int)
-    parser.add_argument("--seed-set", choices=("calibration", "validation"), default="validation")
+    parser.add_argument(
+        "--seed-set",
+        choices=("calibration", "validation", "publication"),
+        default="validation",
+    )
+    parser.add_argument("--thresholds", type=Path)
     args = parser.parse_args()
     if args.shard_count < 1 or not 0 <= args.shard_index < args.shard_count:
         parser.error("shard index must lie in [0, shard count)")
@@ -362,6 +448,7 @@ def main() -> None:
         repetitions_override=args.repetitions,
         bootstrap_override=args.bootstrap,
         seed_set=args.seed_set,
+        threshold_path=args.thresholds,
     )
 
 

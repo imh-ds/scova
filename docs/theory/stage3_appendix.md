@@ -1,8 +1,8 @@
 # Stage 3 finite-grid theory appendix
 
-Status: **candidate derivation awaiting two independent reviews**. Nothing in
-this appendix is a stable claim until the review records required by the Stage
-3 promotion manifest are approved.
+Status: **candidate derivation undergoing automated directional validation**.
+Stable claims require the numerical identity, orthogonality, reduction, and
+held-out simulation gates recorded by the Stage 3 promotion manifest.
 
 ## A. Model, target, and assumptions
 
@@ -178,8 +178,8 @@ h_\lambda(X)\frac{1(A=k)}{e_k(X)}\{Y-m_k(X)\}
 The three summands lie in the outcome, covariate, and assignment tangent
 spaces, respectively. Their inner product with an arbitrary regular score
 equals the pathwise derivative obtained in Section C. In the nonparametric
-model this gradient is therefore the canonical gradient, subject to the two
-independent reviews required for promotion.
+model this gradient is therefore the candidate canonical gradient, subject to
+the numerical pathwise-derivative and orthogonality gates required for promotion.
 
 Mean zero follows from iterated expectation:
 
@@ -303,12 +303,11 @@ marginal intervals.
 The term-by-term theory-to-code correspondence is recorded in
 [`stage3_notation_map.md`](stage3_notation_map.md). Numerical validation must
 cover the derivative identity, nuisance orthogonality, simplex shifts, endpoint
-reductions, finite-difference checks, and JAX checks before either reviewer can
-approve this appendix.
+reductions, finite-difference checks, and JAX checks before stable promotion.
 
 The candidate scope is limited to i.i.d. continuous outcomes, finite declared
 grids and contrast families, cross-fitted nuisance learners, and built-in
 smooth tilts. It does not cover adaptive lambda selection, continuum bands,
 clustered or longitudinal data, interference, custom tilts, TMLE, graphs, or
-sensitivity surfaces. Reviewers must verify that public documentation makes no
-claim stronger than the result actually proved.
+sensitivity surfaces. Public documentation must make no claim stronger than the
+result supported by the directional validation level.

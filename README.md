@@ -8,10 +8,12 @@ fixed-study-population (`h(x) = 1`), cross-fitted, multi-group AIPW estimator
 for continuous outcomes with simultaneous finite-family inference.
 
 The `0.3.0.dev0` source tree also contains an experimental finite-grid smooth
-overlap path. It remains experimental pending external review and full pathwise
-coverage benchmarks. Its production-stabilization machinery and remaining
+overlap path. It remains experimental pending the frozen directional calibration,
+held-out validation, and pinned-gradient runs. Its production-stabilization machinery and remaining
 release blockers are tracked in
-[`docs/stage3_stabilization.md`](docs/stage3_stabilization.md).
+[`docs/stage3_stabilization.md`](docs/stage3_stabilization.md). The executable
+campaign sequence is in the
+[`Stage 3 directional runbook`](docs/stage3_directional_runbook.md).
 
 ## Status and scope
 

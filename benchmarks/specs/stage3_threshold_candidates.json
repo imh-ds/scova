@@ -1,5 +1,8 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "protocol": "stage3-directional-v1",
+  "status": "frozen",
+  "frozen": true,
   "profiles": [
     {
       "name": "least_restrictive",
@@ -58,4 +61,3 @@
     }
   ]
 }
-

@@ -6,6 +6,7 @@ import json
 from dataclasses import asdict, dataclass
 from enum import Enum
 from hashlib import sha256
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -92,6 +93,38 @@ class DiagnosticThresholds:
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
+    def assert_at_least_as_strict_as(self, baseline: DiagnosticThresholds) -> None:
+        minimum_fields = (
+            "min_group_ess_warning",
+            "min_group_ess_refuse",
+            "min_target_ess_ratio_warning",
+            "min_target_ess_ratio_refuse",
+            "min_propensity_q01_warning",
+            "min_propensity_q01_refuse",
+        )
+        maximum_fields = (
+            "max_influence_share_warning",
+            "max_influence_share_refuse",
+            "max_weight_concentration_warning",
+            "max_weight_concentration_refuse",
+            "max_calibration_error_warning",
+            "max_calibration_error_refuse",
+            "max_balance_warning",
+            "max_balance_refuse",
+            "max_crossfit_instability_warning",
+            "max_crossfit_instability_refuse",
+        )
+        weaker = [
+            name for name in minimum_fields if getattr(self, name) < getattr(baseline, name)
+        ]
+        weaker.extend(
+            name for name in maximum_fields if getattr(self, name) > getattr(baseline, name)
+        )
+        if weaker:
+            raise ValueError(
+                "user thresholds cannot weaken production defaults: " + ", ".join(weaker)
+            )
+
     @classmethod
     def from_dict(cls, values: dict[str, Any]) -> DiagnosticThresholds:
         return cls(**values)
@@ -128,6 +161,15 @@ class DiagnosticThresholds:
             max_crossfit_instability_warning=passing["max_crossfit_instability"],
             max_crossfit_instability_refuse=floor["max_crossfit_instability"],
         )
+
+
+def production_thresholds() -> DiagnosticThresholds:
+    """Load the packaged lockfile, falling back to non-certifying provisional gates."""
+    artifact = Path(__file__).with_name("data") / "stage3_thresholds.json"
+    if not artifact.exists():
+        return DiagnosticThresholds()
+    values = json.loads(artifact.read_text(encoding="utf-8"))
+    return DiagnosticThresholds.from_calibration_artifact(values)
 
 
 @dataclass(frozen=True, slots=True)

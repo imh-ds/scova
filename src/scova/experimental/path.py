@@ -21,6 +21,7 @@ from .gates import (
     GateStatus,
     InferenceRefusedError,
     evaluate_path_gates,
+    production_thresholds,
 )
 from .tilts import geometric_tilt_and_gradient
 
@@ -43,7 +44,7 @@ class PathDeclaration:
     contrast_names: tuple[str, ...] = ()
     confidence_level: float = 0.95
     random_state: int | None = None
-    thresholds: DiagnosticThresholds = field(default_factory=DiagnosticThresholds)
+    thresholds: DiagnosticThresholds = field(default_factory=production_thresholds)
 
     def __post_init__(self) -> None:
         grid = tuple(float(value) for value in self.lambdas)
@@ -70,6 +71,9 @@ class PathDeclaration:
             raise ValueError("contrast_names cannot contain duplicates")
         if not 0 < self.confidence_level < 1:
             raise ValueError("confidence_level must lie strictly between 0 and 1")
+        production = production_thresholds()
+        if production.calibrated:
+            self.thresholds.assert_at_least_as_strict_as(production)
 
     @property
     def seed(self) -> int:

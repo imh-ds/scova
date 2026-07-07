@@ -18,73 +18,140 @@ def _upper_binomial(successes: int, total: int) -> float:
     return float(beta.ppf(0.95, successes + 1, total - successes))
 
 
+def _primary_cell(records: list[dict], criteria: dict) -> dict:
+    accepted = [record for record in records if not record["alternative"]["refused"]]
+    null_accepted = [record for record in records if not record["null"]["refused"]]
+    coverage = (
+        float(np.mean([record["alternative"]["uniform_coverage"] for record in accepted]))
+        if accepted
+        else 0.0
+    )
+    false_signs = sum(record["null"]["false_sign_certificate"] for record in null_accepted)
+    fwer_upper = _upper_binomial(false_signs, len(null_accepted)) if null_accepted else 1.0
+    errors = np.asarray(
+        [record["alternative"]["scientific_target_mean_error"] for record in accepted]
+    )
+    standardized_bias = (
+        abs(float(errors.mean())) / float(errors.std(ddof=1))
+        if len(errors) > 1 and errors.std(ddof=1) > 0
+        else float("inf")
+    )
+    stability_coverage = (
+        float(np.mean([record["alternative"]["stability_covered"] for record in accepted]))
+        if accepted
+        else 0.0
+    )
+    execution_failures = sum(
+        "execution_error" in record["alternative"] or "execution_error" in record["null"]
+        for record in records
+    )
+    passed = bool(
+        accepted
+        and execution_failures == 0
+        and criteria["simultaneous_coverage_min"]
+        <= coverage
+        <= criteria["simultaneous_coverage_max"]
+        and fwer_upper <= criteria["fwer_upper_bound_max"]
+        and standardized_bias <= criteria["standardized_absolute_bias_max"]
+        and stability_coverage >= criteria["simultaneous_coverage_min"]
+    )
+    return {
+        "total": len(records),
+        "accepted": len(accepted),
+        "refusal_rate": 1 - len(accepted) / len(records),
+        "execution_failures": execution_failures,
+        "simultaneous_coverage": coverage,
+        "false_sign_count": false_signs,
+        "fwer_upper_95": fwer_upper,
+        "standardized_absolute_bias": standardized_bias,
+        "stability_coverage": stability_coverage,
+        "passed": passed,
+    }
+
+
+def _robustness_cell(records: list[dict], criteria: dict, nuisance: str) -> dict:
+    if nuisance in ("oracle", "gps_correct_outcome_wrong", "flexible"):
+        result = _primary_cell(records, criteria)
+        result["expected_behavior"] = "scientific-target inference"
+        return result
+    execution_failures = sum(
+        "execution_error" in record["alternative"] for record in records
+    )
+    if nuisance == "deliberately_inadequate":
+        protected = sum(
+            record["alternative"]["refused"]
+            or record["alternative"]["gate_status"] == "warning"
+            for record in records
+        )
+        protection_rate = protected / len(records)
+        return {
+            "total": len(records),
+            "execution_failures": execution_failures,
+            "expected_behavior": "warning-or-refusal",
+            "warning_or_refusal_rate": protection_rate,
+            "passed": execution_failures == 0 and protection_rate >= 0.80,
+        }
+    drifts = [
+        record["alternative"]["scientific_pseudo_target_max_drift"] for record in records
+    ]
+    finite = all(value is not None and np.isfinite(value) for value in drifts)
+    return {
+        "total": len(records),
+        "execution_failures": execution_failures,
+        "expected_behavior": "scientific-versus-pseudo-target disclosure",
+        "mean_scientific_pseudo_target_drift": float(np.mean(drifts)) if finite else None,
+        "passed": (
+            execution_failures == 0
+            and finite
+            and max((float(value) for value in drifts if value is not None), default=0.0)
+            > 1e-6
+        ),
+    }
+
+
 def summarize(paths: list[Path], specification: dict) -> dict:
     by_cell: dict[str, list[dict]] = defaultdict(list)
     spec_hashes = set()
+    tiers = set()
+    threshold_hashes = set()
+    validation_levels = set()
     for path in paths:
         payload = json.loads(path.read_text(encoding="utf-8"))
         spec_hashes.add(payload["specification_sha256"])
+        tiers.add(payload["tier"])
+        threshold_hashes.add(payload.get("threshold_artifact_sha256"))
+        validation_levels.add(payload.get("validation_level"))
         for record in payload["records"]:
             key = json.dumps(record["spec"], sort_keys=True)
             by_cell[key].append(record)
-    if len(spec_hashes) != 1:
-        raise ValueError("campaign shards do not share one specification hash")
-    criteria = specification["pass_criteria"]
+    if len(spec_hashes) != 1 or len(tiers) != 1 or len(validation_levels) != 1:
+        raise ValueError("campaign shards do not share one specification, tier, and level")
+    if len(threshold_hashes) != 1 or None in threshold_hashes:
+        raise ValueError("validation shards do not share one locked threshold artifact")
+    tier = next(iter(tiers))
+    criteria = specification["directional_pass_criteria"]
     cells = []
     all_passed = True
     for key, records in sorted(by_cell.items()):
-        accepted = [record for record in records if not record["alternative"]["refused"]]
-        null_accepted = [record for record in records if not record["null"]["refused"]]
-        execution_failures = sum(
-            "execution_error" in record["alternative"] or "execution_error" in record["null"]
-            for record in records
-        )
-        coverage = (
-            np.mean([record["alternative"]["uniform_coverage"] for record in accepted])
-            if accepted
-            else np.nan
-        )
-        false_signs = sum(record["null"]["false_sign_certificate"] for record in null_accepted)
-        fwer_upper = _upper_binomial(false_signs, len(null_accepted)) if null_accepted else np.nan
-        errors = np.array(
-            [record["alternative"]["scientific_target_mean_error"] for record in accepted]
-        )
-        standardized_bias = (
-            abs(float(errors.mean())) / float(errors.std(ddof=1))
-            if len(errors) > 1 and errors.std(ddof=1) > 0
-            else np.nan
-        )
-        passed = bool(
-            accepted
-            and execution_failures == 0
-            and criteria["simultaneous_coverage_min"]
-            <= coverage
-            <= criteria["simultaneous_coverage_max"]
-            and fwer_upper <= criteria["fwer_upper_bound_max"]
-            and standardized_bias <= criteria["standardized_absolute_bias_max"]
-        )
-        all_passed &= passed
-        cells.append(
-            {
-                "spec": json.loads(key),
-                "total": len(records),
-                "accepted": len(accepted),
-                "execution_failures": execution_failures,
-                "refusal_rate": 1 - len(accepted) / len(records),
-                "simultaneous_coverage": coverage,
-                "false_sign_count": false_signs,
-                "fwer_upper_95": fwer_upper,
-                "standardized_absolute_bias": standardized_bias,
-                "passed": passed,
-            }
-        )
+        spec = json.loads(key)
+        if tier == "directional_robustness":
+            cell = _robustness_cell(records, criteria, spec["nuisance"])
+        else:
+            cell = _primary_cell(records, criteria)
+        cell["spec"] = spec
+        all_passed &= bool(cell["passed"])
+        cells.append(cell)
     result = {
-        "schema_version": 1,
+        "schema_version": 2,
+        "protocol": specification["protocol"],
+        "validation_level": next(iter(validation_levels)),
+        "tier": tier,
         "specification_sha256": next(iter(spec_hashes)),
+        "threshold_artifact_sha256": next(iter(threshold_hashes)),
         "all_cells_passed": all_passed,
         "cells": cells,
     }
-    encoded = json.dumps(result, sort_keys=True, allow_nan=True).encode()
+    encoded = json.dumps(result, sort_keys=True, allow_nan=False).encode()
     result["summary_sha256"] = sha256(encoded).hexdigest()
     return result
 
@@ -98,7 +165,7 @@ def main() -> None:
     specification = json.loads(args.spec.read_text(encoding="utf-8"))
     result = summarize(args.inputs, specification)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    args.output.write_text(json.dumps(result, indent=2, allow_nan=False), encoding="utf-8")
 
 
 if __name__ == "__main__":
