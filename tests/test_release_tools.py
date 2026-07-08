@@ -135,6 +135,7 @@ def test_artifact_backed_promotion_can_pass(tmp_path: Path) -> None:
             artifact_paths[role],
             {
                 "all_cells_passed": True,
+                "tier_passed": True,
                 "tier": tier,
                 "specification_sha256": specification_hash,
                 "threshold_artifact_sha256": threshold["sha256"],

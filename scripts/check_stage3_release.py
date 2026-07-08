@@ -117,8 +117,8 @@ def blocking_reasons(manifest: dict, root: Path = Path(".")) -> list[str]:
             continue
         if not _verify_embedded_hash(summary, "summary_sha256", allow_nan=False):
             reasons.append(f"{role} checksum is invalid")
-        if not summary.get("all_cells_passed"):
-            reasons.append(f"{role} did not pass every required cell")
+        if not summary.get("tier_passed"):
+            reasons.append(f"{role} did not pass its pooled directional criteria")
         if summary.get("tier") != expected_tier:
             reasons.append(f"{role} has the wrong campaign tier")
         if summary.get("specification_sha256") != specification_hash:

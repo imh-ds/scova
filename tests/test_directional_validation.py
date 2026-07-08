@@ -160,6 +160,7 @@ def test_directional_summary_requires_locked_threshold_and_all_cells(tmp_path: P
     result = summarize([path], specification)
     assert result["validation_level"] == "directional"
     assert result["all_cells_passed"]
+    assert result["tier_passed"]
     campaign["threshold_artifact_sha256"] = None
     path.write_text(json.dumps(campaign), encoding="utf-8")
     with pytest.raises(ValueError, match="locked threshold"):
@@ -182,6 +183,7 @@ def test_directional_summary_serializes_degenerate_bias_as_null(tmp_path: Path) 
     result = summarize([path], specification)
 
     assert result["all_cells_passed"] is False
+    assert result["tier_passed"] is False
     assert result["cells"][0]["standardized_absolute_bias"] is None
     assert result["cells"][0]["standardized_bias_status"] == (
         "undefined-zero-error-variance"

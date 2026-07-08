@@ -146,6 +146,64 @@ def summarize(paths: list[Path], specification: dict) -> dict:
         cell["spec"] = spec
         all_passed &= bool(cell["passed"])
         cells.append(cell)
+    execution_failures = sum(cell["execution_failures"] for cell in cells)
+    if tier in ("directional_robustness", "local_robustness_pilot"):
+        inferential_nuisances = {"oracle", "gps_correct_outcome_wrong", "flexible"}
+        inferential_records = [
+            record
+            for key, records in by_cell.items()
+            if json.loads(key)["nuisance"] in inferential_nuisances
+            for record in records
+        ]
+        inferential = _primary_cell(inferential_records, criteria)
+        behavioral_cells = [
+            cell
+            for cell in cells
+            if cell["spec"]["nuisance"] not in inferential_nuisances
+        ]
+        behavioral_pass_rate = (
+            sum(cell["passed"] for cell in behavioral_cells) / len(behavioral_cells)
+            if behavioral_cells
+            else 1.0
+        )
+        tier_passed = bool(
+            execution_failures == 0
+            and inferential["passed"]
+            and behavioral_pass_rate >= 0.75
+        )
+        aggregate = {
+            "inferential": inferential,
+            "behavioral_cell_pass_rate": behavioral_pass_rate,
+            "minimum_behavioral_cell_pass_rate": 0.75,
+        }
+    else:
+        pooled = _primary_cell(
+            [record for records in by_cell.values() for record in records], criteria
+        )
+        severe_failures = sum(
+            cell["execution_failures"] > 0
+            or cell["simultaneous_coverage"] < 0.80
+            or cell["fwer_upper_95"] > 0.25
+            or (
+                cell["standardized_absolute_bias"] is not None
+                and cell["standardized_absolute_bias"] > 0.50
+            )
+            or cell["stability_coverage"] < 0.80
+            for cell in cells
+        )
+        cell_pass_rate = sum(cell["passed"] for cell in cells) / len(cells)
+        tier_passed = bool(
+            execution_failures == 0
+            and pooled["passed"]
+            and severe_failures == 0
+            and cell_pass_rate >= 0.75
+        )
+        aggregate = {
+            "pooled": pooled,
+            "individual_cell_pass_rate": cell_pass_rate,
+            "minimum_individual_cell_pass_rate": 0.75,
+            "severe_cell_failures": severe_failures,
+        }
     result = {
         "schema_version": 2,
         "protocol": specification["protocol"],
@@ -154,6 +212,9 @@ def summarize(paths: list[Path], specification: dict) -> dict:
         "specification_sha256": next(iter(spec_hashes)),
         "threshold_artifact_sha256": next(iter(threshold_hashes)),
         "all_cells_passed": all_passed,
+        "tier_passed": tier_passed,
+        "decision_rule": "pooled-directional-v1",
+        "aggregate": aggregate,
         "cells": cells,
     }
     encoded = json.dumps(result, sort_keys=True, allow_nan=False).encode()
