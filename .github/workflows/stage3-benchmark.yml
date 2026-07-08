@@ -16,6 +16,7 @@ jobs:
       - run: python -m pip install -e .
       - run: python benchmarks/stage3_path.py
       - uses: actions/upload-artifact@v6
+        if: always()
         with:
           name: stage3-path
           path: benchmark_artifacts/stage3_path.json

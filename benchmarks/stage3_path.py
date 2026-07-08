@@ -11,7 +11,7 @@ import numpy as np
 from scipy.stats import norm
 
 from scova import SCOVADeclaration
-from scova.experimental import PathDeclaration, fit_path
+from scova.experimental import InferenceRefusedError, PathDeclaration, fit_path
 from scova.experimental.tilts import geometric_tilt_and_gradient
 from scova.simulate import generate_data
 
@@ -46,6 +46,9 @@ def run_benchmark(repetitions: int, n_bootstrap: int, output: Path) -> None:
             pointwise_path_coverage = 0
             corrected_error = 0.0
             naive_error = 0.0
+            inference_accepted = 0
+            inference_refused = 0
+            refusal_reasons: dict[str, int] = {}
             for repetition in range(repetitions):
                 simulation = generate_data(
                     scenario,
@@ -64,9 +67,6 @@ def run_benchmark(repetitions: int, n_bootstrap: int, output: Path) -> None:
                 result = fit_path(simulation.data, declaration)
                 contrast_name = f"g0 - g{n_groups - 1}"
                 contrast = result.contrasts[contrast_name]
-                inference = result.infer(
-                    (contrast_name,), n_bootstrap=n_bootstrap, random_state=repetition
-                )
                 tilt, _ = geometric_tilt_and_gradient(
                     simulation.propensity,
                     result.lambdas,
@@ -77,10 +77,23 @@ def run_benchmark(repetitions: int, n_bootstrap: int, output: Path) -> None:
                     / tilt.sum(axis=0)[:, None]
                 )
                 truth = truth_means[:, 0] - truth_means[:, -1]
+                naive_estimate = result.naive_group_means[:, 0] - result.naive_group_means[:, -1]
+                corrected_error += float(np.mean(np.square(contrast.estimates - truth)))
+                naive_error += float(np.mean(np.square(naive_estimate - truth)))
+                try:
+                    inference = result.infer(
+                        (contrast_name,), n_bootstrap=n_bootstrap, random_state=repetition
+                    )
+                except InferenceRefusedError:
+                    inference_refused += 1
+                    reasons = result.gate_decision.reasons or ("unspecified refusal",)
+                    for reason in reasons:
+                        refusal_reasons[reason] = refusal_reasons.get(reason, 0) + 1
+                    continue
+                inference_accepted += 1
                 lower = inference.lower_bands[0]
                 upper = inference.upper_bands[0]
                 corrected_coverage += bool(np.all((lower <= truth) & (truth <= upper)))
-                naive_estimate = result.naive_group_means[:, 0] - result.naive_group_means[:, -1]
                 naive_influence = (
                     result.naive_influence_values[:, :, 0]
                     - result.naive_influence_values[:, :, -1]
@@ -102,17 +115,29 @@ def run_benchmark(repetitions: int, n_bootstrap: int, output: Path) -> None:
                         & (truth <= contrast.estimates + critical * contrast.standard_errors)
                     )
                 )
-                corrected_error += float(np.mean(np.square(contrast.estimates - truth)))
-                naive_error += float(np.mean(np.square(naive_estimate - truth)))
             records.append(
                 {
                     "overlap": overlap,
                     "n_groups": n_groups,
                     "repetitions": repetitions,
                     "n_bootstrap": n_bootstrap,
-                    "corrected_uniform_coverage": corrected_coverage / repetitions,
-                    "naive_uniform_coverage": naive_coverage / repetitions,
-                    "all_pointwise_intervals_cover": pointwise_path_coverage / repetitions,
+                    "inference_accepted": inference_accepted,
+                    "inference_refused": inference_refused,
+                    "inference_refusal_rate": inference_refused / repetitions,
+                    "refusal_reasons": refusal_reasons,
+                    "corrected_uniform_coverage": (
+                        corrected_coverage / inference_accepted
+                        if inference_accepted
+                        else None
+                    ),
+                    "naive_uniform_coverage": (
+                        naive_coverage / inference_accepted if inference_accepted else None
+                    ),
+                    "all_pointwise_intervals_cover": (
+                        pointwise_path_coverage / inference_accepted
+                        if inference_accepted
+                        else None
+                    ),
                     "corrected_path_rmse": np.sqrt(corrected_error / repetitions),
                     "naive_path_rmse": np.sqrt(naive_error / repetitions),
                 }
