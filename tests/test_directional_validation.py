@@ -166,6 +166,29 @@ def test_directional_summary_requires_locked_threshold_and_all_cells(tmp_path: P
         summarize([path], specification)
 
 
+def test_directional_summary_serializes_degenerate_bias_as_null(tmp_path: Path) -> None:
+    specification = _release_spec()
+    campaign = _campaign(
+        "directional_validation", specification["validation_seed_namespace"], 200
+    )
+    campaign["specification_sha256"] = sha256(
+        Path("benchmarks/specs/stage3_release.json").read_bytes()
+    ).hexdigest()
+    for record in campaign["records"]:
+        record["alternative"]["scientific_target_mean_error"] = 0.0
+    path = tmp_path / "campaign.json"
+    path.write_text(json.dumps(campaign), encoding="utf-8")
+
+    result = summarize([path], specification)
+
+    assert result["all_cells_passed"] is False
+    assert result["cells"][0]["standardized_absolute_bias"] is None
+    assert result["cells"][0]["standardized_bias_status"] == (
+        "undefined-zero-error-variance"
+    )
+    json.dumps(result, allow_nan=False)
+
+
 def test_shard_verifier_checks_complete_provenance(tmp_path: Path) -> None:
     specification = {
         "protocol": "test-directional",

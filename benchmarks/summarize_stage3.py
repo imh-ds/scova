@@ -31,10 +31,11 @@ def _primary_cell(records: list[dict], criteria: dict) -> dict:
     errors = np.asarray(
         [record["alternative"]["scientific_target_mean_error"] for record in accepted]
     )
+    error_sd = float(errors.std(ddof=1)) if len(errors) > 1 else 0.0
     standardized_bias = (
-        abs(float(errors.mean())) / float(errors.std(ddof=1))
-        if len(errors) > 1 and errors.std(ddof=1) > 0
-        else float("inf")
+        abs(float(errors.mean())) / error_sd
+        if np.isfinite(error_sd) and error_sd > 0
+        else None
     )
     stability_coverage = (
         float(np.mean([record["alternative"]["stability_covered"] for record in accepted]))
@@ -52,6 +53,7 @@ def _primary_cell(records: list[dict], criteria: dict) -> dict:
         <= coverage
         <= criteria["simultaneous_coverage_max"]
         and fwer_upper <= criteria["fwer_upper_bound_max"]
+        and standardized_bias is not None
         and standardized_bias <= criteria["standardized_absolute_bias_max"]
         and stability_coverage >= criteria["simultaneous_coverage_min"]
     )
@@ -64,6 +66,9 @@ def _primary_cell(records: list[dict], criteria: dict) -> dict:
         "false_sign_count": false_signs,
         "fwer_upper_95": fwer_upper,
         "standardized_absolute_bias": standardized_bias,
+        "standardized_bias_status": (
+            "computed" if standardized_bias is not None else "undefined-zero-error-variance"
+        ),
         "stability_coverage": stability_coverage,
         "passed": passed,
     }
