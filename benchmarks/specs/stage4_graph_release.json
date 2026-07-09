@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "protocol": "stage4-graph-firewall-v1",
+  "status": "frozen",
+  "frozen": true,
+  "validation_level": "directional",
+  "stage3_dependency": {
+    "required_protocol": "stage3-directional-v1",
+    "requires_calibrated_threshold_artifact": true,
+    "allows_provisional_thresholds_for_smoke_only": true
+  },
+  "analysis_mode": {
+    "selection": "outer_design_estimation_split",
+    "design_fraction": 0.5,
+    "outcome_blind_design": true,
+    "confidence_level": 0.95,
+    "multiplicity": "max-t over locked graph-supported family",
+    "same_sample_selection": "out_of_scope"
+  },
+  "primary_factors": {
+    "n_groups": [2, 4, 8],
+    "n": [500, 2000],
+    "p": [5, 20],
+    "overlap": ["strong", "moderate", "weak", "near_violation", "pairwise_only"],
+    "outcome": ["linear", "nonlinear", "threshold"],
+    "imbalance": ["balanced", "rare"],
+    "error": ["normal", "heteroskedastic"],
+    "null_regime": ["global_null", "sparse_pairwise_signal"]
+  },
+  "candidate_subsets": {
+    "pairs": "all",
+    "subsets": "all_subsets_up_to_size_4",
+    "global_claims": "supported_maximal_cliques_only"
+  },
+  "target_path": {
+    "lambdas": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    "base_target": "study",
+    "tilt": "geometric_subset_harmonic_overlap"
+  },
+  "tiers": {
+    "pull_request": {
+      "cells": 20,
+      "repetitions": 100,
+      "bootstrap": 499,
+      "required_scenarios": ["strong_complete_graph", "pairwise_without_kway", "rare_group_refusal", "post_lock_mutation"]
+    },
+    "calibration": {
+      "cells": 48,
+      "repetitions": 200,
+      "bootstrap": 999,
+      "purpose": "implementation and gate-integration diagnostics only"
+    },
+    "directional_validation": {
+      "cells": 96,
+      "repetitions": 400,
+      "bootstrap": 999,
+      "purpose": "held-out graph selection, conditional FWER, and coverage"
+    },
+    "directional_robustness": {
+      "cells": 48,
+      "repetitions": 400,
+      "bootstrap": 999,
+      "factors": {
+        "error": ["heavy_tailed"],
+        "nuisance": ["gps_correct_outcome_wrong", "outcome_correct_gps_wrong", "both_wrong", "deliberately_inadequate"]
+      }
+    },
+    "nightly": {
+      "cells": 240,
+      "repetitions": 500,
+      "bootstrap": 999
+    },
+    "publication_release": {
+      "cells": 720,
+      "repetitions": 2000,
+      "bootstrap": 1999
+    }
+  },
+  "directional_pass_criteria": {
+    "conditional_fwer_upper_bound_max": 0.1,
+    "simultaneous_coverage_min": 0.9,
+    "simultaneous_coverage_max": 0.99,
+    "minimum_strong_complete_graph_rate": 0.8,
+    "maximum_false_global_claim_rate_pairwise_only": 0.05,
+    "minimum_supported_pairwise_edge_rate_pairwise_only": 0.6,
+    "minimum_rare_group_refusal_rate": 0.6,
+    "post_lock_confirmatory_mutation_rate": 0.0,
+    "minimum_accepted_repetitions_per_cell": 120,
+    "confidence_level": 0.95
+  },
+  "publication_pass_criteria": {
+    "conditional_fwer_upper_bound_max": 0.065,
+    "simultaneous_coverage_min": 0.925,
+    "simultaneous_coverage_max": 0.975,
+    "minimum_strong_complete_graph_rate": 0.9,
+    "maximum_false_global_claim_rate_pairwise_only": 0.025,
+    "post_lock_confirmatory_mutation_rate": 0.0,
+    "confidence_level": 0.95
+  },
+  "required_metrics": [
+    "conditional_fwer_selected_family",
+    "simultaneous_coverage_selected_family",
+    "edge_true_positive_and_false_positive_rates",
+    "hyperedge_and_clique_selection_rates",
+    "unsupported_global_claim_rate",
+    "refusal_rate_by_overlap_regime",
+    "post_lock_mutation_verdicts",
+    "design_lock_reproducibility",
+    "runtime_and_peak_memory"
+  ],
+  "seed_namespaces": {
+    "smoke": 120000000,
+    "calibration": 121000000,
+    "validation": 122000000,
+    "publication": 123000000
+  },
+  "notes": [
+    "The validation namespace must never be used to tune gates, graph rules, or implementation choices.",
+    "All graph-selection metrics are evaluated against the DGP's declared support truth, not observed outcomes.",
+    "A failure in the pairwise-without-K-way scenario blocks Stage 4 promotion.",
+    "Any change to the DGP, gate rules, API semantics, split policy, or inference procedure requires a new protocol and seed namespaces."
+  ]
+}
