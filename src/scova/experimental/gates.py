@@ -345,3 +345,90 @@ def evaluate_path_gates(
         threshold_version=thresholds.version,
         calibrated=thresholds.calibrated,
     )
+
+
+def evaluate_design_gates(
+    *,
+    min_group_ess: float,
+    target_ess_ratio: float,
+    max_weight_concentration: float,
+    min_propensity_q01: float,
+    max_calibration_error: float,
+    max_balance: float,
+    crossfit_instability: float,
+    numerical_valid: bool,
+    thresholds: DiagnosticThresholds,
+) -> GateDecision:
+    """Evaluate only (X, A)-measurable Stage 3 diagnostics.
+
+    Influence concentration is intentionally absent: it depends on outcomes
+    and therefore cannot be used while the Stage 4 design firewall is locked.
+    """
+    metrics = (
+        _minimum_metric(
+            "min_group_ess",
+            min_group_ess,
+            thresholds.min_group_ess_warning,
+            thresholds.min_group_ess_refuse,
+        ),
+        _minimum_metric(
+            "target_ess_ratio",
+            target_ess_ratio,
+            thresholds.min_target_ess_ratio_warning,
+            thresholds.min_target_ess_ratio_refuse,
+        ),
+        _maximum_metric(
+            "max_weight_concentration",
+            max_weight_concentration,
+            thresholds.max_weight_concentration_warning,
+            thresholds.max_weight_concentration_refuse,
+        ),
+        _minimum_metric(
+            "min_propensity_q01",
+            min_propensity_q01,
+            thresholds.min_propensity_q01_warning,
+            thresholds.min_propensity_q01_refuse,
+        ),
+        _maximum_metric(
+            "max_calibration_error",
+            max_calibration_error,
+            thresholds.max_calibration_error_warning,
+            thresholds.max_calibration_error_refuse,
+        ),
+        _maximum_metric(
+            "max_balance",
+            max_balance,
+            thresholds.max_balance_warning,
+            thresholds.max_balance_refuse,
+        ),
+        _maximum_metric(
+            "crossfit_instability",
+            crossfit_instability,
+            thresholds.max_crossfit_instability_warning,
+            thresholds.max_crossfit_instability_refuse,
+        ),
+    )
+    if not numerical_valid or any(metric.status is GateStatus.REFUSE for metric in metrics):
+        status = GateStatus.REFUSE
+    elif any(metric.status is GateStatus.WARNING for metric in metrics):
+        status = GateStatus.WARNING
+    elif thresholds.calibrated:
+        status = GateStatus.PASS
+    else:
+        status = GateStatus.WARNING
+    reasons = [
+        f"{metric.name}={metric.value:.6g} ({metric.status.value})"
+        for metric in metrics
+        if metric.status is not GateStatus.PASS
+    ]
+    if not numerical_valid:
+        reasons.insert(0, "numerical validity check failed")
+    if not thresholds.calibrated:
+        reasons.append("thresholds are provisional and cannot certify inference")
+    return GateDecision(
+        status=status,
+        metrics=metrics,
+        reasons=tuple(reasons),
+        threshold_version=thresholds.version,
+        calibrated=thresholds.calibrated,
+    )
