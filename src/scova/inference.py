@@ -38,9 +38,7 @@ class SimultaneousContrastResult:
             "estimate": self.estimate,
             "standard_error": self.standard_error,
             "statistic": self.statistic,
-            "simultaneous_confidence_interval": list(
-                self.simultaneous_confidence_interval
-            ),
+            "simultaneous_confidence_interval": list(self.simultaneous_confidence_interval),
             "adjusted_p_value": self.adjusted_p_value,
             "rejected": self.rejected,
         }
@@ -110,9 +108,7 @@ class SimultaneousInferenceResult:
                 estimate=float(item["estimate"]),
                 standard_error=float(item["standard_error"]),
                 statistic=float(item["statistic"]),
-                simultaneous_confidence_interval=tuple(
-                    item["simultaneous_confidence_interval"]
-                ),
+                simultaneous_confidence_interval=tuple(item["simultaneous_confidence_interval"]),
                 adjusted_p_value=float(item["adjusted_p_value"]),
                 rejected=bool(item["rejected"]),
             )
@@ -210,16 +206,12 @@ def run_simultaneous_inference(
 
     observed = estimates / standard_errors
     observed_max = float(np.max(np.abs(observed)))
-    critical = float(
-        np.quantile(bootstrap_max, confidence_level, method="higher")
-    )
+    critical = float(np.quantile(bootstrap_max, confidence_level, method="higher"))
     max_t_p = float((1 + np.sum(bootstrap_max >= observed_max)) / (n_bootstrap + 1))
     alpha = 1 - confidence_level
     simultaneous: list[SimultaneousContrastResult] = []
     for column, name in enumerate(family):
-        adjusted_p = float(
-            (1 + np.sum(bootstrap_max >= abs(observed[column]))) / (n_bootstrap + 1)
-        )
+        adjusted_p = float((1 + np.sum(bootstrap_max >= abs(observed[column]))) / (n_bootstrap + 1))
         margin = critical * standard_errors[column]
         simultaneous.append(
             SimultaneousContrastResult(

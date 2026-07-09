@@ -69,9 +69,7 @@ def _assemble_aipw(
     if not np.all(np.isfinite(outcome_regression)):
         raise ValueError("Outcome predictions must be finite")
     observed = np.eye(n_groups, dtype=float)[group_codes]
-    signal = outcome_regression + observed / propensity * (
-        outcome[:, None] - outcome_regression
-    )
+    signal = outcome_regression + observed / propensity * (outcome[:, None] - outcome_regression)
     means = signal.mean(axis=0)
     influence = signal - means
     covariance = np.cov(influence, rowvar=False, ddof=1) / n
@@ -211,9 +209,7 @@ class SCOVA:
                     f"{labels}"
                 )
             propensity = np.asarray(nuisance_predictions.propensity, dtype=float)
-            outcome_regression = np.asarray(
-                nuisance_predictions.outcome_regression, dtype=float
-            )
+            outcome_regression = np.asarray(nuisance_predictions.outcome_regression, dtype=float)
             nuisance_metadata = {
                 "source": "supplied",
                 "propensity_model": None,

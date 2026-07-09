@@ -220,9 +220,7 @@ class SCOVAPathResult:
         difference_estimates = np.stack(
             [item.estimates[:-1] - item.estimates[-1] for item in selected]
         )
-        difference_errors = np.sqrt(
-            np.sum(np.square(difference_influence), axis=0) / (n * (n - 1))
-        )
+        difference_errors = np.sqrt(np.sum(np.square(difference_influence), axis=0) / (n * (n - 1)))
         if np.any(difference_errors <= 0) or not np.all(np.isfinite(difference_errors)):
             raise ValueError("path differences must have finite positive standard errors")
         offset = 0
@@ -231,9 +229,7 @@ class SCOVAPathResult:
             multipliers = rng.normal(size=(current, n))
             multipliers -= multipliers.mean(axis=1, keepdims=True)
             statistics = (multipliers @ influence) / n / flat_errors
-            difference_statistics = (
-                (multipliers @ difference_influence) / n / difference_errors
-            )
+            difference_statistics = (multipliers @ difference_influence) / n / difference_errors
             maxima[offset : offset + current] = np.max(np.abs(statistics), axis=1)
             difference_maxima[offset : offset + current] = np.max(
                 np.abs(difference_statistics), axis=1
@@ -351,9 +347,7 @@ class SCOVAPathResult:
                 for name in metadata["contrast_names"]
             }
             drift = DriftProfile(
-                standardized_mean_shifts=archive[
-                    "drift_standardized_mean_shifts"
-                ].copy(),
+                standardized_mean_shifts=archive["drift_standardized_mean_shifts"].copy(),
                 target_effective_sample_size=archive["drift_target_ess"].copy(),
                 group_effective_sample_size=archive["drift_group_ess"].copy(),
                 top_one_percent_weight_share=archive["drift_concentration"].copy(),
@@ -429,9 +423,7 @@ def fit_path(
 ) -> SCOVAPathResult:
     """Fit one experimental finite-grid target path without refitting nuisances."""
     engine = estimator or SCOVA()
-    base_result = engine.fit(
-        data, declaration.base, nuisance_predictions=nuisance_predictions
-    )
+    base_result = engine.fit(data, declaration.base, nuisance_predictions=nuisance_predictions)
     x, outcome, group_codes, labels = engine._validate_data(data, declaration.base)
     propensity = base_result.propensity_predictions
     outcome_regression = base_result.outcome_predictions
@@ -463,19 +455,15 @@ def fit_path(
     eta = denominator / len(data)
     influence = (
         weighted_residual
-        + (outcome_regression[:, None, :] - group_means[None, :, :])
-        * (tilt + q)[:, :, None]
+        + (outcome_regression[:, None, :] - group_means[None, :, :]) * (tilt + q)[:, :, None]
     ) / eta[None, :, None]
     influence -= influence.mean(axis=0, keepdims=True)
     naive_influence = (
         weighted_residual
-        + (outcome_regression[:, None, :] - naive_group_means[None, :, :])
-        * tilt[:, :, None]
+        + (outcome_regression[:, None, :] - naive_group_means[None, :, :]) * tilt[:, :, None]
     ) / eta[None, :, None]
     naive_influence -= naive_influence.mean(axis=0, keepdims=True)
-    standard_errors = np.sqrt(
-        np.sum(np.square(influence), axis=0) / (len(data) * (len(data) - 1))
-    )
+    standard_errors = np.sqrt(np.sum(np.square(influence), axis=0) / (len(data) * (len(data) - 1)))
     available = declaration.contrast_names or tuple(base_result.contrasts)
     unknown_contrasts = [name for name in available if name not in base_result.contrasts]
     if unknown_contrasts:
@@ -493,8 +481,7 @@ def fit_path(
         estimates = group_means @ base_contrast.weights
         contrast_influence = np.einsum("nlk,k->nl", influence, base_contrast.weights)
         errors = np.sqrt(
-            np.sum(np.square(contrast_influence), axis=0)
-            / (len(data) * (len(data) - 1))
+            np.sum(np.square(contrast_influence), axis=0) / (len(data) * (len(data) - 1))
         )
         contrasts[name] = ContrastPathResult(
             name, base_contrast.weights.copy(), estimates, errors, contrast_influence
@@ -521,12 +508,8 @@ def fit_path(
     covariate_scale = np.where(x.std(axis=0, ddof=1) > 0, x.std(axis=0, ddof=1), 1.0)
     path_balance = np.empty((len(lambdas), len(labels)))
     for code in range(len(labels)):
-        raw_group_weights = (
-            (group_codes == code)[:, None] * tilt / propensity[:, code, None]
-        )
-        normalized_group_weights = raw_group_weights / raw_group_weights.sum(
-            axis=0, keepdims=True
-        )
+        raw_group_weights = (group_codes == code)[:, None] * tilt / propensity[:, code, None]
+        normalized_group_weights = raw_group_weights / raw_group_weights.sum(axis=0, keepdims=True)
         group_covariate_means = normalized_group_weights.T @ x
         path_balance[:, code] = np.max(
             np.abs((group_covariate_means - target_covariate_means) / covariate_scale),
@@ -570,9 +553,7 @@ def fit_path(
     gate_decision = evaluate_path_gates(
         min_group_ess=float(np.min(drift.group_effective_sample_size)),
         target_ess_ratio=float(np.min(drift.target_effective_sample_size) / len(data)),
-        max_influence_share=max(
-            float(np.max(influence_share)), maximum_contrast_influence_share
-        ),
+        max_influence_share=max(float(np.max(influence_share)), maximum_contrast_influence_share),
         max_weight_concentration=float(np.max(drift.top_one_percent_weight_share)),
         min_propensity_q01=float(
             min(item["q01"] for item in diagnostics["propensity_quantiles"].values())

@@ -60,9 +60,7 @@ def verify_shards(
     commits = {payload["git_commit"] for payload in payloads}
     if len(commits) != 1 or "unavailable" in commits:
         raise ValueError("campaign shards do not identify one available git commit")
-    manifests = {
-        json.dumps(payload["cell_manifest"], sort_keys=True) for payload in payloads
-    }
+    manifests = {json.dumps(payload["cell_manifest"], sort_keys=True) for payload in payloads}
     if len(manifests) != 1:
         raise ValueError("campaign shards do not share one cell manifest")
     cell_manifest = json.loads(manifests.pop())
@@ -98,13 +96,9 @@ def verify_shards(
         all_records.extend(payload["records"])
     expected_records = tier_spec["cells"] * tier_spec["repetitions"]
     if len(all_records) != expected_records:
-        raise ValueError(
-            f"campaign has {len(all_records)} records; expected {expected_records}"
-        )
+        raise ValueError(f"campaign has {len(all_records)} records; expected {expected_records}")
     observed_keys = set()
-    manifest_by_source = {
-        item["source_cell_index"]: item["spec"] for item in cell_manifest
-    }
+    manifest_by_source = {item["source_cell_index"]: item["spec"] for item in cell_manifest}
     for record in all_records:
         key = (record["source_cell_index"], record["repetition"])
         if key in observed_keys:

@@ -82,12 +82,7 @@ class DiagnosticThresholds:
         for warning, refusal, name in maximum_pairs:
             if warning < 0 or refusal < warning:
                 raise ValueError(f"invalid monotone maximum thresholds for {name}")
-        if not (
-            0
-            < self.min_propensity_q01_refuse
-            <= self.min_propensity_q01_warning
-            <= 1
-        ):
+        if not (0 < self.min_propensity_q01_refuse <= self.min_propensity_q01_warning <= 1):
             raise ValueError("invalid propensity quantile thresholds")
 
     def to_dict(self) -> dict[str, Any]:
@@ -114,9 +109,7 @@ class DiagnosticThresholds:
             "max_crossfit_instability_warning",
             "max_crossfit_instability_refuse",
         )
-        weaker = [
-            name for name in minimum_fields if getattr(self, name) < getattr(baseline, name)
-        ]
+        weaker = [name for name in minimum_fields if getattr(self, name) < getattr(baseline, name)]
         weaker.extend(
             name for name in maximum_fields if getattr(self, name) > getattr(baseline, name)
         )
@@ -234,9 +227,7 @@ class InferenceRefusedError(RuntimeError):
     """Raised when confirmatory inference is prohibited by a hard gate."""
 
 
-def _minimum_metric(
-    name: str, value: float, warning: float, refusal: float
-) -> GateMetric:
+def _minimum_metric(name: str, value: float, warning: float, refusal: float) -> GateMetric:
     if not np.isfinite(value) or value < refusal:
         status = GateStatus.REFUSE
     elif value < warning:
@@ -246,9 +237,7 @@ def _minimum_metric(
     return GateMetric(name, value, warning, refusal, "minimum", status)
 
 
-def _maximum_metric(
-    name: str, value: float, warning: float, refusal: float
-) -> GateMetric:
+def _maximum_metric(name: str, value: float, warning: float, refusal: float) -> GateMetric:
     if not np.isfinite(value) or value > refusal:
         status = GateStatus.REFUSE
     elif value > warning:

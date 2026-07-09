@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-
 ROOT = Path(__file__).parents[1]
 SPEC = ROOT / "benchmarks" / "specs" / "stage4_graph_release.json"
 EVIDENCE = ROOT / "release" / "artifacts" / "stage4-evidence.json"

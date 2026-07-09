@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -132,7 +133,7 @@ def _canonical_subset(values: Sequence[JsonLabel]) -> tuple[JsonLabel, ...]:
 
 
 def _required_grid_values(
-    source: PairwiseDiagnosticInput,
+    source: PairwiseDiagnosticInput | SubsetDiagnosticInput,
     subset: tuple[JsonLabel, ...],
     lambdas: tuple[float, ...],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float, float]:
@@ -228,11 +229,11 @@ def _subset_edge(
     thresholds: DiagnosticThresholds,
 ) -> SubsetHyperedge:
     if source is None:
-        return SubsetHyperedge(
-            subset, (), (), ("subset design diagnostics were not supplied",)
-        )
+        return SubsetHyperedge(subset, (), (), ("subset design diagnostics were not supplied",))
     values = _required_grid_values(source, subset, declaration.lambdas)
-    target_ess, group_ess, concentration, balance, normalization, q01, calibration, instability = values
+    target_ess, group_ess, concentration, balance, normalization, q01, calibration, instability = (
+        values
+    )
     decisions = tuple(
         evaluate_design_gates(
             min_group_ess=float(np.min(group_ess[index])),
@@ -274,18 +275,18 @@ def build_comparability_graph(
     if len(labels) < 2 or len(set(labels)) != len(labels):
         raise ValueError("graph construction requires at least two distinct group labels")
     normalized_inputs: dict[tuple[JsonLabel, JsonLabel], PairwiseDiagnosticInput] = {}
-    for raw_pair, source in diagnostics_by_pair.items():
+    for raw_pair, pair_source in diagnostics_by_pair.items():
         pair = _canonical_pair(raw_pair)
         if pair not in tuple(combinations(labels, 2)):
             raise ValueError(f"diagnostics supplied for unknown pair: {pair}")
         if pair in normalized_inputs:
             raise ValueError(f"duplicate diagnostics supplied for pair: {pair}")
-        normalized_inputs[pair] = source
+        normalized_inputs[pair] = pair_source
 
     edges: list[PairwiseEdge] = []
     for pair in combinations(labels, 2):
-        source = normalized_inputs.get(pair)
-        if source is None:
+        selected_pair_source = normalized_inputs.get(pair)
+        if selected_pair_source is None:
             edges.append(
                 PairwiseEdge(pair, (), (), ("pairwise design diagnostics were not supplied",))
             )
@@ -299,7 +300,7 @@ def build_comparability_graph(
             min_q01,
             calibration_error,
             instability,
-        ) = _required_grid_values(source, pair, declaration.lambdas)
+        ) = _required_grid_values(selected_pair_source, pair, declaration.lambdas)
         decisions = tuple(
             evaluate_design_gates(
                 min_group_ess=float(np.min(group_ess[index])),
@@ -327,17 +328,19 @@ def build_comparability_graph(
             )
         edges.append(PairwiseEdge(pair, supported, decisions, reasons))
     normalized_subsets: dict[tuple[JsonLabel, ...], SubsetDiagnosticInput] = {}
-    for raw_subset, source in subset_diagnostics.items():
+    for raw_subset, subset_source in subset_diagnostics.items():
         subset = _canonical_subset(raw_subset)
         if not set(subset).issubset(labels):
             raise ValueError(f"diagnostics supplied for unknown subset: {subset}")
         if subset in normalized_subsets:
             raise ValueError(f"duplicate diagnostics supplied for subset: {subset}")
-        normalized_subsets[subset] = source
+        normalized_subsets[subset] = subset_source
     declared_subsets = tuple(_canonical_subset(subset) for subset in declaration.candidate_subsets)
     unknown = set(normalized_subsets).difference(declared_subsets)
     if unknown:
-        raise ValueError(f"subset diagnostics supplied for undeclared subsets: {sorted(map(str, unknown))}")
+        raise ValueError(
+            f"subset diagnostics supplied for undeclared subsets: {sorted(map(str, unknown))}"
+        )
     hyperedges = tuple(
         _subset_edge(subset, normalized_subsets.get(subset), declaration, thresholds)
         for subset in declared_subsets

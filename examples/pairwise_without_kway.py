@@ -3,9 +3,15 @@
 from scova import DesignDeclaration, OutcomeFreeDesignData, SCOVADesign
 from scova.experimental import StabilizationSpec, generate_stabilization_data
 
-
 generated = generate_stabilization_data(
-    StabilizationSpec(n_groups=4, n=2_000, p=5, overlap="pairwise_only", outcome="linear", imbalance="balanced"),
+    StabilizationSpec(
+        n_groups=4,
+        n=2_000,
+        p=5,
+        overlap="pairwise_only",
+        outcome="linear",
+        imbalance="balanced",
+    ),
     seed=17,
 )
 data = generated.data
@@ -21,4 +27,7 @@ declaration = DesignDeclaration(
 
 locked = SCOVADesign().prepare_design(design_data, declaration)
 print("pairwise edges:", locked.graph.supported_edges)
-print("supported K-way hyperedges:", [item.groups for item in locked.graph.supported_maximal_hyperedges])
+print(
+    "supported K-way hyperedges:",
+    [item.groups for item in locked.graph.supported_maximal_hyperedges],
+)

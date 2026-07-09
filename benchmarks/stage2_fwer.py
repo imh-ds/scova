@@ -55,17 +55,20 @@ def run_benchmark(repetitions: int, n_bootstrap: int, output: Path) -> None:
                     simulation.outcome_regression,
                     simulation.group_labels,
                 )
-                alternative = SCOVA().fit(
-                    simulation.data,
-                    declaration,
-                    nuisance_predictions=alternative_nuisance,
-                ).infer(n_bootstrap=n_bootstrap)
+                alternative = (
+                    SCOVA()
+                    .fit(
+                        simulation.data,
+                        declaration,
+                        nuisance_predictions=alternative_nuisance,
+                    )
+                    .infer(n_bootstrap=n_bootstrap)
+                )
                 all_covered = True
                 for contrast in alternative.contrasts:
                     left, right = (int(value[1:]) for value in contrast.name.split(" - "))
                     truth = float(
-                        simulation.true_group_means[left]
-                        - simulation.true_group_means[right]
+                        simulation.true_group_means[left] - simulation.true_group_means[right]
                     )
                     lower, upper = contrast.simultaneous_confidence_interval
                     all_covered &= lower <= truth <= upper
@@ -97,9 +100,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repetitions", type=int, default=1000)
     parser.add_argument("--bootstrap", type=int, default=1999)
-    parser.add_argument(
-        "--output", type=Path, default=Path("benchmark_artifacts/stage2_fwer.json")
-    )
+    parser.add_argument("--output", type=Path, default=Path("benchmark_artifacts/stage2_fwer.json"))
     arguments = parser.parse_args()
     run_benchmark(arguments.repetitions, arguments.bootstrap, arguments.output)
 

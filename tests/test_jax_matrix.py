@@ -10,7 +10,7 @@ def test_randomized_jax_gradient_matrix(dtype: str) -> None:
     jnp = pytest.importorskip("jax.numpy")
     jax.config.update("jax_enable_x64", True)
     np_dtype = np.float64 if dtype == "float64" else np.float32
-    rtol, atol = ((1e-5, 1e-8) if dtype == "float64" else (5e-4, 1e-6))
+    rtol, atol = (1e-5, 1e-8) if dtype == "float64" else (5e-4, 1e-6)
     rng = np.random.default_rng(918_273 if dtype == "float64" else 192_837)
     cases = 256
     for case in range(cases):
@@ -30,9 +30,7 @@ def test_randomized_jax_gradient_matrix(dtype: str) -> None:
             return (len(active_codes) * overlap) ** lambda_value
 
         automatic = np.asarray(jax.grad(function)(jnp.asarray(row)))
-        _, analytic = geometric_tilt_and_gradient(
-            row[None, :], np.array([lam]), active
-        )
+        _, analytic = geometric_tilt_and_gradient(row[None, :], np.array([lam]), active)
         np.testing.assert_allclose(
             automatic,
             analytic[0, 0],

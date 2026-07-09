@@ -33,9 +33,7 @@ def _primary_cell(records: list[dict], criteria: dict) -> dict:
     )
     error_sd = float(errors.std(ddof=1)) if len(errors) > 1 else 0.0
     standardized_bias = (
-        abs(float(errors.mean())) / error_sd
-        if np.isfinite(error_sd) and error_sd > 0
-        else None
+        abs(float(errors.mean())) / error_sd if np.isfinite(error_sd) and error_sd > 0 else None
     )
     stability_coverage = (
         float(np.mean([record["alternative"]["stability_covered"] for record in accepted]))
@@ -79,13 +77,10 @@ def _robustness_cell(records: list[dict], criteria: dict, nuisance: str) -> dict
         result = _primary_cell(records, criteria)
         result["expected_behavior"] = "scientific-target inference"
         return result
-    execution_failures = sum(
-        "execution_error" in record["alternative"] for record in records
-    )
+    execution_failures = sum("execution_error" in record["alternative"] for record in records)
     if nuisance == "deliberately_inadequate":
         protected = sum(
-            record["alternative"]["refused"]
-            or record["alternative"]["gate_status"] == "warning"
+            record["alternative"]["refused"] or record["alternative"]["gate_status"] == "warning"
             for record in records
         )
         protection_rate = protected / len(records)
@@ -96,9 +91,7 @@ def _robustness_cell(records: list[dict], criteria: dict, nuisance: str) -> dict
             "warning_or_refusal_rate": protection_rate,
             "passed": execution_failures == 0 and protection_rate >= 0.80,
         }
-    drifts = [
-        record["alternative"]["scientific_pseudo_target_max_drift"] for record in records
-    ]
+    drifts = [record["alternative"]["scientific_pseudo_target_max_drift"] for record in records]
     finite = all(value is not None and np.isfinite(value) for value in drifts)
     return {
         "total": len(records),
@@ -108,8 +101,7 @@ def _robustness_cell(records: list[dict], criteria: dict, nuisance: str) -> dict
         "passed": (
             execution_failures == 0
             and finite
-            and max((float(value) for value in drifts if value is not None), default=0.0)
-            > 1e-6
+            and max((float(value) for value in drifts if value is not None), default=0.0) > 1e-6
         ),
     }
 
@@ -157,9 +149,7 @@ def summarize(paths: list[Path], specification: dict) -> dict:
         ]
         inferential = _primary_cell(inferential_records, criteria)
         behavioral_cells = [
-            cell
-            for cell in cells
-            if cell["spec"]["nuisance"] not in inferential_nuisances
+            cell for cell in cells if cell["spec"]["nuisance"] not in inferential_nuisances
         ]
         behavioral_pass_rate = (
             sum(cell["passed"] for cell in behavioral_cells) / len(behavioral_cells)
@@ -167,9 +157,7 @@ def summarize(paths: list[Path], specification: dict) -> dict:
             else 1.0
         )
         tier_passed = bool(
-            execution_failures == 0
-            and inferential["passed"]
-            and behavioral_pass_rate >= 0.75
+            execution_failures == 0 and inferential["passed"] and behavioral_pass_rate >= 0.75
         )
         aggregate = {
             "inferential": inferential,

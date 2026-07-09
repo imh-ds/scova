@@ -21,4 +21,3 @@ def test_eif_perturbation_identity() -> None:
 
 
 import pytest  # noqa: E402
-

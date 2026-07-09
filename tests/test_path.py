@@ -14,9 +14,7 @@ from scova.simulate import generate_data
 
 def setup_path(*, target="kway", active_groups=(), contrast_names=()):
     simulation = generate_data("observational", n=500, seed=29)
-    base = SCOVADeclaration(
-        "outcome", "group", ("x1", "x2", "x3"), n_splits=4, random_state=19
-    )
+    base = SCOVADeclaration("outcome", "group", ("x1", "x2", "x3"), n_splits=4, random_state=19)
     declaration = PathDeclaration(
         base,
         lambdas=(0.0, 0.25, 0.5, 0.75, 1.0),
@@ -61,9 +59,7 @@ def test_correction_ablation_and_study_path() -> None:
 
 
 def test_pairwise_target_keeps_only_compatible_contrast() -> None:
-    simulation, _, declaration, nuisance = setup_path(
-        target="pairwise", active_groups=("g0", "g2")
-    )
+    simulation, _, declaration, nuisance = setup_path(target="pairwise", active_groups=("g0", "g2"))
     path = fit_path(simulation.data, declaration, nuisance_predictions=nuisance)
     assert tuple(path.contrasts) == ("g0 - g2",)
     assert path.active_groups == ("g0", "g2")

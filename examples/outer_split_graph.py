@@ -3,7 +3,6 @@
 from scova import DesignDeclaration, OutcomeFreeDesignData, SCOVADesign
 from scova.simulate import generate_data
 
-
 simulation = generate_data("observational", n=1_000, seed=42)
 data = simulation.data
 design_data = OutcomeFreeDesignData.from_arrays(

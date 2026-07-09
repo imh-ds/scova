@@ -36,9 +36,7 @@ def _valid_existing(path: Path, *, tier: str, shard_index: int, shard_count: int
         or values.get("shard_index") != shard_index
         or values.get("shard_count") != shard_count
     ):
-        raise RuntimeError(
-            f"existing shard {path} used different settings; rerun with --force"
-        )
+        raise RuntimeError(f"existing shard {path} used different settings; rerun with --force")
     claimed = sidecar.read_text(encoding="ascii").strip()
     if claimed != sha256(path.read_bytes()).hexdigest():
         raise RuntimeError(f"existing shard checksum is invalid: {path}")
@@ -112,9 +110,7 @@ def _run_tier(
             if _valid_existing(path, tier=tier, shard_index=index, shard_count=workers):
                 print(f"reusing completed {label} shard {index}", flush=True)
                 continue
-            tasks.append(
-                executor.submit(_run_shard, tier, path, index, workers, threshold_path)
-            )
+            tasks.append(executor.submit(_run_shard, tier, path, index, workers, threshold_path))
         for future in as_completed(tasks):
             print(f"completed {future.result()}", flush=True)
     manifest = verify_shards(
@@ -175,9 +171,9 @@ def main() -> None:
         "protocol": "stage3-local-pilot-v1",
         "validation_level": "directional-pilot",
         "promotion_eligible": False,
-        "threshold_artifact_sha256": json.loads(
-            threshold_path.read_text(encoding="utf-8")
-        )["sha256"],
+        "threshold_artifact_sha256": json.loads(threshold_path.read_text(encoding="utf-8"))[
+            "sha256"
+        ],
         "validation_manifest_sha256": validation_manifest["sha256"],
         "robustness_manifest_sha256": robustness_manifest["sha256"],
         "validation_all_cells_passed": validation["all_cells_passed"],

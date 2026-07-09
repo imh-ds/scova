@@ -46,9 +46,7 @@ def generate_data(
     else:
         slopes = np.linspace(-0.8, 0.8, n_groups)
         scale = 3.0 if scenario == "weak_overlap" else 1.0
-        logits = scale * (
-            x[:, [0]] * slopes[None, :] + 0.35 * x[:, [1]] * slopes[::-1][None, :]
-        )
+        logits = scale * (x[:, [0]] * slopes[None, :] + 0.35 * x[:, [1]] * slopes[::-1][None, :])
         if scenario == "imbalanced":
             logits[:, -1] -= 2.0
         propensity = _softmax(logits)

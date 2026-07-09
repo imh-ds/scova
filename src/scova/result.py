@@ -148,9 +148,7 @@ class SCOVAResult:
         selected = tuple(self.contrasts[name] for name in names)
         estimates = np.array([contrast.estimate for contrast in selected])
         standard_errors = np.array([contrast.standard_error for contrast in selected])
-        influence = np.column_stack(
-            [contrast.influence_values for contrast in selected]
-        )
+        influence = np.column_stack([contrast.influence_values for contrast in selected])
         weights = np.vstack([contrast.weights for contrast in selected])
         seed = self.random_state if random_state is None else random_state
         diagnostic_warnings = self.diagnostics.get("warnings", [])
@@ -198,9 +196,7 @@ class SCOVAResult:
             "random_state": self.random_state,
             "verdict": self.verdict.value,
             "contrasts": contrast_metadata,
-            "inferences": {
-                key: inference.to_dict() for key, inference in self.inferences.items()
-            },
+            "inferences": {key: inference.to_dict() for key, inference in self.inferences.items()},
         }
         arrays: dict[str, np.ndarray] = {
             "metadata": np.array(json.dumps(metadata, sort_keys=True, allow_nan=False)),

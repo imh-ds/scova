@@ -57,10 +57,7 @@ class StabilizationData:
         tilt, _ = geometric_tilt_and_gradient(
             probability, lambdas, tuple(range(len(self.group_labels)))
         )
-        means = (
-            np.einsum("nl,nk->lk", tilt, self.outcome_regression)
-            / tilt.sum(axis=0)[:, None]
-        )
+        means = np.einsum("nl,nk->lk", tilt, self.outcome_regression) / tilt.sum(axis=0)[:, None]
         return means @ weights
 
     def nuisance_predictions(self, regime: NuisanceRegime) -> NuisancePredictions | None:
@@ -103,8 +100,7 @@ def generate_stabilization_data(spec: StabilizationSpec, *, seed: int) -> Stabil
         "pairwise_only": 2.5,
     }[spec.overlap]
     logits = overlap_scale * (
-        x[:, [0]] * slopes[None, :]
-        + 0.4 * x[:, [1]] * np.cos(np.arange(spec.n_groups))[None, :]
+        x[:, [0]] * slopes[None, :] + 0.4 * x[:, [1]] * np.cos(np.arange(spec.n_groups))[None, :]
     )
     if spec.overlap == "pairwise_only" and spec.n_groups >= 4:
         left = np.arange(spec.n_groups) < spec.n_groups // 2

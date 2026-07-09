@@ -17,7 +17,17 @@ from scova.experimental.gates import DiagnosticThresholds
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tier", required=True, choices=("pull_request", "calibration", "directional_validation", "directional_robustness", "publication_release"))
+    parser.add_argument(
+        "--tier",
+        required=True,
+        choices=(
+            "pull_request",
+            "calibration",
+            "directional_validation",
+            "directional_robustness",
+            "publication_release",
+        ),
+    )
     parser.add_argument("--thresholds", required=True, type=Path)
     parser.add_argument("--shard-index", required=True, type=int)
     parser.add_argument("--shard-count", required=True, type=int)

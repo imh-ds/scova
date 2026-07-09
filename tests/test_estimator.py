@@ -22,9 +22,11 @@ def test_oracle_aipw_matches_hand_calculation() -> None:
         simulation.propensity, simulation.outcome_regression, simulation.group_labels
     )
     result = SCOVA().fit(simulation.data, declaration(), nuisance_predictions=nuisance)
-    codes = simulation.data["group"].map(
-        {label: code for code, label in enumerate(result.group_labels)}
-    ).to_numpy()
+    codes = (
+        simulation.data["group"]
+        .map({label: code for code, label in enumerate(result.group_labels)})
+        .to_numpy()
+    )
     y = simulation.data["outcome"].to_numpy()
     observed = np.eye(len(result.group_labels))[codes]
     signal = simulation.outcome_regression + observed / simulation.propensity * (
@@ -78,9 +80,7 @@ def test_row_order_and_group_relabeling_invariance_with_oracles() -> None:
         simulation.outcome_regression[:, reorder],
         (5, 10, 20),
     )
-    relabeled = SCOVA().fit(
-        relabeled_data, declaration(), nuisance_predictions=relabeled_nuisance
-    )
+    relabeled = SCOVA().fit(relabeled_data, declaration(), nuisance_predictions=relabeled_nuisance)
     np.testing.assert_allclose(relabeled.group_means, original.group_means[reorder])
 
 

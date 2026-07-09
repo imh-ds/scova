@@ -7,6 +7,7 @@ from scova.experimental.gates import (
     DiagnosticThresholds,
     GateDecision,
     GateStatus,
+    evaluate_design_gates,
     evaluate_path_gates,
 )
 
@@ -63,17 +64,11 @@ def test_calibrated_pass_warning_and_refusal() -> None:
     artifact["sha256"] = sha256(json.dumps(artifact, sort_keys=True).encode()).hexdigest()
     thresholds = DiagnosticThresholds.from_calibration_artifact(artifact)
     assert evaluate_path_gates(**good_values(), thresholds=thresholds).status is GateStatus.PASS
-    warning = evaluate_path_gates(
-        **good_values(min_group_ess=40), thresholds=thresholds
-    )
+    warning = evaluate_path_gates(**good_values(min_group_ess=40), thresholds=thresholds)
     assert warning.status is GateStatus.WARNING
-    refusal = evaluate_path_gates(
-        **good_values(max_influence_share=0.8), thresholds=thresholds
-    )
+    refusal = evaluate_path_gates(**good_values(max_influence_share=0.8), thresholds=thresholds)
     assert refusal.status is GateStatus.REFUSE
-    numerical = evaluate_path_gates(
-        **good_values(numerical_valid=False), thresholds=thresholds
-    )
+    numerical = evaluate_path_gates(**good_values(numerical_valid=False), thresholds=thresholds)
     assert numerical.status is GateStatus.REFUSE
 
 
@@ -111,3 +106,21 @@ def test_user_thresholds_cannot_weaken_locked_defaults() -> None:
     weaker = DiagnosticThresholds(max_balance_warning=0.3)
     with pytest.raises(ValueError, match="cannot weaken"):
         weaker.assert_at_least_as_strict_as(baseline)
+
+
+def test_design_gates_cover_warning_and_provisional_paths() -> None:
+    values = good_values()
+    values.pop("max_influence_share")
+    calibrated = DiagnosticThresholds(
+        calibrated=True,
+        artifact_sha256="test",
+        min_group_ess_warning=300,
+        min_group_ess_refuse=10,
+    )
+    warning = evaluate_design_gates(**values, thresholds=calibrated)
+    assert warning.status is GateStatus.WARNING
+    provisional = evaluate_design_gates(**values, thresholds=DiagnosticThresholds())
+    assert provisional.status is GateStatus.WARNING
+    assert "provisional" in provisional.reasons[-1]
+    refused = evaluate_design_gates(**{**values, "numerical_valid": False}, thresholds=calibrated)
+    assert refused.status is GateStatus.REFUSE

@@ -45,9 +45,7 @@ def test_stabilization_dgps_and_targets(outcome, error) -> None:
     assert generated.data.shape == (240, 7)
     np.testing.assert_allclose(generated.propensity.sum(axis=1), 1)
     truth = generated.target_path(np.array([0.0, 1.0]), np.array([1, 0, 0, -1]))
-    pseudo = generated.target_path(
-        np.array([0.0, 1.0]), np.array([1, 0, 0, -1]), pseudo=True
-    )
+    pseudo = generated.target_path(np.array([0.0, 1.0]), np.array([1, 0, 0, -1]), pseudo=True)
     assert truth.shape == (2,)
     assert pseudo.shape == (2,)
 
@@ -106,9 +104,7 @@ def test_declared_ensemble_uses_inner_cv_convex_weights() -> None:
 
 def test_repeated_crossfit_stability() -> None:
     generated = generate_stabilization_data(base_spec(n=300), seed=7)
-    base = SCOVADeclaration(
-        "outcome", "group", tuple(f"x{i}" for i in range(1, 6)), n_splits=3
-    )
+    base = SCOVADeclaration("outcome", "group", tuple(f"x{i}" for i in range(1, 6)), n_splits=3)
     declaration = PathDeclaration(base, lambdas=(0.0, 0.5, 1.0))
     stability = assess_crossfit_stability(
         generated.data,

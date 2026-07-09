@@ -65,8 +65,5 @@ def test_optional_jax_gradient_agrees() -> None:
         return (3 * overlap) ** lam
 
     automatic = np.asarray(jax.grad(tilt_function)(row))
-    _, analytic = geometric_tilt_and_gradient(
-        np.asarray(row)[None, :], np.array([lam]), (0, 1, 2)
-    )
+    _, analytic = geometric_tilt_and_gradient(np.asarray(row)[None, :], np.array([lam]), (0, 1, 2))
     np.testing.assert_allclose(automatic, analytic[0, 0], rtol=2e-5, atol=2e-6)
-

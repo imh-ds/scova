@@ -169,9 +169,7 @@ def test_directional_summary_requires_locked_threshold_and_all_cells(tmp_path: P
 
 def test_directional_summary_serializes_degenerate_bias_as_null(tmp_path: Path) -> None:
     specification = _release_spec()
-    campaign = _campaign(
-        "directional_validation", specification["validation_seed_namespace"], 200
-    )
+    campaign = _campaign("directional_validation", specification["validation_seed_namespace"], 200)
     campaign["specification_sha256"] = sha256(
         Path("benchmarks/specs/stage3_release.json").read_bytes()
     ).hexdigest()
@@ -185,9 +183,7 @@ def test_directional_summary_serializes_degenerate_bias_as_null(tmp_path: Path) 
     assert result["all_cells_passed"] is False
     assert result["tier_passed"] is False
     assert result["cells"][0]["standardized_absolute_bias"] is None
-    assert result["cells"][0]["standardized_bias_status"] == (
-        "undefined-zero-error-variance"
-    )
+    assert result["cells"][0]["standardized_bias_status"] == ("undefined-zero-error-variance")
     json.dumps(result, allow_nan=False)
 
 

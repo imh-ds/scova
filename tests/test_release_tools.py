@@ -69,9 +69,7 @@ def _write_hashed(
     allow_nan: bool = True,
 ) -> dict:
     payload = dict(values)
-    encoded = json.dumps(
-        payload, indent=indent, sort_keys=True, allow_nan=allow_nan
-    ).encode()
+    encoded = json.dumps(payload, indent=indent, sort_keys=True, allow_nan=allow_nan).encode()
     payload[field] = sha256(encoded).hexdigest()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload), encoding="utf-8")
@@ -98,9 +96,7 @@ def test_artifact_backed_promotion_can_pass(tmp_path: Path) -> None:
     )
     candidate_path = tmp_path / manifest["protocol"]["threshold_candidates"]
     candidate_path.write_text(json.dumps({"frozen": True}), encoding="utf-8")
-    artifact_paths = {
-        name: tmp_path / value for name, value in manifest["artifacts"].items()
-    }
+    artifact_paths = {name: tmp_path / value for name, value in manifest["artifacts"].items()}
     threshold = _write_hashed(
         artifact_paths["thresholds"],
         {"calibrated": True, "validation_level": "directional"},
@@ -161,9 +157,7 @@ def test_artifact_backed_promotion_can_pass(tmp_path: Path) -> None:
         },
         "sha256",
     )
-    _write_hashed(
-        artifact_paths["build"], {"passed": True}, "sha256"
-    )
+    _write_hashed(artifact_paths["build"], {"passed": True}, "sha256")
     artifact_paths["coverage"].parent.mkdir(parents=True, exist_ok=True)
     artifact_paths["coverage"].write_text(json.dumps(_coverage_report()), encoding="utf-8")
     _write_hashed(

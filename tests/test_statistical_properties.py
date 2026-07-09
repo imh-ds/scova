@@ -5,9 +5,7 @@ from scova.simulate import generate_data
 
 
 def _declaration(seed: int = 31) -> SCOVADeclaration:
-    return SCOVADeclaration(
-        "outcome", "group", ("x1", "x2", "x3"), n_splits=3, random_state=seed
-    )
+    return SCOVADeclaration("outcome", "group", ("x1", "x2", "x3"), n_splits=3, random_state=seed)
 
 
 def test_oracle_double_robustness_cases() -> None:
@@ -23,9 +21,7 @@ def test_oracle_double_robustness_cases() -> None:
     errors: dict[str, float] = {}
     for name, (propensity, outcome_regression) in cases.items():
         nuisance = NuisancePredictions(propensity, outcome_regression, simulation.group_labels)
-        result = SCOVA().fit(
-            simulation.data, _declaration(), nuisance_predictions=nuisance
-        )
+        result = SCOVA().fit(simulation.data, _declaration(), nuisance_predictions=nuisance)
         errors[name] = float(np.max(np.abs(result.group_means - simulation.true_group_means)))
     assert errors["correct-both"] < 0.12
     assert errors["correct-outcome-only"] < 0.12
@@ -44,9 +40,7 @@ def test_seeded_oracle_coverage_smoke() -> None:
         nuisance = NuisancePredictions(
             simulation.propensity, simulation.outcome_regression, simulation.group_labels
         )
-        result = SCOVA().fit(
-            simulation.data, _declaration(seed), nuisance_predictions=nuisance
-        )
+        result = SCOVA().fit(simulation.data, _declaration(seed), nuisance_predictions=nuisance)
         interval = result.contrasts["g0 - g1"].confidence_interval
         truth = float(simulation.true_group_means[0] - simulation.true_group_means[1])
         covered += int(interval[0] <= truth <= interval[1])

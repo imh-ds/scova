@@ -46,4 +46,3 @@ def test_zero_rank_and_missing_contrast() -> None:
     values["group_covariance"] = np.zeros((2, 2))
     with pytest.raises(ValueError, match="zero numerical rank"):
         run_simultaneous_inference(**values)
-

@@ -95,8 +95,7 @@ def run_benchmark(repetitions: int, n_bootstrap: int, output: Path) -> None:
                 upper = inference.upper_bands[0]
                 corrected_coverage += bool(np.all((lower <= truth) & (truth <= upper)))
                 naive_influence = (
-                    result.naive_influence_values[:, :, 0]
-                    - result.naive_influence_values[:, :, -1]
+                    result.naive_influence_values[:, :, 0] - result.naive_influence_values[:, :, -1]
                 )
                 naive_lower, naive_upper = _naive_uniform_band(
                     naive_estimate,
@@ -105,9 +104,7 @@ def run_benchmark(repetitions: int, n_bootstrap: int, output: Path) -> None:
                     n_bootstrap=n_bootstrap,
                     seed=repetition,
                 )
-                naive_coverage += bool(
-                    np.all((naive_lower <= truth) & (truth <= naive_upper))
-                )
+                naive_coverage += bool(np.all((naive_lower <= truth) & (truth <= naive_upper)))
                 critical = norm.ppf(0.975)
                 pointwise_path_coverage += bool(
                     np.all(
@@ -126,17 +123,13 @@ def run_benchmark(repetitions: int, n_bootstrap: int, output: Path) -> None:
                     "inference_refusal_rate": inference_refused / repetitions,
                     "refusal_reasons": refusal_reasons,
                     "corrected_uniform_coverage": (
-                        corrected_coverage / inference_accepted
-                        if inference_accepted
-                        else None
+                        corrected_coverage / inference_accepted if inference_accepted else None
                     ),
                     "naive_uniform_coverage": (
                         naive_coverage / inference_accepted if inference_accepted else None
                     ),
                     "all_pointwise_intervals_cover": (
-                        pointwise_path_coverage / inference_accepted
-                        if inference_accepted
-                        else None
+                        pointwise_path_coverage / inference_accepted if inference_accepted else None
                     ),
                     "corrected_path_rmse": np.sqrt(corrected_error / repetitions),
                     "naive_path_rmse": np.sqrt(naive_error / repetitions),
@@ -156,9 +149,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repetitions", type=int, default=500)
     parser.add_argument("--bootstrap", type=int, default=1999)
-    parser.add_argument(
-        "--output", type=Path, default=Path("benchmark_artifacts/stage3_path.json")
-    )
+    parser.add_argument("--output", type=Path, default=Path("benchmark_artifacts/stage3_path.json"))
     arguments = parser.parse_args()
     run_benchmark(arguments.repetitions, arguments.bootstrap, arguments.output)
 

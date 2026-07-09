@@ -21,7 +21,7 @@ def run(cases: int, seed: int, output: Path) -> None:
     maximum_scaled_error = 0.0
     for case in range(cases):
         dtype = np.float64 if case % 2 == 0 else np.float32
-        rtol, atol = ((1e-5, 1e-8) if dtype is np.float64 else (5e-4, 1e-6))
+        rtol, atol = (1e-5, 1e-8) if dtype is np.float64 else (5e-4, 1e-6)
         n_groups = (2, 4, 8)[case % 3]
         row = rng.dirichlet(np.full(n_groups, 0.7)).astype(dtype)
         if case % 23 == 0:

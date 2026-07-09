@@ -72,8 +72,7 @@ def _cell_audit(records: list[dict], profile: dict, criteria: dict) -> dict:
     null_accepted = [
         record
         for record in records
-        if not record["null"]["refused"]
-        and _accepted(record["null"]["gate_metrics"], profile)
+        if not record["null"]["refused"] and _accepted(record["null"]["gate_metrics"], profile)
     ]
     total = len(records)
     supported = (
@@ -92,9 +91,7 @@ def _cell_audit(records: list[dict], profile: dict, criteria: dict) -> dict:
     )
     false_signs = sum(row["null"]["false_sign_certificate"] for row in null_accepted)
     fwer_upper = _upper(false_signs, len(null_accepted)) if null_accepted else 1.0
-    errors = np.asarray(
-        [row["alternative"]["scientific_target_mean_error"] for row in accepted]
-    )
+    errors = np.asarray([row["alternative"]["scientific_target_mean_error"] for row in accepted])
     standardized_bias = (
         abs(float(errors.mean())) / float(errors.std(ddof=1))
         if len(errors) > 1 and errors.std(ddof=1) > 0
@@ -176,9 +173,7 @@ def calibrate(
             cell["spec"] = json.loads(key)
             cells.append(cell)
         supported = [cell for cell in cells if cell["supported"]]
-        supported_keys = {
-            json.dumps(cell["spec"], sort_keys=True) for cell in supported
-        }
+        supported_keys = {json.dumps(cell["spec"], sort_keys=True) for cell in supported}
         pooled_records = [
             record
             for key in supported_keys
@@ -190,25 +185,17 @@ def calibrate(
             record
             for key in supported_keys
             for record in by_cell[key]
-            if not record["null"]["refused"]
-            and _accepted(record["null"]["gate_metrics"], profile)
+            if not record["null"]["refused"] and _accepted(record["null"]["gate_metrics"], profile)
         ]
         pooled_coverage = (
-            float(
-                np.mean(
-                    [record["alternative"]["uniform_coverage"] for record in pooled_records]
-                )
-            )
+            float(np.mean([record["alternative"]["uniform_coverage"] for record in pooled_records]))
             if pooled_records
             else 0.0
         )
         pooled_naive_coverage = (
             float(
                 np.mean(
-                    [
-                        record["alternative"]["naive_uniform_coverage"]
-                        for record in pooled_records
-                    ]
+                    [record["alternative"]["naive_uniform_coverage"] for record in pooled_records]
                 )
             )
             if pooled_records
@@ -216,9 +203,7 @@ def calibrate(
         )
         pooled_stability_coverage = (
             float(
-                np.mean(
-                    [record["alternative"]["stability_covered"] for record in pooled_records]
-                )
+                np.mean([record["alternative"]["stability_covered"] for record in pooled_records])
             )
             if pooled_records
             else 0.0
@@ -227,15 +212,10 @@ def calibrate(
             record["null"]["false_sign_certificate"] for record in pooled_null_records
         )
         pooled_fwer_upper = (
-            _upper(pooled_false_signs, len(pooled_null_records))
-            if pooled_null_records
-            else 1.0
+            _upper(pooled_false_signs, len(pooled_null_records)) if pooled_null_records else 1.0
         )
         pooled_errors = np.asarray(
-            [
-                record["alternative"]["scientific_target_mean_error"]
-                for record in pooled_records
-            ]
+            [record["alternative"]["scientific_target_mean_error"] for record in pooled_records]
         )
         pooled_standardized_bias = (
             abs(float(pooled_errors.mean())) / float(pooled_errors.std(ddof=1))

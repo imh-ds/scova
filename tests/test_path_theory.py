@@ -10,12 +10,8 @@ from scova.experimental.validation import (
 
 
 def population_setup():
-    propensity = np.array(
-        [[0.2, 0.3, 0.5], [0.5, 0.2, 0.3], [0.25, 0.6, 0.15], [0.4, 0.35, 0.25]]
-    )
-    outcomes = np.array(
-        [[-1.0, 0.2, 1.4], [-0.3, 0.6, 1.1], [0.4, -0.2, 1.8], [0.8, 0.3, 0.9]]
-    )
+    propensity = np.array([[0.2, 0.3, 0.5], [0.5, 0.2, 0.3], [0.25, 0.6, 0.15], [0.4, 0.35, 0.25]])
+    outcomes = np.array([[-1.0, 0.2, 1.4], [-0.3, 0.6, 1.1], [0.4, -0.2, 1.8], [0.8, 0.3, 0.9]])
     direction = np.array(
         [[0.02, -0.01, -0.01], [-0.01, 0.025, -0.015], [0.015, -0.02, 0.005], [-0.02, 0.01, 0.01]]
     )
@@ -24,12 +20,8 @@ def population_setup():
 
 def test_assignment_submodel_eif_identity() -> None:
     propensity, outcomes, direction = population_setup()
-    analytic = target_directional_derivative(
-        propensity, outcomes, direction, 1, 0.7, (0, 1, 2)
-    )
-    inner_product = assignment_eif_inner_product(
-        propensity, outcomes, direction, 1, 0.7, (0, 1, 2)
-    )
+    analytic = target_directional_derivative(propensity, outcomes, direction, 1, 0.7, (0, 1, 2))
+    inner_product = assignment_eif_inner_product(propensity, outcomes, direction, 1, 0.7, (0, 1, 2))
     assert inner_product == pytest.approx(analytic, rel=1e-12, abs=1e-12)
     step = 1e-6
     finite_difference = (
@@ -65,4 +57,3 @@ def test_correction_removes_first_order_nuisance_error() -> None:
     naive_ratio = errors["naive"][-1] / errors["naive"][-2]
     assert corrected_ratio < 0.35
     assert naive_ratio > 0.40
-

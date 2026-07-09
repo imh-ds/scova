@@ -210,9 +210,7 @@ def assess_crossfit_stability(
         base = replace(declaration.base, random_state=seed)
         candidate = replace(declaration, base=base, random_state=seed)
         result = fit_path(data, candidate, estimator=profile.estimator())
-        paths.append(
-            np.concatenate([contrast.estimates for contrast in result.contrasts.values()])
-        )
+        paths.append(np.concatenate([contrast.estimates for contrast in result.contrasts.values()]))
         if errors is None:
             errors = np.concatenate(
                 [contrast.standard_errors for contrast in result.contrasts.values()]

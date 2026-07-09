@@ -42,10 +42,10 @@ def locked_thresholds() -> DiagnosticThresholds:
     return DiagnosticThresholds.from_calibration_artifact(artifact)
 
 
-def diagnostic_input(*, weak_middle: bool = False) -> PairwiseDiagnosticInput:
+def diagnostic_input(*, weak_all: bool = False) -> PairwiseDiagnosticInput:
     ess = [100.0, 100.0, 100.0]
-    if weak_middle:
-        ess[1] = 20.0
+    if weak_all:
+        ess = [20.0, 20.0, 20.0]
     return PairwiseDiagnosticInput(
         group_labels=("a", "b", "c"),
         diagnostics={
@@ -80,7 +80,7 @@ def test_pairwise_graph_retains_grid_evidence_and_refusals() -> None:
         ("c", "a", "b"),
         {
             ("a", "b"): diagnostic_input(),
-            ("a", "c"): diagnostic_input(weak_middle=True),
+            ("a", "c"): diagnostic_input(weak_all=True),
         },
         thresholds=locked_thresholds(),
     )
@@ -115,12 +115,14 @@ def test_hyperedges_are_jointly_supported_and_not_implied_by_a_clique() -> None:
         ("a", "c"): diagnostic_input(),
         ("b", "c"): diagnostic_input(),
     }
-    refused = diagnostic_input(weak_middle=True)
+    refused = diagnostic_input(weak_all=True)
     graph = build_comparability_graph(
         declaration,
         ("c", "a", "b"),
         pairs,
-        subset_diagnostics={("a", "b", "c"): SubsetDiagnosticInput(refused.group_labels, refused.diagnostics)},
+        subset_diagnostics={
+            ("a", "b", "c"): SubsetDiagnosticInput(refused.group_labels, refused.diagnostics)
+        },
         thresholds=locked_thresholds(),
     )
     assert graph.maximal_pairwise_cliques == (("a", "b", "c"),)

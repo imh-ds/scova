@@ -2,7 +2,14 @@
 
 from ._version import __version__
 from .declaration import ContrastSpec, DesignDeclaration, SCOVADeclaration
-from .design import DesignLock, OutcomeFreeDesignData, SCOVADesign, SCOVADesignResult, SCOVAGraphResult
+from .design import (
+    DesignLock,
+    OutcomeFreeDesignData,
+    SCOVADesign,
+    SCOVADesignResult,
+    SCOVAGraphResult,
+)
+from .estimator import SCOVA, NuisancePredictions
 from .graph import (
     ComparabilityGraphResult,
     PairwiseDiagnosticInput,
@@ -12,7 +19,6 @@ from .graph import (
     build_comparability_graph,
     build_pairwise_comparability_graph,
 )
-from .estimator import SCOVA, NuisancePredictions
 from .inference import (
     GlobalTestResult,
     InferenceStatus,

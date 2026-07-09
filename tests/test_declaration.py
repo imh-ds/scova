@@ -34,4 +34,3 @@ def test_invalid_declarations(kwargs: dict[str, object], message: str) -> None:
     values.update(kwargs)
     with pytest.raises(ValueError, match=message):
         SCOVADeclaration(**values)  # type: ignore[arg-type]
-

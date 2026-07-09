@@ -26,9 +26,7 @@ def harmonic_overlap(propensity: np.ndarray, active_codes: tuple[int, ...]) -> n
     active = validate_active_groups(probability.shape[1], active_codes)
     log_probability = np.log(probability[:, active])
     maximum = np.max(-log_probability, axis=1, keepdims=True)
-    log_inverse_sum = maximum[:, 0] + np.log(
-        np.exp(-log_probability - maximum).sum(axis=1)
-    )
+    log_inverse_sum = maximum[:, 0] + np.log(np.exp(-log_probability - maximum).sum(axis=1))
     overlap = np.exp(-log_inverse_sum)
     if not np.all(np.isfinite(overlap)) or np.any(overlap <= 0):
         raise ValueError("overlap tilt underflowed or became non-finite")
@@ -60,10 +58,7 @@ def geometric_tilt_and_gradient(
     gradient = np.zeros((len(probability), len(grid), probability.shape[1]))
     for code in active:
         gradient[:, :, code] = (
-            grid[None, :]
-            * tilt
-            * overlap[:, None]
-            / np.square(probability[:, code, None])
+            grid[None, :] * tilt * overlap[:, None] / np.square(probability[:, code, None])
         )
     if not np.all(np.isfinite(tilt)) or not np.all(np.isfinite(gradient)):
         raise ValueError("tilt or gradient became non-finite")
@@ -89,12 +84,7 @@ def finite_difference_gradient(
         minus[code] -= step
         if minus[code] <= 0:
             raise ValueError("finite-difference step crosses the simplex boundary")
-        plus_tilt, _ = geometric_tilt_and_gradient(
-            plus[None, :], lambdas, active_codes
-        )
-        minus_tilt, _ = geometric_tilt_and_gradient(
-            minus[None, :], lambdas, active_codes
-        )
+        plus_tilt, _ = geometric_tilt_and_gradient(plus[None, :], lambdas, active_codes)
+        minus_tilt, _ = geometric_tilt_and_gradient(minus[None, :], lambdas, active_codes)
         result[:, code] = (plus_tilt[0] - minus_tilt[0]) / (2 * step)
     return result
-

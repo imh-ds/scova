@@ -26,9 +26,7 @@ def test_global_null_fwer_smoke_across_group_counts() -> None:
             weight_matrix = np.vstack(weights)
             estimates = weight_matrix @ means
             contrast_influence = influence @ weight_matrix.T
-            standard_errors = np.sqrt(
-                np.diag(weight_matrix @ covariance @ weight_matrix.T)
-            )
+            standard_errors = np.sqrt(np.diag(weight_matrix @ covariance @ weight_matrix.T))
             inference = run_simultaneous_inference(
                 family=tuple(names),
                 estimates=estimates,

@@ -106,9 +106,7 @@ def robustness_cells() -> list[StabilizationSpec]:
     ]
     for index, (k, overlap, outcome) in enumerate(bases):
         # Each stress cell changes one factor from the balanced/normal flexible baseline.
-        cells.append(
-            StabilizationSpec(k, 1000, 20, overlap, outcome, "rare", "normal", "flexible")
-        )
+        cells.append(StabilizationSpec(k, 1000, 20, overlap, outcome, "rare", "normal", "flexible"))
         cells.append(
             StabilizationSpec(
                 k,
@@ -203,9 +201,7 @@ def _fit_one(
         "scientific_target_rmse": float(np.sqrt(np.mean(np.square(contrast.estimates - truth)))),
         "scientific_target_mean_error": float(np.mean(contrast.estimates - truth)),
         "mean_standard_error": float(np.mean(contrast.standard_errors)),
-        "pseudo_target_rmse": float(
-            np.sqrt(np.mean(np.square(contrast.estimates - pseudo_truth)))
-        ),
+        "pseudo_target_rmse": float(np.sqrt(np.mean(np.square(contrast.estimates - pseudo_truth)))),
         "scientific_pseudo_target_max_drift": float(np.max(np.abs(truth - pseudo_truth))),
         "refused": False,
         "uniform_coverage": None,
@@ -214,26 +210,16 @@ def _fit_one(
         "naive_uniform_coverage": None,
         "naive_target_rmse": None,
     }
-    naive_estimate = (
-        result.naive_group_means[:, 0] - result.naive_group_means[:, spec.n_groups - 1]
-    )
+    naive_estimate = result.naive_group_means[:, 0] - result.naive_group_means[:, spec.n_groups - 1]
     naive_influence = (
         result.naive_influence_values[:, :, 0]
         - result.naive_influence_values[:, :, spec.n_groups - 1]
     )
-    naive_lower, naive_upper = _uniform_band(
-        naive_estimate, naive_influence, bootstrap, seed
-    )
-    record["naive_uniform_coverage"] = bool(
-        np.all((naive_lower <= truth) & (truth <= naive_upper))
-    )
-    record["naive_target_rmse"] = float(
-        np.sqrt(np.mean(np.square(naive_estimate - truth)))
-    )
+    naive_lower, naive_upper = _uniform_band(naive_estimate, naive_influence, bootstrap, seed)
+    record["naive_uniform_coverage"] = bool(np.all((naive_lower <= truth) & (truth <= naive_upper)))
+    record["naive_target_rmse"] = float(np.sqrt(np.mean(np.square(naive_estimate - truth))))
     try:
-        inference = result.infer(
-            (contrast_name,), n_bootstrap=bootstrap, random_state=seed
-        )
+        inference = result.infer((contrast_name,), n_bootstrap=bootstrap, random_state=seed)
     except InferenceRefusedError:
         record["refused"] = True
         return record
@@ -323,12 +309,16 @@ def run_campaign(
         thresholds = _ungated_calibration_thresholds()
     else:
         thresholds = DiagnosticThresholds()
-    if tier in (
-        "directional_validation",
-        "directional_robustness",
-        "local_validation_pilot",
-        "local_robustness_pilot",
-    ) and not thresholds.calibrated:
+    if (
+        tier
+        in (
+            "directional_validation",
+            "directional_robustness",
+            "local_validation_pilot",
+            "local_robustness_pilot",
+        )
+        and not thresholds.calibrated
+    ):
         raise ValueError("directional validation requires a locked calibrated threshold artifact")
     repetitions = repetitions_override or tier_spec["repetitions"]
     bootstrap = bootstrap_override or tier_spec["bootstrap"]
@@ -374,8 +364,7 @@ def run_campaign(
             )
             if (repetition + 1) % max(1, min(100, repetitions)) == 0:
                 print(
-                    f"stage3 campaign cell={cell_id} completed "
-                    f"{repetition + 1}/{repetitions}",
+                    f"stage3 campaign cell={cell_id} completed {repetition + 1}/{repetitions}",
                     flush=True,
                 )
     payload = {

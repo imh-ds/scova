@@ -30,7 +30,9 @@ def main() -> None:
         "protocol": protocols.pop(),
         "tier": tiers.pop(),
         "shards": rows,
-        "status": "incomplete" if any(row["status"] != "completed" for row in rows) else "completed",
+        "status": (
+            "incomplete" if any(row["status"] != "completed" for row in rows) else "completed"
+        ),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(summary, sort_keys=True, indent=2), encoding="utf-8")

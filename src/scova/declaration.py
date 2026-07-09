@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from hashlib import sha256
-from typing import Any, Literal, Mapping
+from typing import Any, Literal
 
 JsonLabel = str | int | float | bool
 Interpretation = Literal["descriptive", "causal"]
@@ -212,15 +213,18 @@ class DesignDeclaration:
             n_splits=int(values.get("n_splits", 5)),
             random_state=int(values.get("random_state", 0)),
             contrasts=tuple(
-                ContrastSpec(str(item["name"]), tuple((pair[0], pair[1]) for pair in item["weights"]))
+                ContrastSpec(
+                    str(item["name"]),
+                    tuple((pair[0], pair[1]) for pair in item["weights"]),
+                )
                 for item in values.get("contrasts", [])
             ),
             lambdas=tuple(values.get("lambdas", _default_path_grid())),
             target=values.get("target", "kway"),
             active_groups=tuple(values.get("active_groups", [])),
             candidate_subsets=tuple(tuple(item) for item in values.get("candidate_subsets", [])),
-            confidence_level=float(values.get("confidence_level", .95)),
-            design_fraction=float(values.get("design_fraction", .5)),
+            confidence_level=float(values.get("confidence_level", 0.95)),
+            design_fraction=float(values.get("design_fraction", 0.5)),
             gate_policy=values.get("gate_policy", {}),
             learner_profile=str(values.get("learner_profile", "default")),
         )

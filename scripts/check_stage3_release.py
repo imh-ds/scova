@@ -56,17 +56,14 @@ def blocking_reasons(manifest: dict, root: Path = Path(".")) -> list[str]:
     specification = _read_json(specification_path, reasons, "protocol specification")
     candidates = _read_json(candidate_path, reasons, "threshold candidates")
     if specification is not None and (
-        not specification.get("frozen")
-        or specification.get("validation_level") != "directional"
+        not specification.get("frozen") or specification.get("validation_level") != "directional"
     ):
         reasons.append("protocol specification is not frozen directional validation")
     if candidates is not None and not candidates.get("frozen"):
         reasons.append("threshold candidate specification is not frozen")
 
     paths = {name: root / path for name, path in manifest["artifacts"].items()}
-    artifacts = {
-        name: _read_json(path, reasons, name) for name, path in paths.items()
-    }
+    artifacts = {name: _read_json(path, reasons, name) for name, path in paths.items()}
     thresholds = artifacts["thresholds"]
     packaged_thresholds = artifacts["packaged_thresholds"]
     threshold_hash = None
@@ -146,9 +143,8 @@ def blocking_reasons(manifest: dict, root: Path = Path(".")) -> list[str]:
     if memory is not None:
         if not _verify_embedded_hash(memory, "sha256"):
             reasons.append("memory benchmark checksum is invalid")
-        if (
-            not memory.get("peak_below_unbatched_multiplier_cube")
-            or memory.get("nuisance_refit_possible_from_result")
+        if not memory.get("peak_below_unbatched_multiplier_cube") or memory.get(
+            "nuisance_refit_possible_from_result"
         ):
             reasons.append("memory benchmark did not establish bounded no-refit inference")
     build = artifacts["build"]

@@ -45,9 +45,7 @@ def test_estimator_validation_failure_branches() -> None:
     with pytest.raises(ValueError, match="sum to one"):
         _validate_probabilities(np.array([[0.2, 0.2]]), 1, 2)
     with pytest.raises(ValueError, match="shape"):
-        _assemble_aipw(
-            np.ones(2), np.array([0, 1]), np.full((2, 2), 0.5), np.ones((2, 1))
-        )
+        _assemble_aipw(np.ones(2), np.array([0, 1]), np.full((2, 2), 0.5), np.ones((2, 1)))
     with pytest.raises(ValueError, match="finite"):
         _assemble_aipw(
             np.ones(2),
@@ -112,9 +110,7 @@ def test_path_fit_and_inference_failure_branches(tmp_path) -> None:
     )
     with pytest.raises(ValueError, match="unknown active"):
         fit_path(simulation.data, unknown_group, nuisance_predictions=nuisance)
-    unknown_contrast = PathDeclaration(
-        base, lambdas=(0.0, 1.0), contrast_names=("missing",)
-    )
+    unknown_contrast = PathDeclaration(base, lambdas=(0.0, 1.0), contrast_names=("missing",))
     with pytest.raises(ValueError, match="unknown contrast"):
         fit_path(simulation.data, unknown_contrast, nuisance_predictions=nuisance)
     declaration = PathDeclaration(base, lambdas=(0.0, 0.5, 1.0))
