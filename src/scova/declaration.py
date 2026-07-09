@@ -203,6 +203,28 @@ class DesignDeclaration:
         ).encode("utf-8")
         return sha256(encoded).hexdigest()
 
+    @classmethod
+    def from_dict(cls, values: Mapping[str, Any]) -> DesignDeclaration:
+        return cls(
+            group=str(values["group"]),
+            covariates=tuple(values["covariates"]),
+            interpretation=values.get("interpretation", "descriptive"),
+            n_splits=int(values.get("n_splits", 5)),
+            random_state=int(values.get("random_state", 0)),
+            contrasts=tuple(
+                ContrastSpec(str(item["name"]), tuple((pair[0], pair[1]) for pair in item["weights"]))
+                for item in values.get("contrasts", [])
+            ),
+            lambdas=tuple(values.get("lambdas", _default_path_grid())),
+            target=values.get("target", "kway"),
+            active_groups=tuple(values.get("active_groups", [])),
+            candidate_subsets=tuple(tuple(item) for item in values.get("candidate_subsets", [])),
+            confidence_level=float(values.get("confidence_level", .95)),
+            design_fraction=float(values.get("design_fraction", .5)),
+            gate_policy=values.get("gate_policy", {}),
+            learner_profile=str(values.get("learner_profile", "default")),
+        )
+
 
 def _canonical_mapping(values: Mapping[str, Any]) -> dict[str, Any]:
     """Return a JSON-only copy so declaration hashing is deterministic."""

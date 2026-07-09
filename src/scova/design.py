@@ -21,9 +21,12 @@ from .experimental.tilts import geometric_tilt_and_gradient
 from .graph import (
     ComparabilityGraphResult,
     PairwiseDiagnosticInput,
+    PairwiseEdge,
+    SubsetHyperedge,
     SubsetDiagnosticInput,
     build_comparability_graph,
 )
+from .experimental.gates import GateDecision
 from .inference import SimultaneousInferenceResult, run_direct_influence_inference
 
 SplitAssignment = Literal["design", "estimation"]
@@ -354,10 +357,48 @@ class SCOVADesignResult:
         }
 
     def save(self, path: str | Path) -> None:
-        """Persist a design artifact without serializing raw covariates or outcomes."""
+        """Persist a replayable design artifact without raw covariates or outcomes."""
+        payload = {
+            "schema_version": 1,
+            "declaration": self.declaration.to_dict(),
+            "declaration_hash": self.declaration.declaration_hash,
+            "lock": self.lock.to_dict(),
+            "graph": graph_to_dict(self.graph),
+            "selected_family": [
+                {"name": name, "groups": list(groups), "lambda": lam}
+                for name, groups, lam in self.selected_family
+            ],
+            "diagnostics": self.diagnostics,
+        }
         Path(path).write_text(
-            json.dumps(self.design_report(), sort_keys=True, indent=2, allow_nan=False),
+            json.dumps(payload, sort_keys=True, indent=2, allow_nan=False),
             encoding="utf-8",
+        )
+
+    @classmethod
+    def load(
+        cls, path: str | Path, *, data: OutcomeFreeDesignData, declaration: DesignDeclaration | None = None
+    ) -> SCOVADesignResult:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        if payload.get("schema_version") != 1:
+            raise ValueError("unsupported Stage 4 design artifact schema")
+        stored_declaration = DesignDeclaration.from_dict(payload["declaration"])
+        active_declaration = stored_declaration if declaration is None else declaration
+        if active_declaration.declaration_hash != payload["declaration_hash"]:
+            raise ValueError("supplied declaration does not match the design artifact")
+        lock = DesignLock.from_dict(payload["lock"])
+        lock.verify(active_declaration, data)
+        selected = tuple(
+            (str(item["name"]), tuple(item["groups"]), float(item["lambda"]))
+            for item in payload["selected_family"]
+        )
+        return cls(
+            active_declaration,
+            data,
+            lock,
+            graph_from_dict(payload["graph"]),
+            selected,
+            dict(payload["diagnostics"]),
         )
 
 
@@ -385,6 +426,18 @@ class SCOVAGraphResult:
         Path(path).write_text(
             json.dumps(self.report(), sort_keys=True, indent=2, allow_nan=False),
             encoding="utf-8",
+        )
+
+    @classmethod
+    def load(cls, path: str | Path) -> SCOVAGraphResult:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        inference = payload.get("inference")
+        return cls(
+            design_lock=str(payload["design_lock"]),
+            interpretation=str(payload["interpretation"]),
+            reliability=str(payload["reliability"]),
+            inference=None if inference is None else SimultaneousInferenceResult.from_dict(inference),
+            refused=tuple(payload.get("refused", [])),
         )
 
 
@@ -441,6 +494,28 @@ class SCOVADesign:
         for edge in graph.supported_maximal_hyperedges:
             for lam in edge.supported_lambdas:
                 selected.append((f"omnibus[{','.join(map(str, edge.groups))}] @ λ={lam:.2f}", edge.groups, lam))
+        # Rebuild from the locked graph using either declared exact-support
+        # contrasts or the default pairwise comparison.  The earlier entries
+        # are intentionally discarded so display labels cannot affect selection.
+        selected = []
+        for edge in graph.edges:
+            names = [
+                contrast.name
+                for contrast in declaration.contrasts
+                if {label for label, weight in contrast.weights if abs(weight) > 1e-15}
+                == set(edge.groups)
+            ] or [f"{edge.groups[0]} - {edge.groups[1]}"]
+            for lam in edge.supported_lambdas:
+                selected.extend((f"{name} @ lambda={lam:.2f}", edge.groups, lam) for name in names)
+        for edge in graph.supported_maximal_hyperedges:
+            names = [
+                contrast.name
+                for contrast in declaration.contrasts
+                if {label for label, weight in contrast.weights if abs(weight) > 1e-15}
+                == set(edge.groups)
+            ]
+            for lam in edge.supported_lambdas:
+                selected.extend((f"{name} @ lambda={lam:.2f}", edge.groups, lam) for name in names)
         metadata = {"graph": graph_to_dict(graph), "selected_family": selected}
         lock = DesignLock.create(declaration, data, assignments, design_metadata=metadata)
         return SCOVADesignResult(declaration, data, lock, graph, tuple(selected), {"design_rows": int(design_mask.sum())})
@@ -473,25 +548,29 @@ class SCOVADesign:
         base = SCOVADeclaration(
             "__scova_outcome__", design.declaration.group, design.declaration.covariates,
             interpretation=design.declaration.interpretation, n_splits=design.declaration.n_splits,
-            random_state=design.declaration.random_state,
+            random_state=design.declaration.random_state, contrasts=design.declaration.contrasts,
         )
         flattened: list[tuple[str, float, float, np.ndarray]] = []
+        grouped: dict[tuple[JsonLabel, ...], list[tuple[str, float]]] = {}
         for name, subset, lam in design.selected_family:
+            grouped.setdefault(subset, []).append((name, lam))
+        for subset, requests in grouped.items():
             target = "pairwise" if len(subset) == 2 else "subset"
+            lambdas = tuple(sorted({0.0, 1.0, *(lam for _, lam in requests)}))
             path = fit_path(
                 frame,
-                PathDeclaration(base, lambdas=(0.0, lam, 1.0) if lam not in (0.0, 1.0) else (0.0, 1.0), target=target, active_groups=subset),
+                PathDeclaration(base, lambdas=lambdas, target=target, active_groups=subset),
                 estimator=SCOVA(propensity_model=self.propensity_model, outcome_model=self.outcome_model),
             )
-            if len(subset) == 2:
-                contrast = next(iter(path.contrasts.values()))
+            for name, lam in requests:
+                contrast_name = name.rsplit(" @ lambda=", maxsplit=1)[0]
+                if contrast_name not in path.contrasts:
+                    raise ValueError(
+                        f"locked contrast {contrast_name!r} is incompatible with subset {subset}"
+                    )
+                contrast = path.contrasts[contrast_name]
                 index = int(np.where(np.isclose(path.lambdas, lam))[0][0])
                 flattened.append((name, float(contrast.estimates[index]), float(contrast.standard_errors[index]), contrast.influence_values[:, index]))
-            else:
-                # The maximal-hyperedge omnibus statistic is represented by its pairwise basis.
-                for contrast in path.contrasts.values():
-                    index = int(np.where(np.isclose(path.lambdas, lam))[0][0])
-                    flattened.append((f"{name}: {contrast.name}", float(contrast.estimates[index]), float(contrast.standard_errors[index]), contrast.influence_values[:, index]))
         if not flattened:
             return SCOVAGraphResult(design.lock.lock_hash, design.declaration.interpretation, "refused", None, ("no graph-supported contrasts",))
         family = tuple(item[0] for item in flattened)
@@ -515,4 +594,43 @@ def graph_to_dict(graph: ComparabilityGraphResult) -> dict[str, Any]:
         "edges": [{"groups": list(edge.groups), "supported_lambdas": list(edge.supported_lambdas), "decisions": [decision.to_dict() for decision in edge.decisions], "refusal_reasons": list(edge.refusal_reasons)} for edge in graph.edges],
         "hyperedges": [{"groups": list(edge.groups), "supported_lambdas": list(edge.supported_lambdas), "decisions": [decision.to_dict() for decision in edge.decisions], "refusal_reasons": list(edge.refusal_reasons)} for edge in graph.hyperedges],
         "maximal_pairwise_cliques": [list(item) for item in graph.maximal_pairwise_cliques],
+        "supported_maximal_hyperedges": [list(item.groups) for item in graph.supported_maximal_hyperedges],
+        "threshold_version": graph.threshold_version,
+        "threshold_calibrated": graph.threshold_calibrated,
     }
+
+
+def graph_from_dict(values: Mapping[str, Any]) -> ComparabilityGraphResult:
+    def edge(item: Mapping[str, Any]) -> PairwiseEdge:
+        return PairwiseEdge(
+            tuple(item["groups"]),
+            tuple(float(value) for value in item["supported_lambdas"]),
+            tuple(GateDecision.from_dict(value) for value in item.get("decisions", [])),
+            tuple(item.get("refusal_reasons", [])),
+        )
+
+    def hyperedge(item: Mapping[str, Any]) -> SubsetHyperedge:
+        return SubsetHyperedge(
+            tuple(item["groups"]),
+            tuple(float(value) for value in item["supported_lambdas"]),
+            tuple(GateDecision.from_dict(value) for value in item.get("decisions", [])),
+            tuple(item.get("refusal_reasons", [])),
+        )
+
+    hyperedges = tuple(hyperedge(item) for item in values.get("hyperedges", []))
+    supported = {item.groups: item for item in hyperedges if item.supported}
+    maximal = tuple(
+        supported[tuple(groups)]
+        for groups in values.get("supported_maximal_hyperedges", [])
+        if tuple(groups) in supported
+    )
+    return ComparabilityGraphResult(
+        group_labels=tuple(values["group_labels"]),
+        lambdas=tuple(float(value) for value in values["lambdas"]),
+        edges=tuple(edge(item) for item in values["edges"]),
+        hyperedges=hyperedges,
+        maximal_pairwise_cliques=tuple(tuple(item) for item in values["maximal_pairwise_cliques"]),
+        supported_maximal_hyperedges=maximal,
+        threshold_version=str(values["threshold_version"]),
+        threshold_calibrated=bool(values["threshold_calibrated"]),
+    )

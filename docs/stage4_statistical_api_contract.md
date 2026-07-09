@@ -170,6 +170,12 @@ families; refusal reasons; and graph-conditional inference settings.  Loading
 an older result must not fabricate a Stage 4 lock or graph.  Older schemas stay
 readable under their existing semantics.
 
+`SCOVADesignResult.save()` persists no raw covariates or outcomes.
+`SCOVADesignResult.load(..., data=...)` requires the original outcome-free
+design data and verifies its declaration hash, row IDs, and data digest before
+the artifact can be used for outcome analysis.  Stage 4 remains experimental
+in the 0.4 line even when its directional release gate passes.
+
 ## Acceptance criteria
 
 Stage 4 is complete only when all of the following are automated or backed by
