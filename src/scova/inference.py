@@ -267,3 +267,33 @@ def run_simultaneous_inference(
         package_version=__version__,
         configuration_key=key,
     )
+
+
+def run_direct_influence_inference(
+    *,
+    family: tuple[str, ...],
+    estimates: np.ndarray,
+    standard_errors: np.ndarray,
+    influence_values: np.ndarray,
+    confidence_level: float,
+    n_bootstrap: int,
+    random_state: int,
+    batch_size: int,
+    warning_reasons: tuple[str, ...] = (),
+) -> SimultaneousInferenceResult:
+    """Run max-t inference when each selected contrast has its own EIF column."""
+    covariance = np.cov(influence_values, rowvar=False, ddof=1) / len(influence_values)
+    covariance = np.atleast_2d(covariance)
+    return run_simultaneous_inference(
+        family=family,
+        estimates=estimates,
+        standard_errors=standard_errors,
+        influence_values=influence_values,
+        weights=np.eye(len(family)),
+        group_covariance=covariance,
+        confidence_level=confidence_level,
+        n_bootstrap=n_bootstrap,
+        random_state=random_state,
+        batch_size=batch_size,
+        warning_reasons=warning_reasons,
+    )

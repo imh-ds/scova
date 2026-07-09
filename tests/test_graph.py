@@ -6,6 +6,8 @@ import pytest
 from scova import (
     DesignDeclaration,
     PairwiseDiagnosticInput,
+    SubsetDiagnosticInput,
+    build_comparability_graph,
     build_pairwise_comparability_graph,
 )
 from scova.experimental.gates import DiagnosticThresholds
@@ -102,3 +104,25 @@ def test_pairwise_graph_rejects_incompatible_diagnostics() -> None:
             {("a", "b"): bad},
             thresholds=locked_thresholds(),
         )
+
+
+def test_hyperedges_are_jointly_supported_and_not_implied_by_a_clique() -> None:
+    declaration = DesignDeclaration(
+        "group", ("x1",), lambdas=(0.0, 0.5, 1.0), candidate_subsets=(("a", "b", "c"),)
+    )
+    pairs = {
+        ("a", "b"): diagnostic_input(),
+        ("a", "c"): diagnostic_input(),
+        ("b", "c"): diagnostic_input(),
+    }
+    refused = diagnostic_input(weak_middle=True)
+    graph = build_comparability_graph(
+        declaration,
+        ("c", "a", "b"),
+        pairs,
+        subset_diagnostics={("a", "b", "c"): SubsetDiagnosticInput(refused.group_labels, refused.diagnostics)},
+        thresholds=locked_thresholds(),
+    )
+    assert graph.maximal_pairwise_cliques == (("a", "b", "c"),)
+    assert not graph.supported_maximal_hyperedges
+    assert not graph.hyperedge_for(("c", "b", "a")).supported

@@ -5,11 +5,26 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from hashlib import sha256
+from pathlib import Path
 from typing import Any, Literal, Mapping, Sequence
 
 import numpy as np
+import pandas as pd
+from sklearn.base import BaseEstimator, clone
+from sklearn.linear_model import LogisticRegression
 
-from .declaration import DesignDeclaration, JsonLabel
+from .declaration import ContrastSpec, DesignDeclaration, JsonLabel, SCOVADeclaration
+from .estimator import SCOVA
+from .experimental.gates import DiagnosticThresholds, production_thresholds
+from .experimental.path import PathDeclaration, fit_path
+from .experimental.tilts import geometric_tilt_and_gradient
+from .graph import (
+    ComparabilityGraphResult,
+    PairwiseDiagnosticInput,
+    SubsetDiagnosticInput,
+    build_comparability_graph,
+)
+from .inference import SimultaneousInferenceResult, run_direct_influence_inference
 
 SplitAssignment = Literal["design", "estimation"]
 
@@ -228,3 +243,276 @@ class DesignLock:
             design_metadata=values["design_metadata"],
             lock_hash=str(values["lock_hash"]),
         )
+
+
+def _canonical_labels(values: Sequence[JsonLabel]) -> tuple[JsonLabel, ...]:
+    def key(value: JsonLabel) -> tuple[int, Any]:
+        if isinstance(value, bool):
+            return (0, int(value))
+        if isinstance(value, (int, float)):
+            return (1, float(value))
+        return (2, value)
+
+    return tuple(sorted(set(values), key=key))
+
+
+def _stratified_outer_split(data: OutcomeFreeDesignData, declaration: DesignDeclaration) -> tuple[SplitAssignment, ...]:
+    """Deterministically assign each observed group to both outer partitions."""
+    assignments = np.empty(data.n_observations, dtype=object)
+    groups = np.asarray(data.groups, dtype=object)
+    for group in _canonical_labels(data.groups):
+        indices = np.flatnonzero(groups == group)
+        if len(indices) < 2:
+            raise ValueError("every group requires two observations for an outer split")
+        hashes = np.array(
+            [
+                int(
+                    sha256(f"{declaration.random_state}:{data.row_ids[index]}".encode()).hexdigest(),
+                    16,
+                )
+                for index in indices
+            ],
+            dtype=object,
+        )
+        order = indices[np.argsort(hashes, kind="stable")]
+        count = min(max(1, round(len(order) * declaration.design_fraction)), len(order) - 1)
+        assignments[order[:count]] = "design"
+        assignments[order[count:]] = "estimation"
+    return tuple(assignments.tolist())  # type: ignore[return-value]
+
+
+def _design_diagnostics(
+    x: np.ndarray,
+    groups: np.ndarray,
+    labels: tuple[JsonLabel, ...],
+    propensity: np.ndarray,
+    active: tuple[JsonLabel, ...],
+    lambdas: tuple[float, ...],
+) -> dict[str, Any]:
+    """Emit the design-safe subset of Stage 3's path_gate_grid schema."""
+    codes = np.array([labels.index(value) for value in groups], dtype=int)
+    active_codes = tuple(labels.index(value) for value in active)
+    tilt, _ = geometric_tilt_and_gradient(propensity, np.asarray(lambdas), active_codes)
+    denominator = tilt.sum(axis=0)
+    target_ess = np.square(denominator) / np.square(tilt).sum(axis=0)
+    group_ess = np.empty((len(lambdas), len(labels)))
+    balance = np.empty((len(lambdas), len(labels)))
+    scale = np.where(x.std(axis=0, ddof=1) > 0, x.std(axis=0, ddof=1), 1.0)
+    target_mean = (tilt / denominator[None, :]).T @ x
+    for code in range(len(labels)):
+        raw = (codes == code)[:, None] * tilt / propensity[:, code, None]
+        sums = raw.sum(axis=0)
+        group_ess[:, code] = np.square(sums) / np.square(raw).sum(axis=0)
+        normalized = raw / sums[None, :]
+        means = normalized.T @ x
+        balance[:, code] = np.max(np.abs((means - target_mean) / scale), axis=1)
+    observed = np.eye(len(labels))[codes]
+    calibration = float(np.max(np.abs(propensity.mean(axis=0) - observed.mean(axis=0))))
+    return {
+        "path_gate_grid": {
+            "schema_version": 1,
+            "lambdas": list(lambdas),
+            "target_ess_ratio": (target_ess / len(x)).tolist(),
+            "group_effective_sample_size": group_ess.tolist(),
+            "target_weight_concentration": (
+                np.sort(tilt / denominator[None, :], axis=0)[-max(1, int(np.ceil(.01 * len(x)))) :].sum(axis=0)
+            ).tolist(),
+            "maximum_weighted_covariate_imbalance": balance.tolist(),
+            "normalization_finite": np.isfinite(denominator).tolist(),
+        },
+        "propensity_quantiles": {
+            str(label): {"q01": float(np.quantile(propensity[:, code], .01))}
+            for code, label in enumerate(labels)
+        },
+        "propensity_calibration": {"worst_class_expected_calibration_error": calibration},
+        "crossfit_instability": 0.0,
+    }
+
+
+@dataclass(slots=True)
+class SCOVADesignResult:
+    """Locked outcome-free design artifact retained in memory for analysis."""
+
+    declaration: DesignDeclaration
+    data: OutcomeFreeDesignData
+    lock: DesignLock
+    graph: ComparabilityGraphResult
+    selected_family: tuple[tuple[str, tuple[JsonLabel, ...], float], ...]
+    diagnostics: dict[str, Any]
+
+    def design_report(self) -> dict[str, Any]:
+        return {
+            "design_lock": self.lock.lock_hash,
+            "threshold_version": self.graph.threshold_version,
+            "threshold_calibrated": self.graph.threshold_calibrated,
+            "supported_edges": [list(edge) for edge in self.graph.supported_edges],
+            "supported_hyperedges": [list(edge.groups) for edge in self.graph.supported_maximal_hyperedges],
+            "selected_family": [
+                {"name": name, "groups": list(groups), "lambda": lam}
+                for name, groups, lam in self.selected_family
+            ],
+        }
+
+    def save(self, path: str | Path) -> None:
+        """Persist a design artifact without serializing raw covariates or outcomes."""
+        Path(path).write_text(
+            json.dumps(self.design_report(), sort_keys=True, indent=2, allow_nan=False),
+            encoding="utf-8",
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class SCOVAGraphResult:
+    """Held-out graph-conditional analysis with interpretation kept separate."""
+
+    design_lock: str
+    interpretation: str
+    reliability: str
+    inference: SimultaneousInferenceResult | None
+    refused: tuple[str, ...]
+
+    def report(self) -> dict[str, Any]:
+        return {
+            "design_lock": self.design_lock,
+            "interpretation": self.interpretation,
+            "reliability": self.reliability,
+            "inference_scope": "graph-conditional-outer-split",
+            "refused": list(self.refused),
+            "inference": None if self.inference is None else self.inference.to_dict(),
+        }
+
+    def save(self, path: str | Path) -> None:
+        Path(path).write_text(
+            json.dumps(self.report(), sort_keys=True, indent=2, allow_nan=False),
+            encoding="utf-8",
+        )
+
+
+class SCOVADesign:
+    """Stage 4 outer-split design/analysis firewall."""
+
+    def __init__(
+        self,
+        *,
+        propensity_model: BaseEstimator | None = None,
+        outcome_model: BaseEstimator | None = None,
+        thresholds: DiagnosticThresholds | None = None,
+    ) -> None:
+        self.propensity_model = propensity_model or LogisticRegression(max_iter=2000)
+        self.outcome_model = outcome_model
+        self.thresholds = thresholds or production_thresholds()
+
+    def prepare_design(
+        self, data: OutcomeFreeDesignData, declaration: DesignDeclaration
+    ) -> SCOVADesignResult:
+        assignments = _stratified_outer_split(data, declaration)
+        design_mask = np.asarray(assignments) == "design"
+        x = data.covariates[design_mask]
+        groups = np.asarray(data.groups, dtype=object)[design_mask]
+        labels = _canonical_labels(data.groups)
+        codes = np.array([labels.index(value) for value in groups], dtype=int)
+        if any(np.sum(codes == code) < declaration.n_splits for code in range(len(labels))):
+            raise ValueError("each design-split group requires at least n_splits observations")
+        model = clone(self.propensity_model)
+        model.fit(x, codes)
+        probability = np.asarray(model.predict_proba(x), dtype=float)
+        aligned = np.empty((len(x), len(labels)))
+        for column, code in enumerate(np.asarray(model.classes_, dtype=int)):
+            aligned[:, code] = probability[:, column]
+        pair_inputs = {
+            pair: PairwiseDiagnosticInput(labels, _design_diagnostics(x, groups, labels, aligned, pair, declaration.lambdas))
+            for pair in __import__("itertools").combinations(labels, 2)
+        }
+        subset_inputs = {
+            tuple(subset): SubsetDiagnosticInput(
+                labels,
+                _design_diagnostics(x, groups, labels, aligned, tuple(subset), declaration.lambdas),
+            )
+            for subset in declaration.candidate_subsets
+            if len(subset) > 2
+        }
+        graph = build_comparability_graph(
+            declaration, labels, pair_inputs, subset_diagnostics=subset_inputs, thresholds=self.thresholds
+        )
+        selected: list[tuple[str, tuple[JsonLabel, ...], float]] = []
+        for edge in graph.edges:
+            for lam in edge.supported_lambdas:
+                selected.append((f"{edge.groups[0]} - {edge.groups[1]} @ λ={lam:.2f}", edge.groups, lam))
+        for edge in graph.supported_maximal_hyperedges:
+            for lam in edge.supported_lambdas:
+                selected.append((f"omnibus[{','.join(map(str, edge.groups))}] @ λ={lam:.2f}", edge.groups, lam))
+        metadata = {"graph": graph_to_dict(graph), "selected_family": selected}
+        lock = DesignLock.create(declaration, data, assignments, design_metadata=metadata)
+        return SCOVADesignResult(declaration, data, lock, graph, tuple(selected), {"design_rows": int(design_mask.sum())})
+
+    def analyze_outcomes(
+        self,
+        design: SCOVADesignResult,
+        outcomes: Sequence[float],
+        *,
+        row_ids: Sequence[JsonLabel],
+        confidence_level: float = .95,
+        n_bootstrap: int = 1999,
+        random_state: int | None = None,
+    ) -> SCOVAGraphResult:
+        design.lock.verify(design.declaration, design.data)
+        expected_ids = design.lock.estimation_row_ids
+        if set(row_ids) != set(expected_ids) or len(row_ids) != len(expected_ids):
+            raise ValueError("outcome row_ids must exactly match the locked estimation rows")
+        values = np.asarray(outcomes, dtype=float)
+        if values.shape != (len(row_ids),) or not np.all(np.isfinite(values)):
+            raise ValueError("outcomes must be a finite vector aligned with row_ids")
+        outcome_by_id = dict(zip(row_ids, values, strict=True))
+        positions = [design.data.row_ids.index(row_id) for row_id in expected_ids]
+        x = design.data.covariates[positions]
+        groups = [design.data.groups[position] for position in positions]
+        frame = pd.DataFrame(x, columns=design.declaration.covariates)
+        frame[design.declaration.group] = groups
+        frame["__scova_outcome__"] = [outcome_by_id[row_id] for row_id in expected_ids]
+        labels = _canonical_labels(design.data.groups)
+        base = SCOVADeclaration(
+            "__scova_outcome__", design.declaration.group, design.declaration.covariates,
+            interpretation=design.declaration.interpretation, n_splits=design.declaration.n_splits,
+            random_state=design.declaration.random_state,
+        )
+        flattened: list[tuple[str, float, float, np.ndarray]] = []
+        for name, subset, lam in design.selected_family:
+            target = "pairwise" if len(subset) == 2 else "subset"
+            path = fit_path(
+                frame,
+                PathDeclaration(base, lambdas=(0.0, lam, 1.0) if lam not in (0.0, 1.0) else (0.0, 1.0), target=target, active_groups=subset),
+                estimator=SCOVA(propensity_model=self.propensity_model, outcome_model=self.outcome_model),
+            )
+            if len(subset) == 2:
+                contrast = next(iter(path.contrasts.values()))
+                index = int(np.where(np.isclose(path.lambdas, lam))[0][0])
+                flattened.append((name, float(contrast.estimates[index]), float(contrast.standard_errors[index]), contrast.influence_values[:, index]))
+            else:
+                # The maximal-hyperedge omnibus statistic is represented by its pairwise basis.
+                for contrast in path.contrasts.values():
+                    index = int(np.where(np.isclose(path.lambdas, lam))[0][0])
+                    flattened.append((f"{name}: {contrast.name}", float(contrast.estimates[index]), float(contrast.standard_errors[index]), contrast.influence_values[:, index]))
+        if not flattened:
+            return SCOVAGraphResult(design.lock.lock_hash, design.declaration.interpretation, "refused", None, ("no graph-supported contrasts",))
+        family = tuple(item[0] for item in flattened)
+        inference = run_direct_influence_inference(
+            family=family,
+            estimates=np.array([item[1] for item in flattened]),
+            standard_errors=np.array([item[2] for item in flattened]),
+            influence_values=np.column_stack([item[3] for item in flattened]),
+            confidence_level=confidence_level,
+            n_bootstrap=n_bootstrap,
+            random_state=design.declaration.random_state if random_state is None else random_state,
+            batch_size=256,
+        )
+        reliability = "certified-overlap-only" if self.thresholds.calibrated else "exploratory-only"
+        return SCOVAGraphResult(design.lock.lock_hash, design.declaration.interpretation, reliability, inference, ())
+
+
+def graph_to_dict(graph: ComparabilityGraphResult) -> dict[str, Any]:
+    return {
+        "group_labels": list(graph.group_labels), "lambdas": list(graph.lambdas),
+        "edges": [{"groups": list(edge.groups), "supported_lambdas": list(edge.supported_lambdas), "decisions": [decision.to_dict() for decision in edge.decisions], "refusal_reasons": list(edge.refusal_reasons)} for edge in graph.edges],
+        "hyperedges": [{"groups": list(edge.groups), "supported_lambdas": list(edge.supported_lambdas), "decisions": [decision.to_dict() for decision in edge.decisions], "refusal_reasons": list(edge.refusal_reasons)} for edge in graph.hyperedges],
+        "maximal_pairwise_cliques": [list(item) for item in graph.maximal_pairwise_cliques],
+    }

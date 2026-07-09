@@ -63,7 +63,8 @@ subset and lambda:
 - per-group effective sample size;
 - target effective-sample-size ratio;
 - top-one-percent weight concentration;
-- group and contrast influence concentration where available;
+- influence concentration is an outcome-stage reliability diagnostic and is
+  deliberately excluded from design-stage support certification;
 - lower propensity quantiles and propensity calibration error;
 - maximum standardized weighted covariate imbalance;
 - cross-fit stability; and
