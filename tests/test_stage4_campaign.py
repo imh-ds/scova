@@ -5,6 +5,7 @@ import pytest
 
 from benchmarks import stage4_campaign
 from benchmarks.summarize_stage4 import summarize
+from scripts.verify_stage4_calibration import verify as verify_calibration
 from scripts.verify_stage4_smoke import verify
 
 
@@ -219,3 +220,47 @@ def test_rare_group_count_refusal_is_completed_campaign_evidence() -> None:
     record = stage4_campaign._expected_rare_group_refusal(error)
     assert record["status"] == "completed"
     assert record["expected_refusal"] == "insufficient_per_split_group_count"
+
+
+def test_calibration_verifier_rejects_failed_records(tmp_path: Path) -> None:
+    spec = specification()
+    spec["tiers"]["calibration"] = {
+        **spec["tiers"]["directional_validation"],
+        "cells": 5,
+        "repetitions": 1,
+        "seed_namespace": "validation",
+    }
+    cells = stage4_campaign.frozen_cells("calibration", spec)
+    records = [
+        {
+            "cell_index": index,
+            "repetition": 0,
+            "status": "completed",
+            "expected_refusal": "insufficient_per_split_group_count"
+            if cell.scenario == "rare_group"
+            else None,
+        }
+        for index, cell in enumerate(cells)
+    ]
+    payload = {
+        "schema_version": 2,
+        "protocol": "stage4-test",
+        "tier": "calibration",
+        "specification_sha256": "spec",
+        "catalog_sha256": "catalog",
+        "threshold_artifact_sha256": "threshold",
+        "shard_count": 2,
+        "records": records,
+    }
+    payload["sha256"] = stage4_campaign._digest(payload)
+    path = tmp_path / "calibration.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    assert verify_calibration([path], spec, shard_count=2)["records"] == 5
+    failed = json.loads(path.read_text(encoding="utf-8"))
+    failed["records"][0]["status"] = "failed"
+    failed["sha256"] = stage4_campaign._digest(
+        {key: value for key, value in failed.items() if key != "sha256"}
+    )
+    path.write_text(json.dumps(failed), encoding="utf-8")
+    with pytest.raises(ValueError, match="did not complete"):
+        verify_calibration([path], spec, shard_count=2)

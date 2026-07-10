@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       tier:
-        description: engineering_smoke, calibration, directional_validation, directional_robustness, or aggregate
+        description: engineering_smoke, calibration, verify_calibration, directional_validation, directional_robustness, or aggregate
         required: true
         type: choice
-        options: [engineering_smoke, calibration, directional_validation, directional_robustness, aggregate]
+        options: [engineering_smoke, calibration, verify_calibration, directional_validation, directional_robustness, aggregate]
       shard:
         description: Optional shard index to recover; leave blank for every shard
         required: false
@@ -32,6 +32,10 @@ on:
         description: Optional selected-shard recovery run to merge during aggregate
         required: false
         default: ""
+      calibration_run_id:
+        description: Completed Stage 4 calibration run ID, required for verify_calibration
+        required: false
+        default: "29067446075"
 
 permissions:
   contents: read
@@ -123,6 +127,24 @@ jobs:
           path: smoke
           merge-multiple: true
       - run: python scripts/verify_stage4_smoke.py smoke/*.json
+
+  verify-calibration:
+    if: inputs.tier == 'verify_calibration'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12", cache: pip}
+      - run: python -m pip install -e .
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: stage4-calibration-*
+          path: calibration
+          merge-multiple: true
+          run-id: ${{ inputs.calibration_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: python scripts/verify_stage4_calibration.py calibration/*.json
 
   aggregate:
     if: inputs.tier == 'aggregate'

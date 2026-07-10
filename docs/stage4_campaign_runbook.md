@@ -9,7 +9,8 @@ Run the `Stage 4 graph-firewall validation` workflow by tier:
    Stage 3 artifacts. Its verifier requires every fixed record to complete,
    exercise held-out inference, and reject post-lock tampering.
 2. `calibration` downloads the Stage 3 reaggregated release bundle and verifies
-   its calibrated threshold artifact. Its evidence is diagnostic only.
+   its calibrated threshold artifact. Its evidence is diagnostic only. Run
+   `verify_calibration` with the completed calibration run ID before validation.
 3. `directional_validation` and then `directional_robustness` use the untouched
    validation namespace. Each has 64 canonical shards and a 180-minute limit.
 4. `aggregate` receives the two completed run IDs and writes the evidence
