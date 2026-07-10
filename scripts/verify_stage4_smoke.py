@@ -4,11 +4,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
-from benchmarks.stage4_campaign import frozen_cells, load_specification, shard_items
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from benchmarks.stage4_campaign import frozen_cells, load_specification, shard_items  # noqa: E402
 
 
 def _digest(value: object) -> str:

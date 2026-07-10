@@ -11,7 +11,10 @@ from typing import Any
 
 from scipy.stats import beta
 
-from benchmarks.stage4_campaign import frozen_cells, load_specification, work_items
+if __package__:
+    from .stage4_campaign import frozen_cells, load_specification, work_items
+else:  # ``python benchmarks/summarize_stage4.py``
+    from stage4_campaign import frozen_cells, load_specification, work_items
 
 
 def _canonical_digest(value: object) -> str:
