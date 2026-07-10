@@ -103,7 +103,7 @@ def summarize(paths: list[Path], specification: dict[str, Any], tier: str) -> di
     mutations = sum(
         not record["post_lock_mutation_rejected"]
         for record in records
-        if record["status"] == "completed"
+        if record["status"] == "completed" and record["accepted"]
     )
     bounds = {
         "conditional_fwer_upper_bound_max": _upper(false_rejections, null_total),

@@ -60,6 +60,7 @@ def test_catalog_sharding_and_seed_truth_are_deterministic() -> None:
     assert pairwise.true_pairs
     rare = stage4_campaign.generate_stage4_data(cells[3], 10)
     assert all("g2" not in pair for pair in rare.true_pairs)
+    assert rare.groups.count("g2") == 2
 
 
 def _shard_payload(spec: dict, records: list[dict]) -> dict:
@@ -178,16 +179,19 @@ def test_smoke_verifier_requires_complete_accepted_lock_safe_records(tmp_path: P
     cells = stage4_campaign.frozen_cells("engineering_smoke", spec)
     paths = []
     for shard in range(4):
-        records = [
-            {
-                "cell_index": cell_index,
-                "repetition": repetition,
-                "status": "completed",
-                "accepted": True,
-                "post_lock_mutation_rejected": True,
-            }
-            for cell_index, repetition in stage4_campaign.shard_items(cells, 5, shard, 4)
-        ]
+        records = []
+        for cell_index, repetition in stage4_campaign.shard_items(cells, 5, shard, 4):
+            rare = cells[cell_index].scenario == "rare_group"
+            records.append(
+                {
+                    "cell_index": cell_index,
+                    "repetition": repetition,
+                    "status": "completed",
+                    "accepted": not rare,
+                    "expected_refusal": "insufficient_per_split_group_count" if rare else None,
+                    "post_lock_mutation_rejected": None if rare else True,
+                }
+            )
         payload = {
             "tier": "engineering_smoke",
             "shard_count": 4,
@@ -206,3 +210,12 @@ def test_smoke_verifier_requires_complete_accepted_lock_safe_records(tmp_path: P
     paths[0].write_text(json.dumps(invalid), encoding="utf-8")
     with pytest.raises(ValueError, match="held-out inference"):
         verify(paths, spec)
+
+
+def test_rare_group_count_refusal_is_completed_campaign_evidence() -> None:
+    cell = stage4_campaign.Stage4Cell("rare", "rare_group", 10, 3, 2)
+    error = ValueError("each design-split group requires at least n_splits observations")
+    assert stage4_campaign._is_expected_rare_group_refusal(cell, error)
+    record = stage4_campaign._expected_rare_group_refusal(error)
+    assert record["status"] == "completed"
+    assert record["expected_refusal"] == "insufficient_per_split_group_count"

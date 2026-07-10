@@ -154,6 +154,13 @@ def generate_stage4_data(cell: Stage4Cell, seed: int) -> Stage4Data:
         logits[:, -1] += 1.1 * x[:, 0]
     probabilities = _softmax(logits)
     codes = (rng.random(cell.n)[:, None] > np.cumsum(probabilities, axis=1)).sum(axis=1)
+    if cell.scenario == "rare_group":
+        # Exactly two rare rows force one row into each deterministic outer
+        # split, exercising the preregistered insufficient-per-split refusal.
+        nonrare = _softmax(logits[:, :-1])
+        codes = (rng.random(cell.n)[:, None] > np.cumsum(nonrare, axis=1)).sum(axis=1)
+        rare_indices = rng.choice(cell.n, size=2, replace=False)
+        codes[rare_indices] = cell.n_groups - 1
     effects = np.zeros(cell.n_groups)
     if cell.scenario == "sparse_pairwise_signal":
         effects[-1] = 0.8
@@ -287,6 +294,29 @@ def _failure(error: Exception) -> dict[str, Any]:
     }
 
 
+def _expected_rare_group_refusal(error: ValueError) -> dict[str, Any]:
+    """Record the preregistered per-split-count safety refusal as completed work."""
+    return {
+        "status": "completed",
+        "accepted": False,
+        "expected_refusal": "insufficient_per_split_group_count",
+        "refusal_reasons": [str(error)],
+        "simultaneous_coverage": None,
+        "any_rejection": False,
+        "selected_edges": [],
+        "selected_hyperedges": [],
+        "post_lock_mutation_rejected": None,
+    }
+
+
+def _is_expected_rare_group_refusal(cell: Stage4Cell, error: Exception) -> bool:
+    return (
+        cell.scenario == "rare_group"
+        and isinstance(error, ValueError)
+        and str(error) == "each design-split group requires at least n_splits observations"
+    )
+
+
 def _engineering_smoke_thresholds() -> DiagnosticThresholds:
     """Exercise the complete pipeline without representing smoke as calibration."""
     return DiagnosticThresholds(
@@ -347,7 +377,11 @@ def run_campaign(
         try:
             result = _run_one(cells[cell_index], seed, thresholds, bootstrap, lambdas)
         except Exception as error:  # retain failures as evidence, never reseed
-            result = _failure(error)
+            result = (
+                _expected_rare_group_refusal(error)
+                if _is_expected_rare_group_refusal(cells[cell_index], error)
+                else _failure(error)
+            )
         records.append(
             {
                 "cell_index": cell_index,

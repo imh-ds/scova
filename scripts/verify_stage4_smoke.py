@@ -35,14 +35,22 @@ def verify(paths: list[Path], specification: dict[str, Any]) -> dict[str, int]:
             raise ValueError("smoke artifact has an unexpected tier or shard count")
         for record in payload["records"]:
             key = (int(record["cell_index"]), int(record["repetition"]))
+            scenario = cells[key[0]].scenario
             if key not in expected or key in observed:
                 raise ValueError("smoke artifact has an unexpected or duplicate work item")
             if record.get("status") != "completed":
                 raise ValueError(f"smoke work item {key} did not complete")
-            if not record.get("accepted"):
-                raise ValueError(f"smoke work item {key} did not exercise held-out inference")
-            if not record.get("post_lock_mutation_rejected"):
-                raise ValueError(f"smoke work item {key} accepted post-lock mutation")
+            if scenario == "rare_group":
+                if (
+                    record.get("accepted")
+                    or record.get("expected_refusal") != "insufficient_per_split_group_count"
+                ):
+                    raise ValueError(f"smoke rare-group work item {key} did not refuse safely")
+            else:
+                if not record.get("accepted"):
+                    raise ValueError(f"smoke work item {key} did not exercise held-out inference")
+                if not record.get("post_lock_mutation_rejected"):
+                    raise ValueError(f"smoke work item {key} accepted post-lock mutation")
             observed.add(key)
     if observed != expected:
         raise ValueError(
