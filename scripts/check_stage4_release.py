@@ -1,31 +1,52 @@
-"""Reject Stage 4 promotion unless complete, passing frozen evidence exists."""
+"""Reject Stage 4 promotion unless complete frozen evidence is internally consistent."""
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
-ROOT = Path(__file__).parents[1]
-SPEC = ROOT / "benchmarks" / "specs" / "stage4_graph_release.json"
-EVIDENCE = ROOT / "release" / "artifacts" / "stage4-evidence.json"
-THRESHOLDS = ROOT / "release" / "artifacts" / "stage3-directional-thresholds.json"
+from scova.experimental.gates import DiagnosticThresholds
+
+
+def blocking_reasons(root: Path) -> list[str]:
+    spec_path = root / "benchmarks/specs/stage4_graph_release.json"
+    evidence_path = root / "release/artifacts/stage4-evidence.json"
+    threshold_path = root / "release/artifacts/stage3-directional-thresholds.json"
+    reasons: list[str] = []
+    if not threshold_path.exists():
+        return ["locked Stage 3 threshold artifact is missing"]
+    try:
+        threshold = json.loads(threshold_path.read_text(encoding="utf-8"))
+        thresholds = DiagnosticThresholds.from_calibration_artifact(threshold)
+        if not thresholds.calibrated:
+            reasons.append("Stage 3 thresholds are not calibrated")
+    except (OSError, ValueError, TypeError, KeyError) as error:
+        return [f"Stage 3 threshold artifact is invalid: {error}"]
+    if not evidence_path.exists():
+        return reasons + ["Stage 4 evidence artifact is missing"]
+    evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+    spec = json.loads(spec_path.read_text(encoding="utf-8"))
+    if evidence.get("protocol") != spec.get("protocol"):
+        reasons.append("evidence protocol does not match frozen spec")
+    if evidence.get("threshold_artifact_sha256") != thresholds.artifact_sha256:
+        reasons.append("evidence threshold digest does not match Stage 3 artifact")
+    if evidence.get("status") != "pass":
+        reasons.append("evidence status is not pass")
+    required = spec["directional_pass_criteria"]
+    missing = [name for name in required if evidence.get("criteria", {}).get(name) is not True]
+    if missing:
+        reasons.append("failed criteria: " + ", ".join(missing))
+    return reasons
 
 
 def main() -> None:
-    spec = json.loads(SPEC.read_text(encoding="utf-8"))
-    if not THRESHOLDS.exists():
-        raise SystemExit("Stage 4 promotion blocked: locked Stage 3 threshold artifact is missing")
-    if not EVIDENCE.exists():
-        raise SystemExit("Stage 4 promotion blocked: Stage 4 evidence artifact is missing")
-    evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
-    if evidence.get("protocol") != spec["protocol"]:
-        raise SystemExit("Stage 4 promotion blocked: evidence protocol does not match frozen spec")
-    if evidence.get("status") != "pass":
-        raise SystemExit("Stage 4 promotion blocked: evidence status is not pass")
-    criteria = spec["directional_pass_criteria"]
-    failed = [name for name in criteria if evidence.get("criteria", {}).get(name) is not True]
-    if failed:
-        raise SystemExit("Stage 4 promotion blocked: failed criteria " + ", ".join(failed))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", type=Path, default=Path(__file__).parents[1])
+    args = parser.parse_args()
+    reasons = blocking_reasons(args.root)
+    if reasons:
+        raise SystemExit("Stage 4 promotion blocked: " + "; ".join(reasons))
     print("Stage 4 promotion evidence passes the frozen directional gate")
 
 

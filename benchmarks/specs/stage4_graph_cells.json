@@ -1,0 +1,1385 @@
+{
+  "schema_version": 1,
+  "catalogs": {
+    "engineering_smoke": [
+      {
+        "id": "engineering_smoke-000",
+        "scenario": "strong_complete_graph",
+        "n": 240,
+        "n_groups": 3,
+        "p": 5
+      },
+      {
+        "id": "engineering_smoke-001",
+        "scenario": "pairwise_without_kway",
+        "n": 240,
+        "n_groups": 3,
+        "p": 5
+      },
+      {
+        "id": "engineering_smoke-002",
+        "scenario": "rare_group",
+        "n": 240,
+        "n_groups": 3,
+        "p": 5
+      },
+      {
+        "id": "engineering_smoke-003",
+        "scenario": "global_null",
+        "n": 240,
+        "n_groups": 3,
+        "p": 5
+      }
+    ],
+    "calibration": [
+      {
+        "id": "calibration-000",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "calibration-001",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "calibration-002",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "calibration-003",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "calibration-004",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "calibration-005",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "calibration-006",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "calibration-007",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "calibration-008",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "calibration-009",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "calibration-010",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "calibration-011",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "calibration-012",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "calibration-013",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "calibration-014",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "calibration-015",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "calibration-016",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "calibration-017",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "calibration-018",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "calibration-019",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "calibration-020",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "calibration-021",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "calibration-022",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "calibration-023",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "calibration-024",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "calibration-025",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "calibration-026",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "calibration-027",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "calibration-028",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "calibration-029",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "calibration-030",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "calibration-031",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "calibration-032",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "calibration-033",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "calibration-034",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "calibration-035",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "calibration-036",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "calibration-037",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "calibration-038",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "calibration-039",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "calibration-040",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "calibration-041",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "calibration-042",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "calibration-043",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "calibration-044",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "calibration-045",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "calibration-046",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "calibration-047",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      }
+    ],
+    "directional_validation": [
+      {
+        "id": "directional_validation-000",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-001",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-002",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-003",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-004",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-005",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-006",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-007",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-008",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-009",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-010",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-011",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-012",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-013",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-014",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-015",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-016",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-017",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-018",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-019",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-020",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-021",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-022",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-023",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-024",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-025",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-026",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-027",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-028",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-029",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-030",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-031",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-032",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-033",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-034",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-035",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-036",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-037",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-038",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-039",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-040",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-041",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-042",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-043",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-044",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-045",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-046",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-047",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-048",
+        "scenario": "pairwise_without_kway",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-049",
+        "scenario": "pairwise_without_kway",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-050",
+        "scenario": "pairwise_without_kway",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-051",
+        "scenario": "pairwise_without_kway",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-052",
+        "scenario": "pairwise_without_kway",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-053",
+        "scenario": "pairwise_without_kway",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-054",
+        "scenario": "pairwise_without_kway",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-055",
+        "scenario": "pairwise_without_kway",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-056",
+        "scenario": "pairwise_without_kway",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-057",
+        "scenario": "pairwise_without_kway",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-058",
+        "scenario": "pairwise_without_kway",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-059",
+        "scenario": "pairwise_without_kway",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-060",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-061",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-062",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-063",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-064",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-065",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-066",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-067",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-068",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-069",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-070",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-071",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-072",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-073",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-074",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-075",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-076",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-077",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-078",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-079",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-080",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-081",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-082",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-083",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-084",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-085",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-086",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-087",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-088",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-089",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-090",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-091",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-092",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-093",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_validation-094",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_validation-095",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      }
+    ],
+    "directional_robustness": [
+      {
+        "id": "directional_robustness-000",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-001",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-002",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-003",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-004",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-005",
+        "scenario": "global_null",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-006",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-007",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-008",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-009",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-010",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-011",
+        "scenario": "global_null",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-012",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-013",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-014",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-015",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-016",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-017",
+        "scenario": "sparse_pairwise_signal",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-018",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-019",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-020",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-021",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-022",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-023",
+        "scenario": "sparse_pairwise_signal",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-024",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-025",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-026",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-027",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-028",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-029",
+        "scenario": "strong_complete_graph",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-030",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-031",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-032",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-033",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-034",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-035",
+        "scenario": "strong_complete_graph",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-036",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-037",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-038",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-039",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-040",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-041",
+        "scenario": "rare_group",
+        "n": 500,
+        "n_groups": 8,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-042",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-043",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 2,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-044",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-045",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 4,
+        "p": 20
+      },
+      {
+        "id": "directional_robustness-046",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 5
+      },
+      {
+        "id": "directional_robustness-047",
+        "scenario": "rare_group",
+        "n": 2000,
+        "n_groups": 8,
+        "p": 20
+      }
+    ]
+  }
+}
