@@ -6,7 +6,8 @@ certificate, and no campaign result permits changing Stage 3 thresholds.
 Run the `Stage 4 graph-firewall validation` workflow by tier:
 
 1. `engineering_smoke` uses its dedicated smoke namespace and does not require
-   Stage 3 artifacts. It is an implementation check only.
+   Stage 3 artifacts. Its verifier requires every fixed record to complete,
+   exercise held-out inference, and reject post-lock tampering.
 2. `calibration` downloads the Stage 3 reaggregated release bundle and verifies
    its calibrated threshold artifact. Its evidence is diagnostic only.
 3. `directional_validation` and then `directional_robustness` use the untouched

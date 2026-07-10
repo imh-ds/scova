@@ -5,6 +5,7 @@ import pytest
 
 from benchmarks import stage4_campaign
 from benchmarks.summarize_stage4 import summarize
+from scripts.verify_stage4_smoke import verify
 
 
 def specification() -> dict:
@@ -151,3 +152,57 @@ def test_campaign_requires_stage3_thresholds_and_rejects_mixed_threshold_shards(
     second_path.write_text(json.dumps(second), encoding="utf-8")
     with pytest.raises(ValueError, match="disagree"):
         summarize([first_path, second_path], spec, "directional_validation")
+
+
+def test_smoke_verifier_requires_complete_accepted_lock_safe_records(tmp_path: Path) -> None:
+    spec = {
+        **specification(),
+        "tiers": {
+            "engineering_smoke": {
+                "cells": 4,
+                "repetitions": 5,
+                "bootstrap": 1,
+                "scenarios": [
+                    "strong_complete_graph",
+                    "pairwise_without_kway",
+                    "rare_group",
+                    "global_null",
+                ],
+                "n": [20],
+                "n_groups": [3],
+                "p": [3],
+                "seed_namespace": "smoke",
+            }
+        },
+    }
+    cells = stage4_campaign.frozen_cells("engineering_smoke", spec)
+    paths = []
+    for shard in range(4):
+        records = [
+            {
+                "cell_index": cell_index,
+                "repetition": repetition,
+                "status": "completed",
+                "accepted": True,
+                "post_lock_mutation_rejected": True,
+            }
+            for cell_index, repetition in stage4_campaign.shard_items(cells, 5, shard, 4)
+        ]
+        payload = {
+            "tier": "engineering_smoke",
+            "shard_count": 4,
+            "records": records,
+        }
+        payload["sha256"] = stage4_campaign._digest(payload)
+        path = tmp_path / f"smoke-{shard}.json"
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        paths.append(path)
+    assert verify(paths, spec) == {"records": 20, "cells": 4}
+    invalid = json.loads(paths[0].read_text(encoding="utf-8"))
+    invalid["records"][0]["accepted"] = False
+    invalid["sha256"] = stage4_campaign._digest(
+        {key: value for key, value in invalid.items() if key != "sha256"}
+    )
+    paths[0].write_text(json.dumps(invalid), encoding="utf-8")
+    with pytest.raises(ValueError, match="held-out inference"):
+        verify(paths, spec)
