@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from benchmarks import stage4_campaign
@@ -62,6 +63,22 @@ def test_catalog_sharding_and_seed_truth_are_deterministic() -> None:
     rare = stage4_campaign.generate_stage4_data(cells[3], 10)
     assert all("g2" not in pair for pair in rare.true_pairs)
     assert rare.groups.count("g2") == 2
+
+
+def test_pairwise_only_dgp_has_all_pairs_but_no_joint_hyperedge() -> None:
+    cell = stage4_campaign.Stage4Cell("pairwise", "pairwise_without_kway", n=300, n_groups=3, p=5)
+    data = stage4_campaign.generate_stage4_data(cell, seed=7)
+    assert data.true_pairs == (("g0", "g1"), ("g0", "g2"), ("g1", "g2"))
+    assert data.true_hyperedges == ()
+    support_by_group = {
+        group: set(data.covariates[np.array(data.groups) == group, 0])
+        for group in ("g0", "g1", "g2")
+    }
+    assert all(
+        support_by_group[first].intersection(support_by_group[second])
+        for first, second in data.true_pairs
+    )
+    assert not set.intersection(*support_by_group.values())
 
 
 def _shard_payload(spec: dict, records: list[dict]) -> dict:

@@ -9,8 +9,10 @@ from pathlib import Path
 from scova.experimental.gates import DiagnosticThresholds
 
 
-def blocking_reasons(root: Path) -> list[str]:
-    spec_path = root / "benchmarks/specs/stage4_graph_release.json"
+def blocking_reasons(root: Path, spec_path: Path | None = None) -> list[str]:
+    spec_path = spec_path or root / "benchmarks/specs/stage4_graph_release.json"
+    if not spec_path.is_absolute():
+        spec_path = root / spec_path
     evidence_path = root / "release/artifacts/stage4-evidence.json"
     threshold_path = root / "release/artifacts/stage3-directional-thresholds.json"
     reasons: list[str] = []
@@ -43,8 +45,13 @@ def blocking_reasons(root: Path) -> list[str]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=Path(__file__).parents[1])
+    parser.add_argument(
+        "--spec",
+        type=Path,
+        default=Path("benchmarks/specs/stage4_graph_release.json"),
+    )
     args = parser.parse_args()
-    reasons = blocking_reasons(args.root)
+    reasons = blocking_reasons(args.root, args.spec)
     if reasons:
         raise SystemExit("Stage 4 promotion blocked: " + "; ".join(reasons))
     print("Stage 4 promotion evidence passes the frozen directional gate")

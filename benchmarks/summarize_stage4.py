@@ -90,6 +90,11 @@ def summarize(paths: list[Path], specification: dict[str, Any], tier: str) -> di
     accepted_per_cell = {
         name: sum(record["accepted"] for record in values) for name, values in by_cell.items()
     }
+    expected_inferential_cells = {
+        record["cell"]["id"]
+        for record in records
+        if record["cell"].get("expected_outcome", "inferential") == "inferential"
+    }
     null = by_scenario["global_null"]
     false_rejections, null_total, _ = _rate(null, "any_rejection")
     coverage_successes, coverage_total, coverage = _rate(records, "simultaneous_coverage")
@@ -135,8 +140,8 @@ def summarize(paths: list[Path], specification: dict[str, Any], tier: str) -> di
         >= criteria["minimum_rare_group_refusal_rate"],
         "post_lock_confirmatory_mutation_rate": mutations == 0,
         "minimum_accepted_repetitions_per_cell": all(
-            value >= criteria["minimum_accepted_repetitions_per_cell"]
-            for value in accepted_per_cell.values()
+            accepted_per_cell[name] >= criteria["minimum_accepted_repetitions_per_cell"]
+            for name in expected_inferential_cells
         ),
         "confidence_level": True,
     }

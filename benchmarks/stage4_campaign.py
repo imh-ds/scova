@@ -54,6 +54,7 @@ class Stage4Cell:
     n: int
     n_groups: int
     p: int
+    expected_outcome: Literal["inferential", "refusal"] = "inferential"
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,6 +145,24 @@ def generate_stage4_data(cell: Stage4Cell, seed: int) -> Stage4Data:
     rng = np.random.default_rng(seed)
     x = rng.normal(size=(cell.n, cell.p))
     labels = tuple(f"g{index}" for index in range(cell.n_groups))
+    if cell.scenario == "pairwise_without_kway":
+        if cell.n_groups != 3:
+            raise ValueError("pairwise-without-K-way cells require exactly three groups")
+        codes = np.arange(cell.n) % 3
+        rng.shuffle(codes)
+        support = ((0.0, 1.0), (1.0, 2.0), (0.0, 2.0))
+        x[:, 0] = np.array([rng.choice(support[code]) for code in codes])
+        effects = np.zeros(3)
+        outcomes = 0.6 * x[:, 0] - 0.3 * x[:, 1] + rng.normal(size=cell.n)
+        return Stage4Data(
+            covariates=x,
+            groups=tuple(labels[code] for code in codes),
+            outcomes=outcomes,
+            row_ids=tuple(range(cell.n)),
+            group_effects=dict(zip(labels, effects, strict=True)),
+            true_pairs=tuple(itertools.combinations(labels, 2)),
+            true_hyperedges=(),
+        )
     slopes = np.linspace(-0.7, 0.7, cell.n_groups)
     scale = 0.25 if cell.scenario == "strong_complete_graph" else 1.0
     logits = scale * (x[:, [0]] * slopes + 0.3 * x[:, [1]] * slopes[::-1])
@@ -343,9 +362,17 @@ def _engineering_smoke_thresholds() -> DiagnosticThresholds:
 
 
 def run_campaign(
-    *, tier: str, thresholds_path: Path | None, shard_index: int, shard_count: int, output: Path
+    *,
+    tier: str,
+    thresholds_path: Path | None,
+    shard_index: int,
+    shard_count: int,
+    output: Path,
+    specification_path: Path | None = None,
 ) -> dict[str, Any]:
-    specification_path = Path(__file__).with_name("specs") / "stage4_graph_release.json"
+    specification_path = specification_path or (
+        Path(__file__).with_name("specs") / "stage4_graph_release.json"
+    )
     specification_bytes = specification_path.read_bytes()
     specification = load_specification(specification_path)
     if tier not in specification["tiers"]:
@@ -424,6 +451,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--tier", required=True)
     parser.add_argument("--thresholds", type=Path)
+    parser.add_argument(
+        "--spec", type=Path, default=Path("benchmarks/specs/stage4_graph_release.json")
+    )
     parser.add_argument("--shard-index", type=int, required=True)
     parser.add_argument("--shard-count", type=int, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -434,6 +464,7 @@ def main() -> None:
         shard_index=args.shard_index,
         shard_count=args.shard_count,
         output=args.output,
+        specification_path=args.spec,
     )
 
 

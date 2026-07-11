@@ -24,7 +24,10 @@ def _digest(value: object) -> str:
 def verify(paths: list[Path], specification: dict[str, Any]) -> dict[str, int]:
     tier = "engineering_smoke"
     cells = frozen_cells(tier, specification)
-    expected = {item for shard in range(4) for item in shard_items(cells, 5, shard, 4)}
+    repetitions = int(specification["tiers"][tier]["repetitions"])
+    expected = {
+        item for shard in range(4) for item in shard_items(cells, repetitions, shard, 4)
+    }
     observed: set[tuple[int, int]] = set()
     for path in paths:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -35,12 +38,12 @@ def verify(paths: list[Path], specification: dict[str, Any]) -> dict[str, int]:
             raise ValueError("smoke artifact has an unexpected tier or shard count")
         for record in payload["records"]:
             key = (int(record["cell_index"]), int(record["repetition"]))
-            scenario = cells[key[0]].scenario
+            cell = cells[key[0]]
             if key not in expected or key in observed:
                 raise ValueError("smoke artifact has an unexpected or duplicate work item")
             if record.get("status") != "completed":
                 raise ValueError(f"smoke work item {key} did not complete")
-            if scenario == "rare_group":
+            if cell.expected_outcome == "refusal":
                 if (
                     record.get("accepted")
                     or record.get("expected_refusal") != "insufficient_per_split_group_count"
