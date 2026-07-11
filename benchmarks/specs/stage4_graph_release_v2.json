@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "protocol": "stage4-graph-firewall-v2",
-  "status": "draft",
-  "frozen": false,
+  "status": "frozen",
+  "frozen": true,
   "validation_level": "directional",
   "cell_catalog": "stage4_graph_cells_v2.json",
   "candidate_subsets": {"pairs": "all", "subsets": "all_subsets_up_to_size_4", "global_claims": "supported_maximal_hyperedges_only"},

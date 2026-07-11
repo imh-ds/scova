@@ -49,6 +49,14 @@ def specification() -> dict:
     }
 
 
+def test_v2_release_specification_is_frozen() -> None:
+    path = Path("benchmarks/specs/stage4_graph_release_v2.json")
+    release_specification = json.loads(path.read_text(encoding="utf-8"))
+    assert release_specification["protocol"] == "stage4-graph-firewall-v2"
+    assert release_specification["status"] == "frozen"
+    assert release_specification["frozen"] is True
+
+
 def test_catalog_sharding_and_seed_truth_are_deterministic() -> None:
     cells = stage4_campaign.frozen_cells("directional_validation", specification())
     assert [cell.id for cell in cells] == [
