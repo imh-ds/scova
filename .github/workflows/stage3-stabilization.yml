@@ -2,8 +2,6 @@ name: Stage 3 stabilization
 
 on:
   pull_request:
-  schedule:
-    - cron: "0 4 * * *"
   workflow_dispatch:
     inputs:
       tier:

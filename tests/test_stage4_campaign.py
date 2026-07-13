@@ -184,6 +184,42 @@ def test_campaign_requires_stage3_thresholds_and_rejects_mixed_threshold_shards(
 def test_smoke_verifier_requires_complete_accepted_lock_safe_records(tmp_path: Path) -> None:
     spec = {
         **specification(),
+        "catalogs": {
+            "engineering_smoke": [
+                {
+                    "id": "engineering_smoke-000",
+                    "scenario": "strong_complete_graph",
+                    "n": 20,
+                    "n_groups": 3,
+                    "p": 3,
+                    "expected_outcome": "inferential",
+                },
+                {
+                    "id": "engineering_smoke-001",
+                    "scenario": "pairwise_without_kway",
+                    "n": 20,
+                    "n_groups": 3,
+                    "p": 3,
+                    "expected_outcome": "inferential",
+                },
+                {
+                    "id": "engineering_smoke-002",
+                    "scenario": "rare_group",
+                    "n": 20,
+                    "n_groups": 3,
+                    "p": 3,
+                    "expected_outcome": "refusal",
+                },
+                {
+                    "id": "engineering_smoke-003",
+                    "scenario": "global_null",
+                    "n": 20,
+                    "n_groups": 3,
+                    "p": 3,
+                    "expected_outcome": "inferential",
+                },
+            ]
+        },
         "tiers": {
             "engineering_smoke": {
                 "cells": 4,
@@ -207,7 +243,7 @@ def test_smoke_verifier_requires_complete_accepted_lock_safe_records(tmp_path: P
     for shard in range(4):
         records = []
         for cell_index, repetition in stage4_campaign.shard_items(cells, 5, shard, 4):
-            rare = cells[cell_index].scenario == "rare_group"
+            rare = cells[cell_index].expected_outcome == "refusal"
             records.append(
                 {
                     "cell_index": cell_index,
