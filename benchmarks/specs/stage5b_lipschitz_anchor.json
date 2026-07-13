@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "protocol": "stage5b-lipschitz-anchor-v1",
+  "status": "frozen",
+  "scenarios": ["bounded_lipschitz", "pairwise_without_kway", "lipschitz_violation"],
+  "required_criteria": ["geometry_reproducibility", "endpoint_monotonicity", "lock_refusals", "bounded_lipschitz_coverage", "violation_not_certified"]
+}

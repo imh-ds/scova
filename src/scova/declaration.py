@@ -14,6 +14,44 @@ Interpretation = Literal["descriptive", "causal"]
 
 
 @dataclass(frozen=True, slots=True)
+class SupportGeometryDeclaration:
+    """Outcome-blind geometry settings for experimental Stage 5B bounds."""
+
+    metric: Literal["shrinkage_mahalanobis"] = "shrinkage_mahalanobis"
+    neighbor_count: int = 10
+    softmin_temperature: Literal["design_median"] = "design_median"
+    gamma_grid: tuple[float, ...] = (0.0, 0.25, 0.5, 1.0, 2.0)
+    reference_partition: Literal["design"] = "design"
+    smoothing: Literal["soft_k_nearest"] = "soft_k_nearest"
+
+    def __post_init__(self) -> None:
+        grid = tuple(float(value) for value in self.gamma_grid)
+        if self.metric != "shrinkage_mahalanobis":
+            raise ValueError("Stage 5B requires shrinkage_mahalanobis geometry")
+        if self.neighbor_count < 1:
+            raise ValueError("support geometry neighbor_count must be positive")
+        if self.softmin_temperature != "design_median":
+            raise ValueError("Stage 5B requires a design_median soft-min temperature")
+        if not grid or grid[0] != 0 or any(not isfinite(value) or value < 0 for value in grid):
+            raise ValueError("support geometry gamma_grid must start at zero and be finite")
+        if any(right <= left for left, right in zip(grid, grid[1:], strict=False)):
+            raise ValueError("support geometry gamma_grid must be strictly increasing")
+        if self.reference_partition != "design" or self.smoothing != "soft_k_nearest":
+            raise ValueError("Stage 5B requires design references and soft_k_nearest smoothing")
+        object.__setattr__(self, "gamma_grid", grid)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "metric": self.metric,
+            "neighbor_count": self.neighbor_count,
+            "softmin_temperature": self.softmin_temperature,
+            "gamma_grid": list(self.gamma_grid),
+            "reference_partition": self.reference_partition,
+            "smoothing": self.smoothing,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class AnchoredBoundsDeclaration:
     """Outcome-range assumptions locked before Stage 5A outcome analysis."""
 
@@ -21,6 +59,7 @@ class AnchoredBoundsDeclaration:
     outcome_upper: float
     assumption: Literal["bounded_outcome"] = "bounded_outcome"
     support_weight: Literal["scaled_harmonic_overlap"] = "scaled_harmonic_overlap"
+    support_geometry: SupportGeometryDeclaration | None = None
 
     def __post_init__(self) -> None:
         lower = float(self.outcome_lower)
@@ -40,6 +79,9 @@ class AnchoredBoundsDeclaration:
             "outcome_upper": self.outcome_upper,
             "assumption": self.assumption,
             "support_weight": self.support_weight,
+            "support_geometry": (
+                None if self.support_geometry is None else self.support_geometry.to_dict()
+            ),
         }
 
 
@@ -265,7 +307,18 @@ class DesignDeclaration:
             anchored_bounds=(
                 None
                 if values.get("anchored_bounds") is None
-                else AnchoredBoundsDeclaration(**values["anchored_bounds"])
+                else AnchoredBoundsDeclaration(
+                    **{
+                        **values["anchored_bounds"],
+                        "support_geometry": (
+                            None
+                            if values["anchored_bounds"].get("support_geometry") is None
+                            else SupportGeometryDeclaration(
+                                **values["anchored_bounds"]["support_geometry"]
+                            )
+                        ),
+                    }
+                )
             ),
         )
 

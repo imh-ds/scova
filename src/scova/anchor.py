@@ -112,7 +112,7 @@ class AnchoredBoundsResult:
             contrasts = tuple(
                 AnchoredContrastResult(
                     name=str(item["name"]),
-                    groups=tuple(item["groups"]),  # type: ignore[arg-type]
+                    groups=tuple(item["groups"]),
                     identified_component=float(item["identified_component"]),
                     non_support_mass=float(item["non_support_mass"]),
                     lower_endpoint=float(item["lower_endpoint"]),
@@ -140,6 +140,104 @@ class AnchoredBoundsResult:
             contrasts=contrasts,
             refused=tuple(metadata["refused"]),
             package_version=str(metadata["package_version"]),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class LipschitzContrastResult:
+    """Experimental B2 endpoints on a declared finite Gamma grid."""
+
+    name: str
+    groups: tuple[JsonLabel, JsonLabel]
+    identified_component: float
+    gamma_grid: np.ndarray
+    lower_endpoints: np.ndarray
+    upper_endpoints: np.ndarray
+    smooth_distances: np.ndarray
+    reference_predictions: np.ndarray
+    exploratory_positive_gamma: float | None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "groups": list(self.groups),
+            "identified_component": self.identified_component,
+            "gamma_grid": self.gamma_grid.tolist(),
+            "lower_endpoints": self.lower_endpoints.tolist(),
+            "upper_endpoints": self.upper_endpoints.tolist(),
+            "exploratory_positive_gamma": self.exploratory_positive_gamma,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class LipschitzAnchorResult:
+    """Separate, non-confirmatory artifact for Stage 5B B2 analyses."""
+
+    design_lock: str
+    geometry_digest: str | None
+    verdict: str
+    outcome_lower: float | None
+    outcome_upper: float | None
+    gamma_grid: np.ndarray
+    contrasts: tuple[LipschitzContrastResult, ...]
+    refused: tuple[str, ...]
+    schema_version: int = 1
+
+    def report(self) -> dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "design_lock": self.design_lock,
+            "geometry_digest": self.geometry_digest,
+            "verdict": self.verdict,
+            "inference_scope": "experimental-graph-conditional-lipschitz-anchor",
+            "outcome_lower": self.outcome_lower,
+            "outcome_upper": self.outcome_upper,
+            "gamma_grid": self.gamma_grid.tolist(),
+            "contrasts": [item.to_dict() for item in self.contrasts],
+            "refused": list(self.refused),
+        }
+
+    def save(self, path: str | Path) -> None:
+        arrays: dict[str, np.ndarray] = {
+            "metadata": np.array(json.dumps(self.report(), sort_keys=True, allow_nan=False))
+        }
+        for index, contrast in enumerate(self.contrasts):
+            arrays[f"distances::{index}"] = contrast.smooth_distances
+            arrays[f"reference_predictions::{index}"] = contrast.reference_predictions
+        destination = Path(path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with destination.open("wb") as stream:
+            np.savez_compressed(stream, **arrays)
+
+    @classmethod
+    def load(cls, path: str | Path) -> LipschitzAnchorResult:
+        with np.load(Path(path), allow_pickle=False) as archive:
+            metadata = json.loads(str(archive["metadata"].item()))
+            if int(metadata["schema_version"]) != 1:
+                raise ValueError("unsupported Lipschitz-anchor schema")
+            contrasts = tuple(
+                LipschitzContrastResult(
+                    name=str(item["name"]),
+                    groups=tuple(item["groups"]),
+                    identified_component=float(item["identified_component"]),
+                    gamma_grid=np.asarray(item["gamma_grid"], dtype=float),
+                    lower_endpoints=np.asarray(item["lower_endpoints"], dtype=float),
+                    upper_endpoints=np.asarray(item["upper_endpoints"], dtype=float),
+                    smooth_distances=archive[f"distances::{index}"].copy(),
+                    reference_predictions=archive[f"reference_predictions::{index}"].copy(),
+                    exploratory_positive_gamma=item["exploratory_positive_gamma"],
+                )
+                for index, item in enumerate(metadata["contrasts"])
+            )
+        return cls(
+            design_lock=str(metadata["design_lock"]),
+            geometry_digest=metadata["geometry_digest"],
+            verdict=str(metadata["verdict"]),
+            outcome_lower=metadata["outcome_lower"],
+            outcome_upper=metadata["outcome_upper"],
+            gamma_grid=np.asarray(metadata["gamma_grid"], dtype=float),
+            contrasts=contrasts,
+            refused=tuple(metadata["refused"]),
         )
 
 
@@ -215,4 +313,65 @@ def bounded_pairwise_anchor(
         ),
         lower_influence_values=lower_influence,
         upper_influence_values=upper_influence,
+    )
+
+
+def lipschitz_pairwise_anchor(
+    *,
+    bounded: AnchoredContrastResult,
+    propensity: np.ndarray,
+    active_codes: tuple[int, int],
+    gamma_grid: np.ndarray,
+    smooth_distances: np.ndarray,
+    reference_predictions: np.ndarray,
+    outcome_lower: float,
+    outcome_upper: float,
+) -> LipschitzContrastResult:
+    """Construct clipped experimental B2 endpoints from frozen geometry outputs."""
+    omega, _ = scaled_harmonic_overlap_and_gradient(propensity, active_codes)
+    if smooth_distances.shape != (len(omega), 2) or reference_predictions.shape != (len(omega), 2):
+        raise ValueError("B2 distances and reference predictions must have two aligned columns")
+    lower: list[float] = []
+    upper: list[float] = []
+    remainder_weight = 1 - omega
+    for gamma in gamma_grid:
+        lower_a = np.clip(
+            reference_predictions[:, 0] - gamma * smooth_distances[:, 0],
+            outcome_lower,
+            outcome_upper,
+        )
+        upper_a = np.clip(
+            reference_predictions[:, 0] + gamma * smooth_distances[:, 0],
+            outcome_lower,
+            outcome_upper,
+        )
+        lower_b = np.clip(
+            reference_predictions[:, 1] - gamma * smooth_distances[:, 1],
+            outcome_lower,
+            outcome_upper,
+        )
+        upper_b = np.clip(
+            reference_predictions[:, 1] + gamma * smooth_distances[:, 1],
+            outcome_lower,
+            outcome_upper,
+        )
+        lower.append(
+            float(bounded.identified_component + np.mean(remainder_weight * (lower_a - upper_b)))
+        )
+        upper.append(
+            float(bounded.identified_component + np.mean(remainder_weight * (upper_a - lower_b)))
+        )
+    lower_array = np.asarray(lower)
+    upper_array = np.asarray(upper)
+    positive = gamma_grid[lower_array > 0]
+    return LipschitzContrastResult(
+        name=bounded.name,
+        groups=bounded.groups,
+        identified_component=bounded.identified_component,
+        gamma_grid=np.asarray(gamma_grid, dtype=float),
+        lower_endpoints=lower_array,
+        upper_endpoints=upper_array,
+        smooth_distances=smooth_distances,
+        reference_predictions=reference_predictions,
+        exploratory_positive_gamma=(None if not len(positive) else float(np.max(positive))),
     )

@@ -14,12 +14,18 @@ import pandas as pd
 from sklearn.base import BaseEstimator, clone
 from sklearn.linear_model import LogisticRegression
 
-from .anchor import AnchoredBoundsResult, bounded_pairwise_anchor
+from .anchor import (
+    AnchoredBoundsResult,
+    LipschitzAnchorResult,
+    bounded_pairwise_anchor,
+    lipschitz_pairwise_anchor,
+)
 from .declaration import ContrastSpec, DesignDeclaration, JsonLabel, SCOVADeclaration
 from .estimator import SCOVA
 from .experimental.gates import DiagnosticThresholds, GateDecision, production_thresholds
 from .experimental.path import PathDeclaration, fit_path
 from .experimental.tilts import geometric_tilt_and_gradient
+from .geometry import fit_support_geometry, soft_k_nearest
 from .graph import (
     ComparabilityGraphResult,
     PairwiseDiagnosticInput,
@@ -31,6 +37,32 @@ from .graph import (
 from .inference import SimultaneousInferenceResult, run_direct_influence_inference
 
 SplitAssignment = Literal["design", "estimation"]
+
+
+def _fold_reference_predictions(
+    engine: SCOVADesign,
+    x: np.ndarray,
+    outcomes: np.ndarray,
+    group_codes: np.ndarray,
+    folds: np.ndarray,
+    references: dict[int, np.ndarray],
+    neighbor_indices: dict[int, np.ndarray],
+    neighbor_weights: dict[int, np.ndarray],
+) -> np.ndarray:
+    """Predict frozen reference locations with models excluding each query fold."""
+    predictions = np.empty((len(x), len(references)), dtype=float)
+    for fold in sorted(np.unique(folds)):
+        test = folds == fold
+        train = ~test
+        for code, reference_x in references.items():
+            model = clone(engine.outcome_model) if engine.outcome_model is not None else None
+            if model is None:
+                model = SCOVA().outcome_model
+            model.fit(x[train & (group_codes == code)], outcomes[train & (group_codes == code)])
+            values = np.asarray(model.predict(reference_x), dtype=float)
+            selected = values[neighbor_indices[code][test]]
+            predictions[test, code] = np.sum(selected * neighbor_weights[code][test], axis=1)
+    return predictions
 
 
 def _json_label(value: Any) -> JsonLabel:
@@ -547,7 +579,16 @@ class SCOVADesign:
                 selected.extend(
                     (f"{name} @ lambda={lam:.2f}", hyperedge.groups, lam) for name in names
                 )
-        metadata = {"graph": graph_to_dict(graph), "selected_family": selected}
+        metadata: dict[str, Any] = {"graph": graph_to_dict(graph), "selected_family": selected}
+        anchor = declaration.anchored_bounds
+        if anchor is not None and anchor.support_geometry is not None:
+            metadata["support_geometry"] = fit_support_geometry(
+                data.covariates,
+                data.groups,
+                data.row_ids,
+                design_mask,
+                anchor.support_geometry,
+            )
         lock = DesignLock.create(declaration, data, assignments, design_metadata=metadata)
         return SCOVADesignResult(
             declaration, data, lock, graph, tuple(selected), {"design_rows": int(design_mask.sum())}
@@ -754,6 +795,127 @@ class SCOVADesign:
             seed,
             results,
             (),
+        )
+
+    def analyze_lipschitz_anchors(
+        self,
+        design: SCOVADesignResult,
+        outcomes: Sequence[float],
+        *,
+        row_ids: Sequence[JsonLabel],
+    ) -> LipschitzAnchorResult:
+        """Run experimental B2 bounds using only geometry frozen in the design lock."""
+        design.lock.verify(design.declaration, design.data)
+        anchor = design.declaration.anchored_bounds
+        if anchor is None or anchor.support_geometry is None:
+            return LipschitzAnchorResult(
+                design.lock.lock_hash, None, "refused", None, None, np.array([]), (),
+                ("a locked Stage 5B support geometry declaration is required",),
+            )
+        geometry = design.lock.design_metadata.get("support_geometry")
+        if not isinstance(geometry, Mapping) or not geometry.get("valid", False):
+            reason = "support geometry is absent or invalid"
+            if isinstance(geometry, Mapping) and isinstance(geometry.get("reason"), str):
+                reason = str(geometry["reason"])
+            return LipschitzAnchorResult(
+                design.lock.lock_hash, None, "refused", anchor.outcome_lower, anchor.outcome_upper,
+                np.asarray(anchor.support_geometry.gamma_grid), (), (reason,),
+            )
+        expected_ids = design.lock.estimation_row_ids
+        if set(row_ids) != set(expected_ids) or len(row_ids) != len(expected_ids):
+            raise ValueError("outcome row_ids must exactly match the locked estimation rows")
+        values = np.asarray(outcomes, dtype=float)
+        if values.shape != (len(row_ids),) or not np.all(np.isfinite(values)):
+            raise ValueError("outcomes must be a finite vector aligned with row_ids")
+        if np.any(values < anchor.outcome_lower) or np.any(values > anchor.outcome_upper):
+            return LipschitzAnchorResult(
+                design.lock.lock_hash, str(geometry["digest"]), "refused", anchor.outcome_lower,
+                anchor.outcome_upper, np.asarray(anchor.support_geometry.gamma_grid), (),
+                ("held-out outcomes fall outside the declared bounded-outcome range",),
+            )
+        pairs = tuple(edge.groups for edge in design.graph.edges if edge.supported)
+        if not pairs:
+            return LipschitzAnchorResult(
+                design.lock.lock_hash, str(geometry["digest"]), "refused", anchor.outcome_lower,
+                anchor.outcome_upper, np.asarray(anchor.support_geometry.gamma_grid), (),
+                ("no graph-supported pairwise contrasts are available",),
+            )
+        positions = [design.data.row_ids.index(row_id) for row_id in expected_ids]
+        x = design.data.covariates[positions]
+        groups = [design.data.groups[position] for position in positions]
+        outcome_by_id = dict(zip(row_ids, values, strict=True))
+        frame = pd.DataFrame(x, columns=design.declaration.covariates)
+        frame[design.declaration.group] = groups
+        frame["__scova_outcome__"] = [outcome_by_id[row_id] for row_id in expected_ids]
+        labels = _canonical_labels(design.data.groups)
+        contrasts = tuple(
+            ContrastSpec(f"{pair[0]} - {pair[1]}", ((pair[0], 1.0), (pair[1], -1.0)))
+            for pair in pairs
+        )
+        base = SCOVADeclaration(
+            "__scova_outcome__", design.declaration.group, design.declaration.covariates,
+            interpretation=design.declaration.interpretation, n_splits=design.declaration.n_splits,
+            random_state=design.declaration.random_state, contrasts=contrasts,
+        )
+        fitted = SCOVA(
+            propensity_model=self.propensity_model, outcome_model=self.outcome_model
+        ).fit(frame, base)
+        observed_codes = np.array([labels.index(group) for group in groups], dtype=int)
+        reference_ids = geometry["reference_row_ids"]
+        reference_positions = {
+            code: np.array(
+                [design.data.row_ids.index(row_id) for row_id in reference_ids[str(label)]]
+            )
+            for code, label in enumerate(labels)
+        }
+        references = {
+            code: design.data.covariates[reference_positions]
+            for code, reference_positions in reference_positions.items()
+        }
+        distances: dict[int, np.ndarray] = {}
+        neighbor_indices: dict[int, np.ndarray] = {}
+        neighbor_weights: dict[int, np.ndarray] = {}
+        for code in range(len(labels)):
+            distance, indices, weights = soft_k_nearest(x, references[code], dict(geometry))
+            distances[code] = distance
+            neighbor_indices[code] = indices
+            neighbor_weights[code] = weights
+        reference_prediction = _fold_reference_predictions(
+            self, x, values, observed_codes, fitted.fold_assignments, references,
+            neighbor_indices, neighbor_weights,
+        )
+        gamma_grid = np.asarray(anchor.support_geometry.gamma_grid)
+        results = []
+        for pair in pairs:
+            first, second = labels.index(pair[0]), labels.index(pair[1])
+            bounded = bounded_pairwise_anchor(
+                groups=pair,
+                group_codes=observed_codes,
+                outcomes=values,
+                propensity=fitted.propensity_predictions,
+                outcome_predictions=fitted.outcome_predictions,
+                active_codes=(first, second),
+                outcome_lower=anchor.outcome_lower,
+                outcome_upper=anchor.outcome_upper,
+                confidence_level=design.declaration.confidence_level,
+            )
+            results.append(
+                lipschitz_pairwise_anchor(
+                    bounded=bounded,
+                    propensity=fitted.propensity_predictions,
+                    active_codes=(first, second),
+                    gamma_grid=gamma_grid,
+                    smooth_distances=np.column_stack((distances[first], distances[second])),
+                    reference_predictions=np.column_stack(
+                        (reference_prediction[:, first], reference_prediction[:, second])
+                    ),
+                    outcome_lower=anchor.outcome_lower,
+                    outcome_upper=anchor.outcome_upper,
+                )
+            )
+        return LipschitzAnchorResult(
+            design.lock.lock_hash, str(geometry["digest"]), "experimental", anchor.outcome_lower,
+            anchor.outcome_upper, gamma_grid, tuple(results), (),
         )
 
 

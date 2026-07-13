@@ -7,11 +7,14 @@ from scova import (
     AnchoredBoundsDeclaration,
     AnchoredBoundsResult,
     DesignDeclaration,
+    LipschitzAnchorResult,
     OutcomeFreeDesignData,
     SCOVADesign,
+    SupportGeometryDeclaration,
 )
 from scova.anchor import bounded_pairwise_anchor, scaled_harmonic_overlap_and_gradient
 from scova.experimental.gates import DiagnosticThresholds
+from scova.geometry import soft_k_nearest
 from scova.simulate import generate_data
 
 DEFAULT_BOUNDS = AnchoredBoundsDeclaration(-20, 20)
@@ -134,3 +137,54 @@ def test_anchor_requires_locked_row_alignment() -> None:
     ids = design.lock.estimation_row_ids
     with pytest.raises(ValueError, match="exactly match"):
         engine.analyze_anchored_bounds(design, outcomes[list(ids[:-1])], row_ids=ids[:-1])
+
+
+def test_lipschitz_geometry_is_locked_smooth_and_experimental(tmp_path) -> None:
+    geometry = SupportGeometryDeclaration(neighbor_count=10, gamma_grid=(0.0, 0.5, 1.0))
+    bounds = AnchoredBoundsDeclaration(-20, 20, support_geometry=geometry)
+    engine, design, outcomes = prepared(bounds)
+    stored = design.lock.design_metadata["support_geometry"]
+    assert stored["valid"]
+    ids = design.lock.estimation_row_ids
+    result = engine.analyze_lipschitz_anchors(
+        design, outcomes[list(ids)], row_ids=ids
+    )
+    b1 = engine.analyze_anchored_bounds(design, outcomes[list(ids)], row_ids=ids)
+    b1_by_name = {contrast.name: contrast for contrast in b1.contrasts}
+    assert result.verdict == "experimental"
+    assert result.contrasts
+    for contrast in result.contrasts:
+        assert np.all(np.diff(contrast.lower_endpoints) <= 1e-10)
+        assert np.all(np.diff(contrast.upper_endpoints) >= -1e-10)
+        assert np.all(contrast.lower_endpoints <= contrast.upper_endpoints)
+        assert np.all(contrast.lower_endpoints >= b1_by_name[contrast.name].lower_endpoint)
+        assert np.all(contrast.upper_endpoints <= b1_by_name[contrast.name].upper_endpoint)
+    destination = tmp_path / "lipschitz.npz"
+    result.save(destination)
+    assert LipschitzAnchorResult.load(destination).report() == result.report()
+    query = design.data.covariates[:3]
+    reference_ids = stored["reference_row_ids"]["g0"]
+    reference_positions = [design.data.row_ids.index(row_id) for row_id in reference_ids]
+    reference = design.data.covariates[reference_positions]
+    distance, indices, weights = soft_k_nearest(query, reference, stored)
+    assert np.all(distance >= 0)
+    assert indices.shape == weights.shape
+    np.testing.assert_allclose(weights.sum(axis=1), 1)
+
+
+def test_lipschitz_refuses_missing_or_insufficient_geometry() -> None:
+    engine, design, outcomes = prepared()
+    ids = design.lock.estimation_row_ids
+    refused = engine.analyze_lipschitz_anchors(
+        design, outcomes[list(ids)], row_ids=ids
+    )
+    assert refused.verdict == "refused"
+    geometry = SupportGeometryDeclaration(neighbor_count=1000)
+    invalid_bounds = AnchoredBoundsDeclaration(-20, 20, support_geometry=geometry)
+    _, invalid, invalid_outcomes = prepared(invalid_bounds)
+    invalid_result = engine.analyze_lipschitz_anchors(
+        invalid,
+        invalid_outcomes[list(invalid.lock.estimation_row_ids)],
+        row_ids=invalid.lock.estimation_row_ids,
+    )
+    assert invalid_result.verdict == "refused"

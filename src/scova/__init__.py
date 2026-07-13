@@ -1,12 +1,18 @@
 """SCOVA's fixed-target, multi-group AIPW core."""
 
 from ._version import __version__
-from .anchor import AnchoredBoundsResult, AnchoredContrastResult
+from .anchor import (
+    AnchoredBoundsResult,
+    AnchoredContrastResult,
+    LipschitzAnchorResult,
+    LipschitzContrastResult,
+)
 from .declaration import (
     AnchoredBoundsDeclaration,
     ContrastSpec,
     DesignDeclaration,
     SCOVADeclaration,
+    SupportGeometryDeclaration,
 )
 from .design import (
     DesignLock,
@@ -38,6 +44,8 @@ __all__ = [
     "AnchoredBoundsDeclaration",
     "AnchoredBoundsResult",
     "AnchoredContrastResult",
+    "LipschitzAnchorResult",
+    "LipschitzContrastResult",
     "ContrastSpec",
     "ComparabilityGraphResult",
     "DesignDeclaration",
@@ -58,6 +66,7 @@ __all__ = [
     "SimultaneousInferenceResult",
     "SubsetDiagnosticInput",
     "SubsetHyperedge",
+    "SupportGeometryDeclaration",
     "Verdict",
     "__version__",
     "build_pairwise_comparability_graph",
