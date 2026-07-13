@@ -105,28 +105,43 @@ def load_specification(path: Path) -> dict[str, Any]:
     specification = json.loads(path.read_text(encoding="utf-8"))
     catalog_name = specification.get("cell_catalog")
     if catalog_name:
-        catalog = json.loads(path.with_name(str(catalog_name)).read_text(encoding="utf-8"))
+        catalog_path = path.with_name(str(catalog_name))
+        catalog_bytes = catalog_path.read_bytes()
+        catalog = json.loads(catalog_bytes)
         if catalog.get("base_catalog"):
             base_path = path.with_name(str(catalog["base_catalog"]))
-            base = json.loads(base_path.read_text(encoding="utf-8"))
+            base_bytes = base_path.read_bytes()
+            base = json.loads(base_bytes)
             catalog = {
                 **base,
                 "overrides": catalog.get("overrides", {}),
+                "transforms": catalog.get("transforms", []),
                 "schema_version": catalog.get("schema_version"),
             }
+            catalog_bytes += base_bytes
         if catalog.get("schema_version") != 1 or not isinstance(catalog.get("catalogs"), dict):
             raise ValueError("Stage 4 cell catalog has an unsupported schema")
         overrides = catalog.get("overrides", {})
         catalogs: dict[str, list[dict[str, Any]]] = {}
         for tier, items in catalog["catalogs"].items():
-            catalogs[tier] = [
-                {
-                    **item,
-                    **overrides.get(item["scenario"], {}),
-                }
-                for item in items
-            ]
+            rendered: list[dict[str, Any]] = []
+            for source_item in items:
+                item = {**source_item, **overrides.get(source_item["scenario"], {})}
+                for transform in catalog.get("transforms", []):
+                    when = transform["when"]
+                    matches = all(
+                        item.get(key) == value
+                        for key, value in when.items()
+                        if key != "scenario_not"
+                    ) and (
+                        "scenario_not" not in when or item["scenario"] != when["scenario_not"]
+                    )
+                    if matches:
+                        item = {**item, **transform["set"]}
+                rendered.append(item)
+            catalogs[tier] = rendered
         specification["catalogs"] = catalogs
+        specification["catalog_definition_sha256"] = sha256(catalog_bytes).hexdigest()
     return specification
 
 
@@ -465,6 +480,7 @@ def run_campaign(
         "tier": tier,
         "specification_sha256": sha256(specification_bytes).hexdigest(),
         "catalog_sha256": _digest([asdict(cell) for cell in cells]),
+        "catalog_definition_sha256": specification.get("catalog_definition_sha256"),
         "threshold_artifact_sha256": threshold_hash,
         "shard_index": shard_index,
         "shard_count": shard_count,

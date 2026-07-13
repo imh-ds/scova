@@ -73,6 +73,24 @@ def test_v3_release_specification_is_frozen_with_fresh_seeds() -> None:
     )
 
 
+def test_v4_catalog_has_no_nonrare_low_sample_eight_group_cells() -> None:
+    release = stage4_campaign.load_specification(
+        Path("benchmarks/specs/stage4_graph_release_v4.json")
+    )
+    cells = stage4_campaign.frozen_cells("directional_validation", release)
+    assert release["protocol"] == "stage4-graph-firewall-v4"
+    assert release["seed_namespaces"]["validation"] == 422000000
+    assert release["catalog_definition_sha256"]
+    assert all(
+        cell.scenario == "rare_group" or cell.expected_outcome == "inferential"
+        for cell in cells
+    )
+    assert all(
+        not (cell.scenario != "rare_group" and cell.n == 500 and cell.n_groups == 8)
+        for cell in cells
+    )
+
+
 def test_catalog_sharding_and_seed_truth_are_deterministic() -> None:
     cells = stage4_campaign.frozen_cells("directional_validation", specification())
     assert [cell.id for cell in cells] == [
@@ -119,7 +137,7 @@ def test_strong_complete_graph_dgp_is_balanced_and_complete() -> None:
 
 def _shard_payload(spec: dict, records: list[dict]) -> dict:
     payload = {
-        "schema_version": 3 if spec.get("metric_contract") == "stage4-v3" else 2,
+        "schema_version": 3 if spec.get("metric_contract") in {"stage4-v3", "stage4-v4"} else 2,
         "protocol": "stage4-test",
         "metric_contract": spec.get("metric_contract", "legacy"),
         "tier": "directional_validation",
@@ -215,6 +233,49 @@ def test_v3_summary_excludes_declared_refusals_from_inferential_metrics(tmp_path
     assert result["metrics"]["minimum_rare_group_refusal_rate"]["denominator"] == 1
     assert result["metrics"]["conditional_fwer_upper_bound_max"]["denominator"] == 1
     assert result["criteria"]["strong_complete_graph:directional_validation-002"]
+
+
+def test_v4_summary_reports_each_cell_acceptance_gate(tmp_path: Path) -> None:
+    spec = specification()
+    spec["metric_contract"] = "stage4-v4"
+    spec["directional_pass_criteria"]["minimum_accepted_repetitions_per_cell"] = 2
+    spec["tiers"]["directional_validation"]["repetitions"] = 2
+    spec["tiers"]["directional_validation"]["cells"] = 1
+    spec["tiers"]["directional_validation"]["scenarios"] = ["global_null"]
+    spec["catalogs"] = {
+        "directional_validation": [
+            {
+                "id": "directional_validation-000",
+                "scenario": "global_null",
+                "n": 30,
+                "n_groups": 2,
+                "p": 3,
+                "expected_outcome": "inferential",
+            }
+        ]
+    }
+    cells = stage4_campaign.frozen_cells("directional_validation", spec)
+    record = {
+        "cell_index": 0,
+        "repetition": 0,
+        "cell": {**stage4_campaign.asdict(cells[0])},
+        "status": "completed",
+        "accepted": True,
+        "simultaneous_coverage": True,
+        "any_rejection": False,
+        "selected_edges": [["g0", "g1"]],
+        "selected_hyperedges": [],
+        "complete_graph_recovered": True,
+        "post_lock_mutation_rejected": True,
+    }
+    refused = {**record, "repetition": 1, "accepted": False, "simultaneous_coverage": None}
+    payload = _shard_payload(spec, [record, refused])
+    path = tmp_path / "v4.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    result = summarize([path], spec, "directional_validation")
+    name = "accepted_repetitions:directional_validation-000"
+    assert result["criteria"][name] is False
+    assert result["metrics"][name]["numerator"] == 1
 
 
 def test_campaign_requires_stage3_thresholds_and_rejects_mixed_threshold_shards(

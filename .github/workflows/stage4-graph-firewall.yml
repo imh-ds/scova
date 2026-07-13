@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       protocol:
-        description: Frozen Stage 4 protocol; use v3 for all new runs
+        description: Frozen Stage 4 protocol; use v4 for all new runs
         required: true
         type: choice
-        options: [v3, v2, v1]
-        default: v3
+        options: [v4, v3, v2, v1]
+        default: v4
       tier:
         description: engineering_smoke, calibration, verify_calibration, directional_validation, directional_robustness, or aggregate
         required: true
@@ -39,9 +39,9 @@ on:
         required: false
         default: ""
       calibration_run_id:
-        description: Completed Stage 4 calibration run ID, required for verify_calibration
+        description: Completed calibration run ID for the selected protocol, required for verify_calibration
         required: false
-        default: "29067446075"
+        default: ""
 
 permissions:
   contents: read
@@ -52,7 +52,7 @@ env:
   OPENBLAS_NUM_THREADS: "1"
   MKL_NUM_THREADS: "1"
   NUMEXPR_NUM_THREADS: "1"
-  STAGE4_SPEC: ${{ inputs.protocol == 'v3' && 'benchmarks/specs/stage4_graph_release_v3.json' || inputs.protocol == 'v2' && 'benchmarks/specs/stage4_graph_release_v2.json' || 'benchmarks/specs/stage4_graph_release.json' }}
+  STAGE4_SPEC: ${{ inputs.protocol == 'v4' && 'benchmarks/specs/stage4_graph_release_v4.json' || inputs.protocol == 'v3' && 'benchmarks/specs/stage4_graph_release_v3.json' || inputs.protocol == 'v2' && 'benchmarks/specs/stage4_graph_release_v2.json' || 'benchmarks/specs/stage4_graph_release.json' }}
 
 concurrency:
   group: stage4-${{ inputs.protocol }}-${{ inputs.tier }}-${{ github.ref }}

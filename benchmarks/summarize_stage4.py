@@ -59,17 +59,27 @@ def _validate_shards(
             payload.get("tier"),
             payload.get("specification_sha256"),
             payload.get("catalog_sha256"),
+            payload.get("catalog_definition_sha256"),
             payload.get("threshold_artifact_sha256"),
             payload.get("shard_count"),
         )
         fingerprints.add(fingerprint)
         if payload["tier"] != tier:
             raise ValueError("shards must match the requested tier")
+        if payload.get("protocol") != specification.get("protocol"):
+            raise ValueError("shards do not match the requested frozen protocol")
         if specification.get("metric_contract") == "stage4-v3" and (
             payload.get("schema_version") != 3
             or payload.get("metric_contract") != "stage4-v3"
         ):
             raise ValueError("v3 shards must use the v3 metric-contract schema")
+        if specification.get("metric_contract") == "stage4-v4" and (
+            payload.get("schema_version") != 3
+            or payload.get("metric_contract") != "stage4-v4"
+            or payload.get("catalog_definition_sha256")
+            != specification.get("catalog_definition_sha256")
+        ):
+            raise ValueError("v4 shards must match the v4 catalog-definition schema")
         for record in payload["records"]:
             key = (int(record["cell_index"]), int(record["repetition"]))
             if key not in expected or key in observed:
@@ -192,6 +202,21 @@ def _v3_metric(
     }
 
 
+def _count_metric(
+    *, count: int, total: int, threshold: int, eligible_cell_id: str
+) -> dict[str, Any]:
+    return {
+        "numerator": count,
+        "denominator": total,
+        "point_estimate": count / total if total else 0.0,
+        "bound": float(count),
+        "threshold": threshold,
+        "comparison": ">=",
+        "eligible_cell_ids": [eligible_cell_id],
+        "passed": count >= threshold,
+    }
+
+
 def _summarize_v3(paths: list[Path], specification: dict[str, Any], tier: str) -> dict[str, Any]:
     records = _validate_shards(paths, specification, tier)
     criteria = specification["directional_pass_criteria"]
@@ -217,6 +242,15 @@ def _summarize_v3(paths: list[Path], specification: dict[str, Any], tier: str) -
         for cell_id in inferential_cells
     }
     metrics: dict[str, dict[str, Any]] = {}
+    if specification.get("metric_contract") == "stage4-v4":
+        repetitions = int(specification["tiers"][tier]["repetitions"])
+        for cell_id, count in accepted_per_cell.items():
+            metrics[f"accepted_repetitions:{cell_id}"] = _count_metric(
+                count=count,
+                total=repetitions,
+                threshold=criteria["minimum_accepted_repetitions_per_cell"],
+                eligible_cell_id=cell_id,
+            )
 
     null = [record for record in inferential if record["cell"]["scenario"] == "global_null"]
     metrics["conditional_fwer_upper_bound_max"] = _v3_metric(
@@ -333,7 +367,7 @@ def _summarize_v3(paths: list[Path], specification: dict[str, Any], tier: str) -
 
 
 def summarize(paths: list[Path], specification: dict[str, Any], tier: str) -> dict[str, Any]:
-    if specification.get("metric_contract") == "stage4-v3":
+    if specification.get("metric_contract") in {"stage4-v3", "stage4-v4"}:
         return _summarize_v3(paths, specification, tier)
     return _summarize_legacy(paths, specification, tier)
 

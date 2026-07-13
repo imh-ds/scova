@@ -204,3 +204,10 @@ strong-overlap DGP is balanced and independent of covariates; recovery requires
 the exact declared complete pairwise graph in every inferential strong-overlap
 cell. Expected rare-group refusals are evaluated separately. The v2 evidence
 remains an immutable failed protocol and cannot be rerun or retuned.
+
+The `stage4-graph-firewall-v4` protocol replaces every non-rare 500-row,
+eight-group catalog cell with its 2,000-row counterpart before any seed is
+used. Its artifacts bind the frozen protocol, rendered catalog, catalog-source
+digest, Stage 3 threshold digest, and v4 metric-contract schema. Every
+inferential cell reports its accepted-repetition count, so an aggregate names
+any cell that fails the minimum-acceptance requirement.

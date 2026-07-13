@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "base_catalog": "stage4_graph_cells_v2.json",
+  "transforms": [
+    {
+      "when": {"scenario": "rare_group"},
+      "set": {"expected_outcome": "refusal"}
+    },
+    {
+      "when": {"scenario_not": "rare_group"},
+      "set": {"expected_outcome": "inferential"}
+    },
+    {
+      "when": {"n": 500, "n_groups": 8, "scenario_not": "rare_group"},
+      "set": {"n": 2000, "expected_outcome": "inferential"}
+    }
+  ]
+}

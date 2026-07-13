@@ -1,0 +1,19 @@
+{
+  "schema_version": 3,
+  "protocol": "stage4-graph-firewall-v4",
+  "status": "frozen",
+  "frozen": true,
+  "validation_level": "directional",
+  "metric_contract": "stage4-v4",
+  "cell_catalog": "stage4_graph_cells_v4.json",
+  "candidate_subsets": {"pairs": "all", "subsets": "all_subsets_up_to_size_4", "global_claims": "supported_maximal_hyperedges_only"},
+  "target_path": {"lambdas": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]},
+  "tiers": {
+    "engineering_smoke": {"cells": 5, "repetitions": 5, "bootstrap": 99, "seed_namespace": "smoke"},
+    "calibration": {"cells": 50, "repetitions": 200, "bootstrap": 999, "seed_namespace": "calibration"},
+    "directional_validation": {"cells": 100, "repetitions": 400, "bootstrap": 999, "seed_namespace": "validation"},
+    "directional_robustness": {"cells": 50, "repetitions": 400, "bootstrap": 999, "seed_namespace": "robustness"}
+  },
+  "directional_pass_criteria": {"conditional_fwer_upper_bound_max": 0.1, "simultaneous_coverage_min": 0.9, "simultaneous_coverage_max": 0.99, "minimum_strong_complete_graph_rate": 0.8, "maximum_false_global_claim_rate_pairwise_only": 0.05, "minimum_supported_pairwise_edge_rate_pairwise_only": 0.6, "minimum_rare_group_refusal_rate": 0.6, "post_lock_confirmatory_mutation_rate": 0.0, "minimum_accepted_repetitions_per_cell": 120, "confidence_level": 0.95},
+  "seed_namespaces": {"smoke": 420000000, "calibration": 421000000, "validation": 422000000, "robustness": 423000000}
+}
