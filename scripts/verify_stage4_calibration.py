@@ -30,7 +30,7 @@ def verify(
     expected = set(work_items(cells, repetitions))
     observed: set[tuple[int, int]] = set()
     fingerprints: set[tuple[object, ...]] = set()
-    rare_refusals = 0
+    expected_refusals = 0
     for path in paths:
         payload = json.loads(path.read_text(encoding="utf-8"))
         claimed = payload.pop("sha256", None)
@@ -55,12 +55,12 @@ def verify(
                 raise ValueError("calibration artifact has an unexpected or duplicate work item")
             if record.get("status") != "completed":
                 raise ValueError(f"calibration work item {key} did not complete")
-            if cells[key[0]].scenario == "rare_group":
+            if cells[key[0]].expected_outcome == "refusal":
                 if record.get("expected_refusal") != "insufficient_per_split_group_count":
                     raise ValueError(
                         f"calibration rare-group work item {key} did not refuse safely"
                     )
-                rare_refusals += 1
+                expected_refusals += 1
             observed.add(key)
     if len(fingerprints) != 1:
         raise ValueError("calibration artifacts disagree on frozen provenance")
@@ -68,7 +68,7 @@ def verify(
         raise ValueError(
             f"incomplete calibration evidence: expected {len(expected)}, found {len(observed)}"
         )
-    return {"records": len(observed), "cells": len(cells), "rare_refusals": rare_refusals}
+    return {"records": len(observed), "cells": len(cells), "expected_refusals": expected_refusals}
 
 
 def main() -> None:
@@ -83,7 +83,7 @@ def main() -> None:
     result = verify(args.inputs, load_specification(args.spec))
     print(
         "Verified {records} Stage 4 calibration records across {cells} cells "
-        "with {rare_refusals} expected rare-group refusals".format(**result)
+        "with {expected_refusals} expected safe refusals".format(**result)
     )
 
 

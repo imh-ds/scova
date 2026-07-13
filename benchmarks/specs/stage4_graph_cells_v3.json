@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "base_catalog": "stage4_graph_cells_v2.json",
+  "overrides": {
+    "global_null": {"expected_outcome": "inferential"},
+    "sparse_pairwise_signal": {"expected_outcome": "inferential"},
+    "strong_complete_graph": {"expected_outcome": "inferential"},
+    "pairwise_without_kway": {"expected_outcome": "inferential"},
+    "rare_group": {"expected_outcome": "refusal"}
+  }
+}

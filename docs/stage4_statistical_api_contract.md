@@ -197,3 +197,10 @@ a versioned benchmark artifact:
 
 Any statistical, API, gate, or DGP change after freezing the accompanying
 protocol requires a new protocol identifier and new validation seed namespace.
+
+The `stage4-graph-firewall-v3` campaign evaluates FWER, coverage, and graph
+selection only among accepted records from cells declared inferential. Its
+strong-overlap DGP is balanced and independent of covariates; recovery requires
+the exact declared complete pairwise graph in every inferential strong-overlap
+cell. Expected rare-group refusals are evaluated separately. The v2 evidence
+remains an immutable failed protocol and cannot be rerun or retuned.

@@ -1,3 +1,4 @@
+import itertools
 import json
 from pathlib import Path
 
@@ -57,6 +58,21 @@ def test_v2_release_specification_is_frozen() -> None:
     assert release_specification["frozen"] is True
 
 
+def test_v3_release_specification_is_frozen_with_fresh_seeds() -> None:
+    release = stage4_campaign.load_specification(
+        Path("benchmarks/specs/stage4_graph_release_v3.json")
+    )
+    assert release["protocol"] == "stage4-graph-firewall-v3"
+    assert release["frozen"] is True
+    assert release["metric_contract"] == "stage4-v3"
+    assert release["seed_namespaces"]["validation"] != 222000000
+    assert all(
+        cell.expected_outcome == "inferential"
+        for cell in stage4_campaign.frozen_cells("directional_validation", release)
+        if cell.scenario == "strong_complete_graph"
+    )
+
+
 def test_catalog_sharding_and_seed_truth_are_deterministic() -> None:
     cells = stage4_campaign.frozen_cells("directional_validation", specification())
     assert [cell.id for cell in cells] == [
@@ -89,10 +105,23 @@ def test_pairwise_only_dgp_has_all_pairs_but_no_joint_hyperedge() -> None:
     assert not set.intersection(*support_by_group.values())
 
 
+def test_strong_complete_graph_dgp_is_balanced_and_complete() -> None:
+    cell = stage4_campaign.Stage4Cell("strong", "strong_complete_graph", 400, 4, 5)
+    data = stage4_campaign.generate_stage4_data(cell, seed=7)
+    assert {group: data.groups.count(group) for group in set(data.groups)} == {
+        "g0": 100,
+        "g1": 100,
+        "g2": 100,
+        "g3": 100,
+    }
+    assert data.true_pairs == tuple(itertools.combinations(("g0", "g1", "g2", "g3"), 2))
+
+
 def _shard_payload(spec: dict, records: list[dict]) -> dict:
     payload = {
-        "schema_version": 2,
+        "schema_version": 3 if spec.get("metric_contract") == "stage4-v3" else 2,
         "protocol": "stage4-test",
+        "metric_contract": spec.get("metric_contract", "legacy"),
         "tier": "directional_validation",
         "specification_sha256": "spec",
         "catalog_sha256": "catalog",
@@ -138,6 +167,54 @@ def test_aggregation_rejects_missing_duplicate_and_bad_checksum(tmp_path: Path) 
     path.write_text(json.dumps(broken), encoding="utf-8")
     with pytest.raises(ValueError, match="checksum"):
         summarize([path], spec, "directional_validation")
+
+
+def test_v3_summary_excludes_declared_refusals_from_inferential_metrics(tmp_path: Path) -> None:
+    spec = specification()
+    spec["metric_contract"] = "stage4-v3"
+    spec["catalogs"] = {
+        "directional_validation": [
+            {
+                "id": f"directional_validation-{index:03d}",
+                "scenario": scenario,
+                "n": 30,
+                "n_groups": 3,
+                "p": 3,
+                "expected_outcome": "refusal" if scenario == "rare_group" else "inferential",
+            }
+            for index, scenario in enumerate(spec["tiers"]["directional_validation"]["scenarios"])
+        ]
+    }
+    cells = stage4_campaign.frozen_cells("directional_validation", spec)
+    records = []
+    for index, cell in enumerate(cells):
+        refusal = cell.expected_outcome == "refusal"
+        records.append(
+            {
+                "cell_index": index,
+                "repetition": 0,
+                "cell": {
+                    "id": cell.id,
+                    "scenario": cell.scenario,
+                    "expected_outcome": cell.expected_outcome,
+                },
+                "status": "completed",
+                "accepted": not refusal,
+                "expected_refusal": "insufficient_per_split_group_count" if refusal else None,
+                "simultaneous_coverage": not refusal,
+                "any_rejection": False,
+                "selected_edges": [["g0", "g1"]],
+                "selected_hyperedges": [],
+                "complete_graph_recovered": cell.scenario == "strong_complete_graph",
+                "post_lock_mutation_rejected": None if refusal else True,
+            }
+        )
+    path = tmp_path / "v3.json"
+    path.write_text(json.dumps(_shard_payload(spec, records)), encoding="utf-8")
+    result = summarize([path], spec, "directional_validation")
+    assert result["metrics"]["minimum_rare_group_refusal_rate"]["denominator"] == 1
+    assert result["metrics"]["conditional_fwer_upper_bound_max"]["denominator"] == 1
+    assert result["criteria"]["strong_complete_graph:directional_validation-002"]
 
 
 def test_campaign_requires_stage3_thresholds_and_rejects_mixed_threshold_shards(

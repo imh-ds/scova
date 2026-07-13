@@ -34,7 +34,7 @@ Scenario = Literal[
     "pairwise_without_kway",
 ]
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 def _canonical_bytes(value: object) -> bytes:
@@ -106,9 +106,27 @@ def load_specification(path: Path) -> dict[str, Any]:
     catalog_name = specification.get("cell_catalog")
     if catalog_name:
         catalog = json.loads(path.with_name(str(catalog_name)).read_text(encoding="utf-8"))
+        if catalog.get("base_catalog"):
+            base_path = path.with_name(str(catalog["base_catalog"]))
+            base = json.loads(base_path.read_text(encoding="utf-8"))
+            catalog = {
+                **base,
+                "overrides": catalog.get("overrides", {}),
+                "schema_version": catalog.get("schema_version"),
+            }
         if catalog.get("schema_version") != 1 or not isinstance(catalog.get("catalogs"), dict):
             raise ValueError("Stage 4 cell catalog has an unsupported schema")
-        specification["catalogs"] = catalog["catalogs"]
+        overrides = catalog.get("overrides", {})
+        catalogs: dict[str, list[dict[str, Any]]] = {}
+        for tier, items in catalog["catalogs"].items():
+            catalogs[tier] = [
+                {
+                    **item,
+                    **overrides.get(item["scenario"], {}),
+                }
+                for item in items
+            ]
+        specification["catalogs"] = catalogs
     return specification
 
 
@@ -145,6 +163,21 @@ def generate_stage4_data(cell: Stage4Cell, seed: int) -> Stage4Data:
     rng = np.random.default_rng(seed)
     x = rng.normal(size=(cell.n, cell.p))
     labels = tuple(f"g{index}" for index in range(cell.n_groups))
+    if cell.scenario == "strong_complete_graph":
+        # A deliberately strong, complete-overlap target: group assignment is
+        # balanced and independent of covariates, so every pair is supported.
+        codes = np.arange(cell.n) % cell.n_groups
+        rng.shuffle(codes)
+        outcomes = 0.6 * x[:, 0] - 0.3 * x[:, 1] + rng.normal(size=cell.n)
+        return Stage4Data(
+            covariates=x,
+            groups=tuple(labels[code] for code in codes),
+            outcomes=outcomes,
+            row_ids=tuple(range(cell.n)),
+            group_effects=dict.fromkeys(labels, 0.0),
+            true_pairs=tuple(itertools.combinations(labels, 2)),
+            true_hyperedges=(tuple(labels),) if len(labels) >= 3 else (),
+        )
     if cell.scenario == "pairwise_without_kway":
         if cell.n_groups != 3:
             raise ValueError("pairwise-without-K-way cells require exactly three groups")
@@ -164,8 +197,7 @@ def generate_stage4_data(cell: Stage4Cell, seed: int) -> Stage4Data:
             true_hyperedges=(),
         )
     slopes = np.linspace(-0.7, 0.7, cell.n_groups)
-    scale = 0.25 if cell.scenario == "strong_complete_graph" else 1.0
-    logits = scale * (x[:, [0]] * slopes + 0.3 * x[:, [1]] * slopes[::-1])
+    logits = x[:, [0]] * slopes + 0.3 * x[:, [1]] * slopes[::-1]
     if cell.scenario == "rare_group":
         logits[:, -1] -= 4.0
     if cell.scenario == "pairwise_without_kway" and cell.n_groups >= 3:
@@ -221,6 +253,10 @@ def _truth_for_name(name: str, effects: dict[str, float]) -> float:
         return 0.0
     first, second = contrast.split(" - ", 1)
     return effects[first] - effects[second]
+
+
+def _normalized_pairs(pairs: Any) -> tuple[tuple[str, str], ...]:
+    return tuple(sorted(tuple(sorted(map(str, pair))) for pair in pairs))
 
 
 def _run_one(
@@ -290,6 +326,8 @@ def _run_one(
         "any_rejection": bool(rejected),
         "rejected_family": rejected,
         "post_lock_mutation_rejected": mutation_rejected,
+        "complete_graph_recovered": _normalized_pairs(selected_edges)
+        == _normalized_pairs(data.true_pairs),
         "truth": {
             "pairs": [list(pair) for pair in data.true_pairs],
             "hyperedges": [list(edge) for edge in data.true_hyperedges],
@@ -309,6 +347,7 @@ def _failure(error: Exception) -> dict[str, Any]:
         "selected_edges": [],
         "selected_hyperedges": [],
         "post_lock_mutation_rejected": False,
+        "complete_graph_recovered": False,
         "error": {"type": type(error).__name__, "message": str(error)},
     }
 
@@ -325,6 +364,7 @@ def _expected_rare_group_refusal(error: ValueError) -> dict[str, Any]:
         "selected_edges": [],
         "selected_hyperedges": [],
         "post_lock_mutation_rejected": None,
+        "complete_graph_recovered": False,
     }
 
 
@@ -421,6 +461,7 @@ def run_campaign(
     payload: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "protocol": specification["protocol"],
+        "metric_contract": specification.get("metric_contract", "legacy"),
         "tier": tier,
         "specification_sha256": sha256(specification_bytes).hexdigest(),
         "catalog_sha256": _digest([asdict(cell) for cell in cells]),

@@ -35,16 +35,29 @@ def blocking_reasons(root: Path, spec_path: Path | None = None) -> list[str]:
         reasons.append("evidence threshold digest does not match Stage 3 artifact")
     if evidence.get("status") != "pass":
         reasons.append("evidence status is not pass")
-    required = spec["directional_pass_criteria"]
     criteria = evidence.get("criteria", {})
-    failed = [
-        name
-        for prefix in ("", "robustness:")
-        for name in required
-        if criteria.get(f"{prefix}{name}") is not True
-    ]
+    if spec.get("metric_contract") == "stage4-v3":
+        failed = [name for name, passed in criteria.items() if passed is not True]
+    else:
+        required = spec["directional_pass_criteria"]
+        failed = [
+            name
+            for prefix in ("", "robustness:")
+            for name in required
+            if criteria.get(f"{prefix}{name}") is not True
+        ]
     if failed:
-        reasons.append("failed criteria: " + ", ".join(failed))
+        details = []
+        for name in failed:
+            metric = evidence.get("metrics", {}).get(name)
+            if metric:
+                details.append(
+                    f"{name} (bound={metric['bound']:.6g} {metric['comparison']} "
+                    f"{metric['threshold']:.6g}; n={metric['denominator']})"
+                )
+            else:
+                details.append(name)
+        reasons.append("failed criteria: " + ", ".join(details))
     return reasons
 
 

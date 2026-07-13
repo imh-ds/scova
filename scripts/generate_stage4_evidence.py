@@ -30,12 +30,17 @@ def main() -> None:
         **validation["criteria"],
         **{f"robustness:{key}": value for key, value in robustness["criteria"].items()},
     }
+    metrics = {
+        **validation.get("metrics", {}),
+        **{f"robustness:{key}": value for key, value in robustness.get("metrics", {}).items()},
+    }
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "protocol": validation["protocol"],
         "status": "pass" if validation["status"] == robustness["status"] == "pass" else "fail",
         "threshold_artifact_sha256": threshold.get("sha256"),
         "criteria": criteria,
+        "metrics": metrics,
         "validation_summary_sha256": validation["summary_sha256"],
         "robustness_summary_sha256": robustness["summary_sha256"],
     }
