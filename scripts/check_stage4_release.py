@@ -36,7 +36,11 @@ def blocking_reasons(root: Path, spec_path: Path | None = None) -> list[str]:
     if evidence.get("status") != "pass":
         reasons.append("evidence status is not pass")
     criteria = evidence.get("criteria", {})
-    if spec.get("metric_contract") == "stage4-v3":
+    # V3 and V4 intentionally publish one strong-complete-graph criterion per
+    # eligible cell.  The aggregate criterion names in ``required`` are kept
+    # for the legacy contracts only; looking for them in a V4 evidence file
+    # would falsely block an otherwise passing release.
+    if spec.get("metric_contract") in {"stage4-v3", "stage4-v4"}:
         failed = [name for name, passed in criteria.items() if passed is not True]
     else:
         required = spec["directional_pass_criteria"]

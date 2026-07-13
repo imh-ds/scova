@@ -7,6 +7,7 @@ import pytest
 
 from benchmarks import stage4_campaign
 from benchmarks.summarize_stage4 import summarize
+from scripts import check_stage4_release
 from scripts.verify_stage4_calibration import verify as verify_calibration
 from scripts.verify_stage4_smoke import verify
 
@@ -276,6 +277,51 @@ def test_v4_summary_reports_each_cell_acceptance_gate(tmp_path: Path) -> None:
     name = "accepted_repetitions:directional_validation-000"
     assert result["criteria"][name] is False
     assert result["metrics"][name]["numerator"] == 1
+
+
+def test_v4_release_checker_uses_per_cell_criteria(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A passing V4 artifact must not be checked against legacy aggregate keys."""
+    root = tmp_path
+    spec = {
+        "protocol": "stage4-graph-firewall-v4",
+        "metric_contract": "stage4-v4",
+        "directional_pass_criteria": {
+            "minimum_strong_complete_graph_rate": 0.8,
+        },
+    }
+    spec_path = root / "stage4-v4.json"
+    spec_path.write_text(json.dumps(spec), encoding="utf-8")
+    artifact_dir = root / "release" / "artifacts"
+    artifact_dir.mkdir(parents=True)
+    (artifact_dir / "stage3-directional-thresholds.json").write_text(
+        "{}", encoding="utf-8"
+    )
+    evidence = {
+        "protocol": spec["protocol"],
+        "threshold_artifact_sha256": "threshold",
+        "status": "pass",
+        "criteria": {
+            "strong_complete_graph:directional_validation-002": True,
+            "robustness:strong_complete_graph:directional_robustness-002": True,
+        },
+        "metrics": {},
+    }
+    (artifact_dir / "stage4-evidence.json").write_text(
+        json.dumps(evidence), encoding="utf-8"
+    )
+
+    class CalibratedThresholds:
+        calibrated = True
+        artifact_sha256 = "threshold"
+
+    monkeypatch.setattr(
+        check_stage4_release.DiagnosticThresholds,
+        "from_calibration_artifact",
+        lambda _: CalibratedThresholds(),
+    )
+    assert check_stage4_release.blocking_reasons(root, spec_path) == []
 
 
 def test_campaign_requires_stage3_thresholds_and_rejects_mixed_threshold_shards(
