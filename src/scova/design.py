@@ -14,7 +14,8 @@ import pandas as pd
 from sklearn.base import BaseEstimator, clone
 from sklearn.linear_model import LogisticRegression
 
-from .declaration import DesignDeclaration, JsonLabel, SCOVADeclaration
+from .anchor import AnchoredBoundsResult, bounded_pairwise_anchor
+from .declaration import ContrastSpec, DesignDeclaration, JsonLabel, SCOVADeclaration
 from .estimator import SCOVA
 from .experimental.gates import DiagnosticThresholds, GateDecision, production_thresholds
 from .experimental.path import PathDeclaration, fit_path
@@ -637,6 +638,122 @@ class SCOVADesign:
         reliability = "certified-overlap-only" if self.thresholds.calibrated else "exploratory-only"
         return SCOVAGraphResult(
             design.lock.lock_hash, design.declaration.interpretation, reliability, inference, ()
+        )
+
+    def analyze_anchored_bounds(
+        self,
+        design: SCOVADesignResult,
+        outcomes: Sequence[float],
+        *,
+        row_ids: Sequence[JsonLabel],
+        confidence_level: float = 0.95,
+    ) -> AnchoredBoundsResult:
+        """Run the locked Stage 5A B1 analysis for graph-supported pairs only."""
+        design.lock.verify(design.declaration, design.data)
+        anchor = design.declaration.anchored_bounds
+        seed = design.declaration.random_state
+        if anchor is None:
+            return AnchoredBoundsResult(
+                design.lock.lock_hash,
+                design.declaration.interpretation,
+                "refused",
+                "bounded_outcome",
+                "scaled_harmonic_overlap",
+                None,
+                None,
+                confidence_level,
+                seed,
+                (),
+                ("anchored outcome bounds were not declared before design locking",),
+            )
+        expected_ids = design.lock.estimation_row_ids
+        if set(row_ids) != set(expected_ids) or len(row_ids) != len(expected_ids):
+            raise ValueError("outcome row_ids must exactly match the locked estimation rows")
+        values = np.asarray(outcomes, dtype=float)
+        if values.shape != (len(row_ids),) or not np.all(np.isfinite(values)):
+            raise ValueError("outcomes must be a finite vector aligned with row_ids")
+        if not 0 < confidence_level < 1:
+            raise ValueError("confidence_level must lie strictly between 0 and 1")
+        if np.any(values < anchor.outcome_lower) or np.any(values > anchor.outcome_upper):
+            return AnchoredBoundsResult(
+                design.lock.lock_hash,
+                design.declaration.interpretation,
+                "refused",
+                anchor.assumption,
+                anchor.support_weight,
+                anchor.outcome_lower,
+                anchor.outcome_upper,
+                confidence_level,
+                seed,
+                (),
+                ("held-out outcomes fall outside the declared bounded-outcome range",),
+            )
+        pairs = tuple(edge.groups for edge in design.graph.edges if edge.supported)
+        if not pairs:
+            return AnchoredBoundsResult(
+                design.lock.lock_hash,
+                design.declaration.interpretation,
+                "refused",
+                anchor.assumption,
+                anchor.support_weight,
+                anchor.outcome_lower,
+                anchor.outcome_upper,
+                confidence_level,
+                seed,
+                (),
+                ("no graph-supported pairwise contrasts are available",),
+            )
+        outcome_by_id = dict(zip(row_ids, values, strict=True))
+        positions = [design.data.row_ids.index(row_id) for row_id in expected_ids]
+        x = design.data.covariates[positions]
+        groups = [design.data.groups[position] for position in positions]
+        frame = pd.DataFrame(x, columns=design.declaration.covariates)
+        frame[design.declaration.group] = groups
+        frame["__scova_outcome__"] = [outcome_by_id[row_id] for row_id in expected_ids]
+        labels = _canonical_labels(design.data.groups)
+        contrasts = tuple(
+            ContrastSpec(f"{pair[0]} - {pair[1]}", ((pair[0], 1.0), (pair[1], -1.0)))
+            for pair in pairs
+        )
+        base = SCOVADeclaration(
+            "__scova_outcome__",
+            design.declaration.group,
+            design.declaration.covariates,
+            interpretation=design.declaration.interpretation,
+            n_splits=design.declaration.n_splits,
+            random_state=seed,
+            contrasts=contrasts,
+        )
+        fitted = SCOVA(
+            propensity_model=self.propensity_model, outcome_model=self.outcome_model
+        ).fit(frame, base)
+        observed_codes = np.array([labels.index(group) for group in groups], dtype=int)
+        results = tuple(
+            bounded_pairwise_anchor(
+                groups=pair,
+                group_codes=observed_codes,
+                outcomes=values,
+                propensity=fitted.propensity_predictions,
+                outcome_predictions=fitted.outcome_predictions,
+                active_codes=(labels.index(pair[0]), labels.index(pair[1])),
+                outcome_lower=anchor.outcome_lower,
+                outcome_upper=anchor.outcome_upper,
+                confidence_level=confidence_level,
+            )
+            for pair in pairs
+        )
+        return AnchoredBoundsResult(
+            design.lock.lock_hash,
+            design.declaration.interpretation,
+            "interval-only",
+            anchor.assumption,
+            anchor.support_weight,
+            anchor.outcome_lower,
+            anchor.outcome_upper,
+            confidence_level,
+            seed,
+            results,
+            (),
         )
 
 

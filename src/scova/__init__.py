@@ -1,7 +1,13 @@
 """SCOVA's fixed-target, multi-group AIPW core."""
 
 from ._version import __version__
-from .declaration import ContrastSpec, DesignDeclaration, SCOVADeclaration
+from .anchor import AnchoredBoundsResult, AnchoredContrastResult
+from .declaration import (
+    AnchoredBoundsDeclaration,
+    ContrastSpec,
+    DesignDeclaration,
+    SCOVADeclaration,
+)
 from .design import (
     DesignLock,
     OutcomeFreeDesignData,
@@ -29,6 +35,9 @@ from .result import ContrastEstimate, SCOVAResult, Verdict
 
 __all__ = [
     "ContrastEstimate",
+    "AnchoredBoundsDeclaration",
+    "AnchoredBoundsResult",
+    "AnchoredContrastResult",
     "ContrastSpec",
     "ComparabilityGraphResult",
     "DesignDeclaration",

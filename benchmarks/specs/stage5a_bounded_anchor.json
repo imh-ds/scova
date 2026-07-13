@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "protocol": "stage5a-bounded-anchor-v1",
+  "status": "frozen",
+  "scenarios": ["bounded_full_support", "pairwise_without_kway", "bounded_support_failure"],
+  "required_criteria": ["ordered_endpoints", "monotone_outcome_bounds", "locked_graph_only", "bounded_truth_coverage"]
+}

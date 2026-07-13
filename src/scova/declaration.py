@@ -6,10 +6,41 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from hashlib import sha256
+from math import isfinite
 from typing import Any, Literal
 
 JsonLabel = str | int | float | bool
 Interpretation = Literal["descriptive", "causal"]
+
+
+@dataclass(frozen=True, slots=True)
+class AnchoredBoundsDeclaration:
+    """Outcome-range assumptions locked before Stage 5A outcome analysis."""
+
+    outcome_lower: float
+    outcome_upper: float
+    assumption: Literal["bounded_outcome"] = "bounded_outcome"
+    support_weight: Literal["scaled_harmonic_overlap"] = "scaled_harmonic_overlap"
+
+    def __post_init__(self) -> None:
+        lower = float(self.outcome_lower)
+        upper = float(self.outcome_upper)
+        if not (isfinite(lower) and isfinite(upper) and lower < upper):
+            raise ValueError("anchored outcome bounds must be finite with lower < upper")
+        if self.assumption != "bounded_outcome":
+            raise ValueError("Stage 5A supports only the bounded_outcome assumption")
+        if self.support_weight != "scaled_harmonic_overlap":
+            raise ValueError("Stage 5A requires scaled_harmonic_overlap support weights")
+        object.__setattr__(self, "outcome_lower", lower)
+        object.__setattr__(self, "outcome_upper", upper)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "outcome_lower": self.outcome_lower,
+            "outcome_upper": self.outcome_upper,
+            "assumption": self.assumption,
+            "support_weight": self.support_weight,
+        }
 
 
 def _json_label(value: Any) -> JsonLabel:
@@ -125,6 +156,7 @@ class DesignDeclaration:
     design_fraction: float = 0.5
     gate_policy: Mapping[str, Any] = field(default_factory=dict)
     learner_profile: str = "default"
+    anchored_bounds: AnchoredBoundsDeclaration | None = None
 
     def __post_init__(self) -> None:
         covariates = tuple(self.covariates)
@@ -195,6 +227,9 @@ class DesignDeclaration:
             "design_fraction": self.design_fraction,
             "gate_policy": self.gate_policy,
             "learner_profile": self.learner_profile,
+            "anchored_bounds": (
+                None if self.anchored_bounds is None else self.anchored_bounds.to_dict()
+            ),
         }
 
     @property
@@ -227,6 +262,11 @@ class DesignDeclaration:
             design_fraction=float(values.get("design_fraction", 0.5)),
             gate_policy=values.get("gate_policy", {}),
             learner_profile=str(values.get("learner_profile", "default")),
+            anchored_bounds=(
+                None
+                if values.get("anchored_bounds") is None
+                else AnchoredBoundsDeclaration(**values["anchored_bounds"])
+            ),
         )
 
 
