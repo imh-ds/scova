@@ -36,9 +36,15 @@ def blocking_reasons(root: Path, spec_path: Path | None = None) -> list[str]:
     if evidence.get("status") != "pass":
         reasons.append("evidence status is not pass")
     required = spec["directional_pass_criteria"]
-    missing = [name for name in required if evidence.get("criteria", {}).get(name) is not True]
-    if missing:
-        reasons.append("failed criteria: " + ", ".join(missing))
+    criteria = evidence.get("criteria", {})
+    failed = [
+        name
+        for prefix in ("", "robustness:")
+        for name in required
+        if criteria.get(f"{prefix}{name}") is not True
+    ]
+    if failed:
+        reasons.append("failed criteria: " + ", ".join(failed))
     return reasons
 
 
