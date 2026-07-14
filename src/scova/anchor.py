@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scipy.optimize import brentq
 from scipy.stats import norm
 
 from ._version import __version__
 from .declaration import JsonLabel
 
 ANCHOR_SCHEMA_VERSION = 1
+LIPSCHITZ_SCHEMA_VERSION = 2
 
 
 @dataclass(frozen=True, slots=True)
@@ -156,9 +158,15 @@ class LipschitzContrastResult:
     smooth_distances: np.ndarray
     reference_predictions: np.ndarray
     exploratory_positive_gamma: float | None
+    lower_influence_values: np.ndarray | None = None
+    upper_influence_values: np.ndarray | None = None
+    endpoint_standard_errors: np.ndarray | None = None
+    confidence_intervals: np.ndarray | None = None
+    inference_status: str = "unavailable"
+    boundary_proximity: np.ndarray | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        report: dict[str, Any] = {
             "name": self.name,
             "groups": list(self.groups),
             "identified_component": self.identified_component,
@@ -166,7 +174,15 @@ class LipschitzContrastResult:
             "lower_endpoints": self.lower_endpoints.tolist(),
             "upper_endpoints": self.upper_endpoints.tolist(),
             "exploratory_positive_gamma": self.exploratory_positive_gamma,
+            "inference_status": self.inference_status,
         }
+        if self.endpoint_standard_errors is not None:
+            report["endpoint_standard_errors"] = self.endpoint_standard_errors.tolist()
+        if self.confidence_intervals is not None:
+            report["confidence_intervals"] = self.confidence_intervals.tolist()
+        if self.boundary_proximity is not None:
+            report["boundary_proximity"] = self.boundary_proximity.tolist()
+        return report
 
 
 @dataclass(frozen=True, slots=True)
@@ -181,7 +197,10 @@ class LipschitzAnchorResult:
     gamma_grid: np.ndarray
     contrasts: tuple[LipschitzContrastResult, ...]
     refused: tuple[str, ...]
-    schema_version: int = 1
+    confidence_level: float | None = None
+    inference_method: str = "unavailable"
+    transport_diagnostics: dict[str, Any] = field(default_factory=dict)
+    schema_version: int = LIPSCHITZ_SCHEMA_VERSION
 
     def report(self) -> dict[str, Any]:
         return {
@@ -193,6 +212,9 @@ class LipschitzAnchorResult:
             "outcome_lower": self.outcome_lower,
             "outcome_upper": self.outcome_upper,
             "gamma_grid": self.gamma_grid.tolist(),
+            "confidence_level": self.confidence_level,
+            "inference_method": self.inference_method,
+            "transport_diagnostics": self.transport_diagnostics,
             "contrasts": [item.to_dict() for item in self.contrasts],
             "refused": list(self.refused),
         }
@@ -204,6 +226,10 @@ class LipschitzAnchorResult:
         for index, contrast in enumerate(self.contrasts):
             arrays[f"distances::{index}"] = contrast.smooth_distances
             arrays[f"reference_predictions::{index}"] = contrast.reference_predictions
+            if contrast.lower_influence_values is not None:
+                arrays[f"lower_influence::{index}"] = contrast.lower_influence_values
+            if contrast.upper_influence_values is not None:
+                arrays[f"upper_influence::{index}"] = contrast.upper_influence_values
         destination = Path(path)
         destination.parent.mkdir(parents=True, exist_ok=True)
         with destination.open("wb") as stream:
@@ -213,7 +239,8 @@ class LipschitzAnchorResult:
     def load(cls, path: str | Path) -> LipschitzAnchorResult:
         with np.load(Path(path), allow_pickle=False) as archive:
             metadata = json.loads(str(archive["metadata"].item()))
-            if int(metadata["schema_version"]) != 1:
+            version = int(metadata["schema_version"])
+            if version not in (1, LIPSCHITZ_SCHEMA_VERSION):
                 raise ValueError("unsupported Lipschitz-anchor schema")
             contrasts = tuple(
                 LipschitzContrastResult(
@@ -226,6 +253,35 @@ class LipschitzAnchorResult:
                     smooth_distances=archive[f"distances::{index}"].copy(),
                     reference_predictions=archive[f"reference_predictions::{index}"].copy(),
                     exploratory_positive_gamma=item["exploratory_positive_gamma"],
+                    lower_influence_values=(
+                        archive[f"lower_influence::{index}"].copy()
+                        if version >= 2 and f"lower_influence::{index}" in archive.files
+                        else None
+                    ),
+                    upper_influence_values=(
+                        archive[f"upper_influence::{index}"].copy()
+                        if version >= 2 and f"upper_influence::{index}" in archive.files
+                        else None
+                    ),
+                    endpoint_standard_errors=(
+                        np.asarray(item["endpoint_standard_errors"], dtype=float)
+                        if version >= 2 and item.get("endpoint_standard_errors") is not None
+                        else None
+                    ),
+                    confidence_intervals=(
+                        np.asarray(item["confidence_intervals"], dtype=float)
+                        if version >= 2 and item.get("confidence_intervals") is not None
+                        else None
+                    ),
+                    inference_status=(
+                        str(item.get("inference_status", "unavailable"))
+                        if version >= 2 else "legacy-unavailable"
+                    ),
+                    boundary_proximity=(
+                        np.asarray(item["boundary_proximity"], dtype=bool)
+                        if version >= 2 and item.get("boundary_proximity") is not None
+                        else None
+                    ),
                 )
                 for index, item in enumerate(metadata["contrasts"])
             )
@@ -238,6 +294,16 @@ class LipschitzAnchorResult:
             gamma_grid=np.asarray(metadata["gamma_grid"], dtype=float),
             contrasts=contrasts,
             refused=tuple(metadata["refused"]),
+            confidence_level=(
+                None if version == 1 else metadata.get("confidence_level")
+            ),
+            inference_method=(
+                "legacy-unavailable" if version == 1 else str(metadata.get("inference_method"))
+            ),
+            transport_diagnostics=(
+                {} if version == 1 else dict(metadata.get("transport_diagnostics", {}))
+            ),
+            schema_version=version,
         )
 
 
@@ -326,43 +392,91 @@ def lipschitz_pairwise_anchor(
     reference_predictions: np.ndarray,
     outcome_lower: float,
     outcome_upper: float,
+    transport_residuals: np.ndarray | None = None,
+    confidence_level: float | None = None,
+    boundary_tolerance: float = 1e-12,
 ) -> LipschitzContrastResult:
     """Construct clipped experimental B2 endpoints from frozen geometry outputs."""
     omega, _ = scaled_harmonic_overlap_and_gradient(propensity, active_codes)
     if smooth_distances.shape != (len(omega), 2) or reference_predictions.shape != (len(omega), 2):
         raise ValueError("B2 distances and reference predictions must have two aligned columns")
+    if transport_residuals is not None and transport_residuals.shape != (len(omega), 2):
+        raise ValueError("B2 transport residuals must have two aligned columns")
     lower: list[float] = []
     upper: list[float] = []
+    lower_influence: list[np.ndarray] = []
+    upper_influence: list[np.ndarray] = []
+    boundary: list[bool] = []
     remainder_weight = 1 - omega
     for gamma in gamma_grid:
+        raw_lower_a = reference_predictions[:, 0] - gamma * smooth_distances[:, 0]
+        raw_upper_a = reference_predictions[:, 0] + gamma * smooth_distances[:, 0]
+        raw_lower_b = reference_predictions[:, 1] - gamma * smooth_distances[:, 1]
+        raw_upper_b = reference_predictions[:, 1] + gamma * smooth_distances[:, 1]
         lower_a = np.clip(
-            reference_predictions[:, 0] - gamma * smooth_distances[:, 0],
+            raw_lower_a,
             outcome_lower,
             outcome_upper,
         )
         upper_a = np.clip(
-            reference_predictions[:, 0] + gamma * smooth_distances[:, 0],
+            raw_upper_a,
             outcome_lower,
             outcome_upper,
         )
         lower_b = np.clip(
-            reference_predictions[:, 1] - gamma * smooth_distances[:, 1],
+            raw_lower_b,
             outcome_lower,
             outcome_upper,
         )
         upper_b = np.clip(
-            reference_predictions[:, 1] + gamma * smooth_distances[:, 1],
+            raw_upper_b,
             outcome_lower,
             outcome_upper,
         )
+        lower_remainder = lower_a - upper_b
+        upper_remainder = upper_a - lower_b
+        transport = np.zeros(len(omega))
+        if transport_residuals is not None:
+            transport = remainder_weight * (transport_residuals[:, 0] - transport_residuals[:, 1])
         lower.append(
-            float(bounded.identified_component + np.mean(remainder_weight * (lower_a - upper_b)))
+            float(
+                bounded.identified_component
+                + np.mean(remainder_weight * lower_remainder)
+                + transport.mean()
+            )
         )
         upper.append(
-            float(bounded.identified_component + np.mean(remainder_weight * (upper_a - lower_b)))
+            float(
+                bounded.identified_component
+                + np.mean(remainder_weight * upper_remainder)
+                + transport.mean()
+            )
         )
+        # Start from B1's corrected endpoint EIF, then replace its constant
+        # remainder by the frozen smooth-reference remainder.  The augmented
+        # residual score is cross-fitted upstream and supplies the regular
+        # reference-prediction channel.
+        lower_delta = remainder_weight * (lower_remainder - (outcome_lower - outcome_upper))
+        upper_delta = remainder_weight * (upper_remainder - (outcome_upper - outcome_lower))
+        lower_phi = bounded.lower_influence_values + lower_delta - lower_delta.mean()
+        upper_phi = bounded.upper_influence_values + upper_delta - upper_delta.mean()
+        if transport_residuals is not None:
+            lower_phi = lower_phi + transport - transport.mean()
+            upper_phi = upper_phi + transport - transport.mean()
+        lower_influence.append(lower_phi)
+        upper_influence.append(upper_phi)
+        raw = np.column_stack((raw_lower_a, raw_upper_a, raw_lower_b, raw_upper_b))
+        boundary.append(bool(
+            np.any(np.isclose(raw, outcome_lower, rtol=0, atol=boundary_tolerance))
+            or np.any(np.isclose(raw, outcome_upper, rtol=0, atol=boundary_tolerance))
+        ))
     lower_array = np.asarray(lower)
     upper_array = np.asarray(upper)
+    lower_influence_array = np.column_stack(lower_influence)
+    upper_influence_array = np.column_stack(upper_influence)
+    standard_errors, intervals = _imbens_manski_intervals(
+        lower_array, upper_array, lower_influence_array, upper_influence_array, confidence_level
+    )
     positive = gamma_grid[lower_array > 0]
     return LipschitzContrastResult(
         name=bounded.name,
@@ -374,4 +488,44 @@ def lipschitz_pairwise_anchor(
         smooth_distances=smooth_distances,
         reference_predictions=reference_predictions,
         exploratory_positive_gamma=(None if not len(positive) else float(np.max(positive))),
+        lower_influence_values=lower_influence_array,
+        upper_influence_values=upper_influence_array,
+        endpoint_standard_errors=standard_errors,
+        confidence_intervals=intervals,
+        inference_status=("blocked-boundary" if any(boundary) else "experimental-eif"),
+        boundary_proximity=np.asarray(boundary, dtype=bool),
     )
+
+
+def _imbens_manski_intervals(
+    lower: np.ndarray,
+    upper: np.ndarray,
+    lower_influence: np.ndarray,
+    upper_influence: np.ndarray,
+    confidence_level: float | None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return endpoint SEs and Imbens--Manski confidence intervals per Gamma."""
+    if confidence_level is None or not 0 < confidence_level < 1:
+        raise ValueError("B2 endpoint inference requires a confidence level in (0, 1)")
+    n = len(lower_influence)
+    if n < 2:
+        raise ValueError("B2 endpoint inference requires at least two rows")
+    lower_se = np.sqrt(np.sum(np.square(lower_influence), axis=0) / (n * (n - 1)))
+    upper_se = np.sqrt(np.sum(np.square(upper_influence), axis=0) / (n * (n - 1)))
+    intervals = np.empty((len(lower), 2), dtype=float)
+    alpha = 1 - confidence_level
+    for index, (left, right, left_se, right_se) in enumerate(
+        zip(lower, upper, lower_se, upper_se, strict=True)
+    ):
+        scale = max(float(left_se), float(right_se))
+        if not np.isfinite(scale) or scale <= 0:
+            raise ValueError("B2 endpoint influence values have non-positive standard error")
+        standardized_gap = max(float(right - left) / scale, 0.0)
+        one_sided = float(norm.ppf(1 - alpha))
+        two_sided = float(norm.ppf(1 - alpha / 2))
+        def coverage(value: float, gap: float = standardized_gap) -> float:
+            return float(norm.cdf(value + gap) - norm.cdf(-value) - confidence_level)
+
+        critical = brentq(coverage, one_sided, two_sided)
+        intervals[index] = (left - critical * left_se, right + critical * right_se)
+    return np.column_stack((lower_se, upper_se)), intervals

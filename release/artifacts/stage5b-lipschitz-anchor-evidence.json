@@ -1,25 +1,34 @@
 {
   "criteria": {
-    "bounded_lipschitz_coverage": true,
+    "boundary_margin": true,
+    "conservative_gamma_ci_coverage": true,
+    "endpoint_eif_available": true,
     "endpoint_monotonicity": true,
+    "exact_gamma_ci_coverage": true,
     "geometry_reproducibility": true,
     "lock_refusals": true,
+    "perturbation_harness": true,
     "violation_not_certified": true
   },
   "metrics": {
-    "bounded_lipschitz_coverage": {
-      "denominator": 24,
-      "threshold": 0.8,
+    "bounded_runs": 200,
+    "conservative_gamma_ci_coverage": {
+      "denominator": 600,
+      "threshold": 0.9,
       "value": 1.0
     },
-    "bounded_runs": 24,
+    "exact_gamma_ci_coverage": {
+      "denominator": 200,
+      "threshold": 0.9,
+      "value": 1.0
+    },
     "pairwise_supported_edges": 3,
     "pairwise_supported_hyperedges": 1,
     "pairwise_without_kway_exercised": true,
     "violation_runs": 4
   },
-  "protocol": "stage5b-lipschitz-anchor-v1",
-  "schema_version": 1,
-  "sha256": "c38f2a1d07d112081011e59cd14f374aac9ee77417d22e7f8b9de58fbffe62af",
+  "protocol": "stage5b-lipschitz-anchor-inference-v2",
+  "schema_version": 2,
+  "sha256": "cedfc4824c627c767abab0535909cc1991eaa24273b7e80d040afa1ee29186e4",
   "status": "pass"
 }

@@ -80,6 +80,11 @@ def fit_support_geometry(
         "scale": scale.tolist(),
         "precision": precision.tolist(),
         "temperature": temperature,
+        "reference_transport": {
+            "kind": "gaussian_mixture",
+            "bandwidth": "design_median_softmin_temperature",
+            "value": temperature,
+        },
     }
     metadata["digest"] = sha256(
         json.dumps(metadata, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
@@ -111,3 +116,29 @@ def soft_k_nearest(
     weights /= weights.sum(axis=1, keepdims=True)
     smooth = minimum[:, 0] - temperature * np.log(np.exp(logits).mean(axis=1))
     return smooth, indices, weights
+
+
+def gaussian_reference_transport(
+    query: np.ndarray, references: np.ndarray, geometry: dict[str, Any]
+) -> np.ndarray:
+    """Return a finite design-locked Gaussian-mixture transport tilt.
+
+    The mixture is defined only by frozen reference covariates and the
+    design-derived soft-min temperature.  Normalization to a probability-ratio
+    scale is deliberately performed by the held-out analysis routine.
+    """
+    location = np.asarray(geometry["location"], dtype=float)
+    scale = np.asarray(geometry["scale"], dtype=float)
+    precision = np.asarray(geometry["precision"], dtype=float)
+    bandwidth = float(geometry["temperature"])
+    if not np.isfinite(bandwidth) or bandwidth <= 0 or not np.all(np.isfinite(precision)):
+        raise ValueError("support geometry has no finite Gaussian transport bandwidth")
+    q = (np.asarray(query, dtype=float) - location) / scale
+    r = (np.asarray(references, dtype=float) - location) / scale
+    delta = q[:, None, :] - r[None, :, :]
+    squared = np.einsum("nri,ij,nrj->nr", delta, precision, delta)
+    kernels = np.exp(-0.5 * np.maximum(squared, 0) / bandwidth**2)
+    transport = kernels.mean(axis=1)
+    if not np.all(np.isfinite(transport)) or np.any(transport <= 0):
+        raise ValueError("Gaussian reference transport is non-finite or zero")
+    return transport

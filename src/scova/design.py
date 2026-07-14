@@ -25,7 +25,11 @@ from .estimator import SCOVA
 from .experimental.gates import DiagnosticThresholds, GateDecision, production_thresholds
 from .experimental.path import PathDeclaration, fit_path
 from .experimental.tilts import geometric_tilt_and_gradient
-from .geometry import fit_support_geometry, soft_k_nearest
+from .geometry import (
+    fit_support_geometry,
+    gaussian_reference_transport,
+    soft_k_nearest,
+)
 from .graph import (
     ComparabilityGraphResult,
     PairwiseDiagnosticInput,
@@ -875,16 +879,57 @@ class SCOVADesign:
         distances: dict[int, np.ndarray] = {}
         neighbor_indices: dict[int, np.ndarray] = {}
         neighbor_weights: dict[int, np.ndarray] = {}
+        transport_tilts: dict[int, np.ndarray] = {}
         for code in range(len(labels)):
             distance, indices, weights = soft_k_nearest(x, references[code], dict(geometry))
             distances[code] = distance
             neighbor_indices[code] = indices
             neighbor_weights[code] = weights
+            transport_tilts[code] = gaussian_reference_transport(
+                x, references[code], dict(geometry)
+            )
         reference_prediction = _fold_reference_predictions(
             self, x, values, observed_codes, fitted.fold_assignments, references,
             neighbor_indices, neighbor_weights,
         )
         gamma_grid = np.asarray(anchor.support_geometry.gamma_grid)
+        transport_residuals = np.zeros((len(x), len(labels)), dtype=float)
+        transport_ess: dict[str, float] = {}
+        for code, label in enumerate(labels):
+            observed = observed_codes == code
+            if not np.any(observed):
+                return LipschitzAnchorResult(
+                    design.lock.lock_hash, str(geometry["digest"]), "refused", anchor.outcome_lower,
+                    anchor.outcome_upper, gamma_grid, (),
+                    (f"transport group {label!r} has no held-out observations",),
+                )
+            normalized_tilt = transport_tilts[code] / float(
+                np.mean(transport_tilts[code][observed])
+            )
+            group_weights = normalized_tilt[observed]
+            ess = float(np.square(group_weights.sum()) / np.square(group_weights).sum())
+            transport_ess[str(label)] = ess
+            if not np.isfinite(ess) or ess <= self.thresholds.min_group_ess_refuse:
+                return LipschitzAnchorResult(
+                    design.lock.lock_hash, str(geometry["digest"]), "refused", anchor.outcome_lower,
+                    anchor.outcome_upper, gamma_grid, (),
+                    (f"transport effective sample size failed for group {label!r}",),
+                    confidence_level=design.declaration.confidence_level,
+                    inference_method="regularized-transport-eif",
+                    transport_diagnostics={"effective_sample_size": transport_ess},
+                )
+            transport_residuals[:, code] = (
+                observed * normalized_tilt * (values - fitted.outcome_predictions[:, code])
+                / fitted.propensity_predictions[:, code]
+            )
+        if not np.all(np.isfinite(transport_residuals)):
+            return LipschitzAnchorResult(
+                design.lock.lock_hash, str(geometry["digest"]), "refused", anchor.outcome_lower,
+                anchor.outcome_upper, gamma_grid, (), ("transport residual score is non-finite",),
+                confidence_level=design.declaration.confidence_level,
+                inference_method="regularized-transport-eif",
+                transport_diagnostics={"effective_sample_size": transport_ess},
+            )
         results = []
         for pair in pairs:
             first, second = labels.index(pair[0]), labels.index(pair[1])
@@ -911,11 +956,21 @@ class SCOVADesign:
                     ),
                     outcome_lower=anchor.outcome_lower,
                     outcome_upper=anchor.outcome_upper,
+                    transport_residuals=np.column_stack(
+                        (transport_residuals[:, first], transport_residuals[:, second])
+                    ),
+                    confidence_level=design.declaration.confidence_level,
                 )
             )
         return LipschitzAnchorResult(
             design.lock.lock_hash, str(geometry["digest"]), "experimental", anchor.outcome_lower,
             anchor.outcome_upper, gamma_grid, tuple(results), (),
+            confidence_level=design.declaration.confidence_level,
+            inference_method="regularized-transport-eif-im",
+            transport_diagnostics={
+                "transport": "gaussian-mixture-design-temperature",
+                "effective_sample_size": transport_ess,
+            },
         )
 
 

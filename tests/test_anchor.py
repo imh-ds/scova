@@ -18,7 +18,7 @@ from scova.anchor import (
     scaled_harmonic_overlap_and_gradient,
 )
 from scova.experimental.gates import DiagnosticThresholds
-from scova.geometry import fit_support_geometry, soft_k_nearest
+from scova.geometry import fit_support_geometry, gaussian_reference_transport, soft_k_nearest
 from scova.simulate import generate_data
 
 DEFAULT_BOUNDS = AnchoredBoundsDeclaration(-20, 20)
@@ -163,6 +163,15 @@ def test_lipschitz_geometry_is_locked_smooth_and_experimental(tmp_path) -> None:
         assert np.all(contrast.lower_endpoints <= contrast.upper_endpoints)
         assert np.all(contrast.lower_endpoints >= b1_by_name[contrast.name].lower_endpoint)
         assert np.all(contrast.upper_endpoints <= b1_by_name[contrast.name].upper_endpoint)
+        assert contrast.inference_status == "experimental-eif"
+        assert contrast.lower_influence_values is not None
+        assert contrast.upper_influence_values is not None
+        assert contrast.confidence_intervals is not None
+        assert contrast.endpoint_standard_errors is not None
+        assert contrast.lower_influence_values.shape == (len(ids), len(result.gamma_grid))
+        assert contrast.confidence_intervals.shape == (len(result.gamma_grid), 2)
+        assert np.all(contrast.confidence_intervals[:, 0] <= contrast.lower_endpoints)
+        assert np.all(contrast.confidence_intervals[:, 1] >= contrast.upper_endpoints)
     destination = tmp_path / "lipschitz.npz"
     result.save(destination)
     assert LipschitzAnchorResult.load(destination).report() == result.report()
@@ -174,6 +183,11 @@ def test_lipschitz_geometry_is_locked_smooth_and_experimental(tmp_path) -> None:
     assert np.all(distance >= 0)
     assert indices.shape == weights.shape
     np.testing.assert_allclose(weights.sum(axis=1), 1)
+    transport = gaussian_reference_transport(query, reference, stored)
+    assert np.all(np.isfinite(transport))
+    assert np.all(transport > 0)
+    assert result.inference_method == "regularized-transport-eif-im"
+    assert result.transport_diagnostics["effective_sample_size"]
 
 
 def test_lipschitz_refuses_missing_or_insufficient_geometry() -> None:
@@ -240,3 +254,54 @@ def test_geometry_and_b2_primitives_fail_closed_for_invalid_inputs() -> None:
             gamma_grid=np.array([0.0]), smooth_distances=np.zeros((2, 1)),
             reference_predictions=np.zeros((2, 2)), outcome_lower=0, outcome_upper=1,
         )
+
+
+def test_b2_eif_is_centered_and_tracks_a_query_perturbation() -> None:
+    propensity = np.full((6, 2), 0.5)
+    bounded = bounded_pairwise_anchor(
+        groups=("a", "b"), group_codes=np.array([0, 1, 0, 1, 0, 1]),
+        outcomes=np.array([0.1, 0.7, 0.2, 0.8, 0.3, 0.9]), propensity=propensity,
+        outcome_predictions=np.full((6, 2), 0.5), active_codes=(0, 1), outcome_lower=0,
+        outcome_upper=1, confidence_level=0.95,
+    )
+    result = lipschitz_pairwise_anchor(
+        bounded=bounded, propensity=propensity, active_codes=(0, 1),
+        gamma_grid=np.array([0.0, 0.5, 2.0]),
+        smooth_distances=np.full((6, 2), 0.1),
+        reference_predictions=np.column_stack((np.linspace(0.35, 0.55, 6), np.full(6, 0.45))),
+        transport_residuals=np.column_stack((np.linspace(-0.1, 0.1, 6), np.zeros(6))),
+        outcome_lower=0, outcome_upper=1, confidence_level=0.95,
+    )
+    assert result.lower_influence_values is not None
+    assert result.upper_influence_values is not None
+    np.testing.assert_allclose(result.lower_influence_values.mean(axis=0), 0, atol=1e-14)
+    np.testing.assert_allclose(result.upper_influence_values.mean(axis=0), 0, atol=1e-14)
+    assert result.confidence_intervals is not None
+    assert np.all(result.confidence_intervals[:, 0] <= result.lower_endpoints)
+
+
+def test_b2_endpoint_finite_difference_away_from_clipping() -> None:
+    propensity = np.full((6, 2), 0.5)
+    bounded = bounded_pairwise_anchor(
+        groups=("a", "b"), group_codes=np.array([0, 1, 0, 1, 0, 1]),
+        outcomes=np.array([0.2, 0.8, 0.3, 0.7, 0.4, 0.6]), propensity=propensity,
+        outcome_predictions=np.full((6, 2), 0.5), active_codes=(0, 1), outcome_lower=0,
+        outcome_upper=1, confidence_level=0.95,
+    )
+    predictions = np.full((6, 2), (0.55, 0.45))
+    direction = np.column_stack((np.linspace(-0.1, 0.1, 6), np.zeros(6)))
+    common = dict(
+        bounded=bounded, propensity=propensity, active_codes=(0, 1), gamma_grid=np.array([0.0]),
+        smooth_distances=np.full((6, 2), 0.1), outcome_lower=0, outcome_upper=1,
+        confidence_level=0.95,
+    )
+    baseline = lipschitz_pairwise_anchor(reference_predictions=predictions, **common)
+    step = 1e-6
+    shifted = lipschitz_pairwise_anchor(
+        reference_predictions=predictions + step * direction, **common
+    )
+    omega, _ = scaled_harmonic_overlap_and_gradient(propensity, (0, 1))
+    derivative = np.mean((1 - omega) * (direction[:, 0] - direction[:, 1]))
+    assert (shifted.lower_endpoints[0] - baseline.lower_endpoints[0]) / step == pytest.approx(
+        derivative, rel=1e-6, abs=1e-8
+    )

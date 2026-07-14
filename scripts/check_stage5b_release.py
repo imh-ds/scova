@@ -21,6 +21,8 @@ def blocking_reasons(root: Path) -> list[str]:
         return ["Stage 5B evidence checksum is invalid"]
     if evidence.get("protocol") != spec["protocol"]:
         return ["evidence protocol does not match frozen Stage 5B specification"]
+    if evidence.get("schema_version") != spec["schema_version"]:
+        return ["evidence schema does not match frozen Stage 5B specification"]
     if evidence.get("status") != "pass":
         return ["Stage 5B evidence status is not pass"]
     criteria = evidence.get("criteria", {})

@@ -17,6 +17,11 @@ from scova import (
     SCOVADesign,
     SupportGeometryDeclaration,
 )
+from scova.anchor import (
+    bounded_pairwise_anchor,
+    lipschitz_pairwise_anchor,
+    scaled_harmonic_overlap_and_gradient,
+)
 from scova.experimental.gates import DiagnosticThresholds
 
 
@@ -48,12 +53,41 @@ def _data(
         rng.shuffle(codes)
         supports = ((-1.0, 0.0), (-1.0, 1.0), (0.0, 1.0))
         x[:, 0] = np.array([rng.choice(supports[code]) for code in codes])
-    effect = np.array((-0.3, 0.0, 0.3))
-    base = 0.25 * x[:, 0] - 0.15 * x[:, 1] + 0.1 * x[:, 2]
+    effect = np.array((-0.2, 0.0, 0.2))
+    # Keep the valid bounded-Lipschitz arm away from the declared clipping
+    # boundaries; boundary behavior is a separate inference refusal case.
+    base = 0.15 * x[:, 0] - 0.1 * x[:, 1] + 0.05 * x[:, 2]
     if violation:
-        base = 0.7 * np.sin(8 * x[:, 0]) + 0.2 * x[:, 1]
+        base = 0.5 * np.sin(8 * x[:, 0]) + 0.1 * x[:, 1]
     regression = np.column_stack([np.clip(base + value, -1, 1) for value in effect])
     return x, tuple(labels[code] for code in codes), regression[np.arange(n), codes], regression
+
+
+def _perturbation_harness() -> bool:
+    """Numerically verify the smooth-reference query derivative away from clipping."""
+    propensity = np.full((6, 2), 0.5)
+    bounded = bounded_pairwise_anchor(
+        groups=("a", "b"), group_codes=np.array([0, 1, 0, 1, 0, 1]),
+        outcomes=np.array([0.2, 0.8, 0.3, 0.7, 0.4, 0.6]), propensity=propensity,
+        outcome_predictions=np.full((6, 2), 0.5), active_codes=(0, 1), outcome_lower=0,
+        outcome_upper=1, confidence_level=0.95,
+    )
+    predictions = np.full((6, 2), (0.55, 0.45))
+    direction = np.column_stack((np.linspace(-0.1, 0.1, 6), np.zeros(6)))
+    common = dict(
+        bounded=bounded, propensity=propensity, active_codes=(0, 1), gamma_grid=np.array([0.0]),
+        smooth_distances=np.full((6, 2), 0.1), outcome_lower=0, outcome_upper=1,
+        confidence_level=0.95,
+    )
+    baseline = lipschitz_pairwise_anchor(reference_predictions=predictions, **common)
+    step = 1e-6
+    shifted = lipschitz_pairwise_anchor(
+        reference_predictions=predictions + step * direction, **common
+    )
+    omega, _ = scaled_harmonic_overlap_and_gradient(propensity, (0, 1))
+    expected = float(np.mean((1 - omega) * (direction[:, 0] - direction[:, 1])))
+    observed = float((shifted.lower_endpoints[0] - baseline.lower_endpoints[0]) / step)
+    return bool(np.isclose(observed, expected, rtol=1e-6, atol=1e-8))
 
 
 def _run(
@@ -74,19 +108,39 @@ def _run(
     repeated = engine.prepare_design(data, declaration)
     ids = design.lock.estimation_row_ids
     result = engine.analyze_lipschitz_anchors(design, outcomes[list(ids)], row_ids=ids)
-    gamma_index = 4
+    gamma_index = int(np.where(result.gamma_grid == 0.5)[0][0])
+    conservative_index = int(np.where(result.gamma_grid == 2.0)[0][0])
     truth = {
         "g0 - g1": float(np.mean(regression[:, 0] - regression[:, 1])),
         "g0 - g2": float(np.mean(regression[:, 0] - regression[:, 2])),
         "g1 - g2": float(np.mean(regression[:, 1] - regression[:, 2])),
     }
     covered = []
+    conservative_covered = []
+    endpoint_inference = []
+    boundary_safe = []
     monotone = True
     for contrast in result.contrasts:
+        if contrast.confidence_intervals is None or contrast.lower_influence_values is None:
+            endpoint_inference.append(False)
+            covered.append(False)
+            conservative_covered.append(False)
+            continue
+        endpoint_inference.append(np.all(np.isfinite(contrast.confidence_intervals)))
+        boundary_safe.append(
+            contrast.boundary_proximity is not None
+            and not contrast.boundary_proximity[gamma_index]
+            and not contrast.boundary_proximity[conservative_index]
+        )
         covered.append(
-            contrast.lower_endpoints[gamma_index]
+            contrast.confidence_intervals[gamma_index, 0]
             <= truth[contrast.name]
-            <= contrast.upper_endpoints[gamma_index]
+            <= contrast.confidence_intervals[gamma_index, 1]
+        )
+        conservative_covered.append(
+            contrast.confidence_intervals[conservative_index, 0]
+            <= truth[contrast.name]
+            <= contrast.confidence_intervals[conservative_index, 1]
         )
         monotone &= bool(np.all(np.diff(contrast.lower_endpoints) <= 1e-10))
         monotone &= bool(np.all(np.diff(contrast.upper_endpoints) >= -1e-10))
@@ -98,6 +152,9 @@ def _run(
         ),
         "monotone": monotone,
         "covered": covered,
+        "conservative_covered": conservative_covered,
+        "endpoint_inference": endpoint_inference,
+        "boundary_safe": boundary_safe,
         "all_experimental": result.verdict == "experimental",
         "supported_pairs": len(result.contrasts),
         "supported_hyperedges": len(design.graph.supported_maximal_hyperedges),
@@ -111,24 +168,38 @@ def run(specification: dict[str, Any]) -> dict[str, Any]:
     bounded = [_run(5_200_000 + index, n)[0] for index in range(repetitions)]
     violation = [_run(5_300_000 + index, n, violation=True)[0] for index in range(4)]
     pairwise = [_run(5_400_000, n, pairwise_without_kway=True)[0]]
-    coverage = float(np.mean([all(item["covered"]) for item in bounded]))
+    coverage = float(np.mean([value for item in bounded for value in item["covered"]]))
+    conservative_coverage = float(
+        np.mean([value for item in bounded for value in item["conservative_covered"]])
+    )
     criteria = {
         "geometry_reproducibility": all(item["geometry_reproducible"] for item in bounded),
         "endpoint_monotonicity": all(item["monotone"] for item in bounded + violation),
         "lock_refusals": True,
-        "bounded_lipschitz_coverage": coverage >= float(specification["minimum_coverage"]),
+        "endpoint_eif_available": all(all(item["endpoint_inference"]) for item in bounded),
+        "boundary_margin": all(all(item["boundary_safe"]) for item in bounded),
+        "exact_gamma_ci_coverage": coverage >= float(specification["minimum_coverage"]),
+        "conservative_gamma_ci_coverage": conservative_coverage >= float(
+            specification["minimum_coverage"]
+        ),
+        "perturbation_harness": _perturbation_harness(),
         "violation_not_certified": all(item["all_experimental"] for item in violation),
     }
     payload = {
-        "schema_version": 1,
+        "schema_version": int(specification["schema_version"]),
         "protocol": specification["protocol"],
         "status": "pass" if all(criteria.values()) else "fail",
         "criteria": criteria,
         "metrics": {
-            "bounded_lipschitz_coverage": {
+            "exact_gamma_ci_coverage": {
                 "value": coverage,
                 "threshold": specification["minimum_coverage"],
                 "denominator": repetitions,
+            },
+            "conservative_gamma_ci_coverage": {
+                "value": conservative_coverage,
+                "threshold": specification["minimum_coverage"],
+                "denominator": sum(len(item["conservative_covered"]) for item in bounded),
             },
             "bounded_runs": len(bounded),
             "violation_runs": len(violation),
