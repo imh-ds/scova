@@ -12,7 +12,10 @@ from typing import Any
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 
-from benchmarks.stage5b_campaign import _perturbation_harness, _run, _thresholds
+try:  # Supports both ``python -m benchmarks...`` and direct workflow execution.
+    from benchmarks.stage5b_campaign import _perturbation_harness, _run, _thresholds
+except ModuleNotFoundError:  # pragma: no cover - exercised by the direct-script workflow.
+    from stage5b_campaign import _perturbation_harness, _run, _thresholds
 from scova.anchor import bounded_pairwise_anchor, lipschitz_pairwise_anchor
 
 
