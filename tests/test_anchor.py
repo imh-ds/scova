@@ -12,9 +12,13 @@ from scova import (
     SCOVADesign,
     SupportGeometryDeclaration,
 )
-from scova.anchor import bounded_pairwise_anchor, scaled_harmonic_overlap_and_gradient
+from scova.anchor import (
+    bounded_pairwise_anchor,
+    lipschitz_pairwise_anchor,
+    scaled_harmonic_overlap_and_gradient,
+)
 from scova.experimental.gates import DiagnosticThresholds
-from scova.geometry import soft_k_nearest
+from scova.geometry import fit_support_geometry, soft_k_nearest
 from scova.simulate import generate_data
 
 DEFAULT_BOUNDS = AnchoredBoundsDeclaration(-20, 20)
@@ -188,3 +192,51 @@ def test_lipschitz_refuses_missing_or_insufficient_geometry() -> None:
         row_ids=invalid.lock.estimation_row_ids,
     )
     assert invalid_result.verdict == "refused"
+
+
+@pytest.mark.parametrize(
+    ("settings", "message"),
+    [
+        ({"metric": "euclidean"}, "shrinkage_mahalanobis"),
+        ({"neighbor_count": 0}, "neighbor_count"),
+        ({"softmin_temperature": "fixed"}, "design_median"),
+        ({"gamma_grid": (0.1, 1.0)}, "gamma_grid"),
+        ({"gamma_grid": (0.0, 1.0, 1.0)}, "strictly increasing"),
+        ({"reference_partition": "analysis"}, "design references"),
+    ],
+)
+def test_support_geometry_declaration_rejects_non_frozen_settings(settings, message) -> None:
+    with pytest.raises(ValueError, match=message):
+        SupportGeometryDeclaration(**settings)
+
+
+def test_geometry_and_b2_primitives_fail_closed_for_invalid_inputs() -> None:
+    declaration = SupportGeometryDeclaration(neighbor_count=2)
+    too_small = fit_support_geometry(
+        np.array([[0.0], [1.0], [2.0]]), ["a", "a", "b"], [0, 1, 2],
+        np.array([True, True, True]), declaration,
+    )
+    assert not too_small["valid"]
+    degenerate = fit_support_geometry(
+        np.zeros((4, 1)), ["a", "a", "b", "b"], [0, 1, 2, 3],
+        np.ones(4, dtype=bool), declaration,
+    )
+    assert not degenerate["valid"]
+    with pytest.raises(ValueError, match="not usable"):
+        soft_k_nearest(np.zeros((1, 1)), np.zeros((1, 1)), {
+            "location": [0.0], "scale": [1.0], "precision": [[1.0]],
+            "temperature": 1.0, "configuration": declaration.to_dict(),
+        })
+    with pytest.raises(ValueError, match="propensities"):
+        scaled_harmonic_overlap_and_gradient(np.array([[1.0, 0.0]]), (0, 1))
+    bounded = bounded_pairwise_anchor(
+        groups=("a", "b"), group_codes=np.array([0, 1]), outcomes=np.array([0.2, 0.8]),
+        propensity=np.full((2, 2), 0.5), outcome_predictions=np.full((2, 2), 0.5),
+        active_codes=(0, 1), outcome_lower=0, outcome_upper=1, confidence_level=0.95,
+    )
+    with pytest.raises(ValueError, match="aligned columns"):
+        lipschitz_pairwise_anchor(
+            bounded=bounded, propensity=np.full((2, 2), 0.5), active_codes=(0, 1),
+            gamma_grid=np.array([0.0]), smooth_distances=np.zeros((2, 1)),
+            reference_predictions=np.zeros((2, 2)), outcome_lower=0, outcome_upper=1,
+        )
