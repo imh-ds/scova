@@ -1,0 +1,25 @@
+{
+  "criteria": {
+    "bounded_lipschitz_coverage": true,
+    "endpoint_monotonicity": true,
+    "geometry_reproducibility": true,
+    "lock_refusals": true,
+    "violation_not_certified": true
+  },
+  "metrics": {
+    "bounded_lipschitz_coverage": {
+      "denominator": 24,
+      "threshold": 0.8,
+      "value": 1.0
+    },
+    "bounded_runs": 24,
+    "pairwise_supported_edges": 3,
+    "pairwise_supported_hyperedges": 1,
+    "pairwise_without_kway_exercised": true,
+    "violation_runs": 4
+  },
+  "protocol": "stage5b-lipschitz-anchor-v1",
+  "schema_version": 1,
+  "sha256": "c38f2a1d07d112081011e59cd14f374aac9ee77417d22e7f8b9de58fbffe62af",
+  "status": "pass"
+}

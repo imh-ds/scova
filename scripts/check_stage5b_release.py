@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from hashlib import sha256
 from pathlib import Path
 
 
@@ -14,6 +15,10 @@ def blocking_reasons(root: Path) -> list[str]:
     if not evidence_path.exists():
         return ["Stage 5B Lipschitz evidence artifact is missing"]
     evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+    claimed = evidence.pop("sha256", None)
+    encoded = json.dumps(evidence, sort_keys=True, separators=(",", ":")).encode()
+    if claimed != sha256(encoded).hexdigest():
+        return ["Stage 5B evidence checksum is invalid"]
     if evidence.get("protocol") != spec["protocol"]:
         return ["evidence protocol does not match frozen Stage 5B specification"]
     if evidence.get("status") != "pass":
