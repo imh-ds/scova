@@ -5,6 +5,7 @@ from pathlib import Path
 from benchmarks.stage3_campaign import _failed_fit
 from scripts.check_critical_coverage import CRITICAL_SUFFIXES, coverage_failures
 from scripts.check_stage3_release import blocking_reasons
+from scripts.check_stage5b_promotion_audit import blocking_reasons as stage5b_blocking_reasons
 from scripts.generate_stage3_evidence import _artifact_record
 
 
@@ -167,3 +168,49 @@ def test_artifact_backed_promotion_can_pass(tmp_path: Path) -> None:
         indent=2,
     )
     assert blocking_reasons(manifest, tmp_path) == []
+
+
+def test_stage5b_promotion_audit_requires_experimental_linked_evidence(tmp_path: Path) -> None:
+    specification = {
+        "protocol": "stage5b-promotion-audit-v1",
+        "repetitions_per_arm": 1000,
+        "required_criteria": ["coverage", "experimental"],
+    }
+    spec_path = tmp_path / "benchmarks/specs/stage5b_promotion_audit.json"
+    spec_path.parent.mkdir(parents=True)
+    spec_path.write_text(json.dumps(specification), encoding="utf-8")
+    audit_path = tmp_path / "release/stage5b_promotion_audit.json"
+    audit_path.parent.mkdir(parents=True)
+    audit_path.write_text(
+        json.dumps({"protocol": specification["protocol"], "public_verdict": "experimental"}),
+        encoding="utf-8",
+    )
+    evidence = {
+        "protocol": specification["protocol"],
+        "status": "pass",
+        "audit_manifest_sha256": sha256(audit_path.read_bytes()).hexdigest(),
+        "criteria": {"coverage": True, "experimental": True},
+        "metrics": {"repetitions_per_arm": 1000},
+    }
+    encoded = json.dumps(evidence, sort_keys=True, separators=(",", ":")).encode()
+    evidence["sha256"] = sha256(encoded).hexdigest()
+    evidence_path = tmp_path / "release/artifacts/stage5b-promotion-evidence.json"
+    evidence_path.parent.mkdir(parents=True)
+    evidence_path.write_text(json.dumps(evidence), encoding="utf-8")
+    assert stage5b_blocking_reasons(tmp_path) == []
+    evidence["audit_manifest_sha256"] = "tampered"
+    evidence_path.write_text(json.dumps(evidence), encoding="utf-8")
+    assert stage5b_blocking_reasons(tmp_path)
+
+
+def test_stage5b_workflows_keep_pr_and_full_audit_campaigns_separate() -> None:
+    pr_workflow = Path(".github/workflows/stage5b-lipschitz-anchor.yml").read_text(encoding="utf-8")
+    audit_workflow = Path(".github/workflows/stage5b-promotion-audit.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "pull_request:" in pr_workflow
+    assert "stage5b_promotion_campaign.py" not in pr_workflow
+    assert "schedule:" in audit_workflow
+    assert "workflow_dispatch:" in audit_workflow
+    assert "stage5b_promotion_campaign.py" in audit_workflow
+    assert "pull_request:" not in audit_workflow

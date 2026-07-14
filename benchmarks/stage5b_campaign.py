@@ -91,7 +91,13 @@ def _perturbation_harness() -> bool:
 
 
 def _run(
-    seed: int, n: int, *, violation: bool = False, pairwise_without_kway: bool = False
+    seed: int,
+    n: int,
+    *,
+    violation: bool = False,
+    pairwise_without_kway: bool = False,
+    outcome_model: Any | None = None,
+    threshold_settings: DiagnosticThresholds | None = None,
 ) -> tuple[dict[str, Any], bool]:
     x, groups, outcomes, regression = _data(
         seed, n, violation=violation, pairwise_without_kway=pairwise_without_kway
@@ -103,7 +109,13 @@ def _run(
         anchored_bounds=AnchoredBoundsDeclaration(-1, 1, support_geometry=geometry),
     )
     data = OutcomeFreeDesignData.from_arrays(x, groups, row_ids=range(n))
-    engine = SCOVADesign(thresholds=_thresholds(separate_kway=pairwise_without_kway))
+    engine = SCOVADesign(
+        thresholds=(
+            _thresholds(separate_kway=pairwise_without_kway)
+            if threshold_settings is None else threshold_settings
+        ),
+        outcome_model=outcome_model,
+    )
     design = engine.prepare_design(data, declaration)
     repeated = engine.prepare_design(data, declaration)
     ids = design.lock.estimation_row_ids
@@ -158,6 +170,10 @@ def _run(
         "all_experimental": result.verdict == "experimental",
         "supported_pairs": len(result.contrasts),
         "supported_hyperedges": len(design.graph.supported_maximal_hyperedges),
+        "endpoint_midpoints": [
+            float(np.mean((contrast.lower_endpoints + contrast.upper_endpoints) / 2))
+            for contrast in result.contrasts
+        ],
     }
     return payload, bool(all(covered))
 

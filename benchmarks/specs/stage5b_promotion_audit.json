@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "protocol": "stage5b-promotion-audit-v1",
+  "repetitions_per_arm": 1000,
+  "confidence_level": 0.95,
+  "minimum_coverage": 0.925,
+  "learner_profiles": ["default", "random_forest"],
+  "required_criteria": [
+    "audit_manifest_valid",
+    "exact_gamma_endpoint_coverage",
+    "conservative_gamma_endpoint_coverage",
+    "learner_sensitivity_recorded",
+    "pairwise_without_kway_retained",
+    "boundary_refusal_recorded",
+    "transport_refusal_recorded",
+    "violation_never_promoted",
+    "public_verdict_remains_experimental"
+  ]
+}

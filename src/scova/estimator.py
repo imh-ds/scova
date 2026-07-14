@@ -87,8 +87,10 @@ class SCOVA:
         propensity_model: BaseEstimator | None = None,
         outcome_model: BaseEstimator | None = None,
     ) -> None:
-        self.propensity_model = propensity_model or LogisticRegression(max_iter=2000)
-        self.outcome_model = outcome_model or Ridge(alpha=1.0)
+        self.propensity_model = (
+            LogisticRegression(max_iter=2000) if propensity_model is None else propensity_model
+        )
+        self.outcome_model = Ridge(alpha=1.0) if outcome_model is None else outcome_model
 
     @staticmethod
     def _validate_data(
