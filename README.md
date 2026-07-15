@@ -23,6 +23,8 @@ The current vertical slice provides:
 
 - immutable, hashed analysis declarations;
 - deterministic stratified cross-fitting;
+- adaptive cross-fitted nuisance learning: regularized linear and
+  histogram-gradient-boosting candidates selected by inner-fold loss;
 - multinomial propensity and group-specific outcome models;
 - standardized group means, pairwise/custom contrasts, influence values, and
   pointwise Wald inference;
@@ -87,6 +89,19 @@ print(result.diagnostics["effective_sample_sizes"])
 
 A complete three-group workflow is available in
 [`examples/three_group.py`](examples/three_group.py).
+
+### Nuisance-learning defaults
+
+`SCOVA()` defaults to `nuisance_strategy="adaptive"`. Within each outer
+cross-fitting fold it chooses between regularized linear and
+histogram-gradient-boosting nuisance candidates by deterministic inner-fold
+log loss for the propensity model and mean squared error for each group outcome
+model. The result artifact records the selected learner and candidate scores.
+
+Use `SCOVA(nuisance_strategy="linear")` for the former transparent
+Ridge/logistic baseline. Use `nuisance_strategy="custom"` together with both
+`propensity_model` and `outcome_model` to supply compatible scikit-learn
+estimators.
 
 An experimental target-path workflow is available in
 [`examples/overlap_path.py`](examples/overlap_path.py). It uses

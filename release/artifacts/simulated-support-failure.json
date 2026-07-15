@@ -1,0 +1,83 @@
+{
+  "anova": {
+    "f_statistic": 258.8679939901698,
+    "p_value": 1.1735242025134484e-50,
+    "raw_group_means": {
+      "accelerated": 72.18745564774893,
+      "standard": 81.90635850735259
+    }
+  },
+  "constructs": {
+    "covariate": "baseline preparation",
+    "group": "fictional program track",
+    "outcome": "bounded achievement score (30 to 100)",
+    "simulation_truth": "The direct accelerated-minus-standard contrast is zero at every preparation value.",
+    "support_design": "standard: [-2.0, -0.4]; accelerated: [0.4, 1.2]"
+  },
+  "interpretation": "The ANCOVA coefficient is an extrapolation from disjoint covariate ranges. The Stage-4 graph refuses the pair, so B1 and B2 correctly produce no anchor claim.",
+  "linear_ancova": {
+    "confidence_interval": [
+      17.795014162844446,
+      23.433369177281435
+    ],
+    "contrast": "accelerated - standard",
+    "estimate": 20.61419167006294,
+    "model": "achievement_score ~ track + baseline_preparation (linear)"
+  },
+  "scova_b1_anchor": {
+    "assumption": "bounded_outcome",
+    "confidence_level": 0.95,
+    "contrasts": [],
+    "design_lock": "a634f2a61aadc34932a5fe9d3b6fc179d3f1c3dfeb50fd7cc939be279747cc84",
+    "inference_scope": "graph-conditional-outer-split-bounded-anchor",
+    "interpretation": "descriptive",
+    "outcome_lower": 30.0,
+    "outcome_upper": 100.0,
+    "package_version": "0.3.0.dev0",
+    "random_state": 17,
+    "refused": [
+      "no graph-supported pairwise contrasts are available"
+    ],
+    "schema_version": 1,
+    "support_weight": "scaled_harmonic_overlap",
+    "verdict": "refused"
+  },
+  "scova_b2_experimental": {
+    "confidence_level": null,
+    "contrasts": [],
+    "design_lock": "a634f2a61aadc34932a5fe9d3b6fc179d3f1c3dfeb50fd7cc939be279747cc84",
+    "gamma_grid": [
+      0.0,
+      0.5,
+      1.0,
+      2.0
+    ],
+    "geometry_digest": "52ffae4d8308b584c5416583e3379fb4234319d8db327cb6166512da50ce6a58",
+    "inference_method": "unavailable",
+    "inference_scope": "experimental-graph-conditional-lipschitz-anchor",
+    "outcome_lower": 30.0,
+    "outcome_upper": 100.0,
+    "refused": [
+      "no graph-supported pairwise contrasts are available"
+    ],
+    "schema_version": 2,
+    "transport_diagnostics": {},
+    "verdict": "refused"
+  },
+  "scova_graph": {
+    "refused_pairs": [
+      {
+        "groups": [
+          "accelerated",
+          "standard"
+        ],
+        "reasons": [
+          "no declared lambda passed all design gates",
+          "lambda=0: min_propensity_q01=6.85296e-05 (refuse)",
+          "lambda=1: min_propensity_q01=6.85296e-05 (refuse)"
+        ]
+      }
+    ],
+    "supported_pairwise_edges": []
+  }
+}

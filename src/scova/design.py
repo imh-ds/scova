@@ -12,7 +12,7 @@ from typing import Any, Literal, cast
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, clone
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, Ridge
 
 from .anchor import (
     AnchoredBoundsResult,
@@ -59,9 +59,11 @@ def _fold_reference_predictions(
         test = folds == fold
         train = ~test
         for code, reference_x in references.items():
-            model = clone(engine.outcome_model) if engine.outcome_model is not None else None
-            if model is None:
-                model = SCOVA().outcome_model
+            model = (
+                clone(engine.outcome_model)
+                if engine.outcome_model is not None
+                else Ridge(alpha=1.0)
+            )
             model.fit(x[train & (group_codes == code)], outcomes[train & (group_codes == code)])
             values = np.asarray(model.predict(reference_x), dtype=float)
             selected = values[neighbor_indices[code][test]]
@@ -503,7 +505,7 @@ class SCOVADesign:
         thresholds: DiagnosticThresholds | None = None,
     ) -> None:
         self.propensity_model = propensity_model or LogisticRegression(max_iter=2000)
-        self.outcome_model = outcome_model
+        self.outcome_model = outcome_model or Ridge(alpha=1.0)
         self.thresholds = thresholds or production_thresholds()
 
     def prepare_design(

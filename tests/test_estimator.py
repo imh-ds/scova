@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.linear_model import LogisticRegression, Ridge
 
 from scova import SCOVA, NuisancePredictions, SCOVADeclaration, Verdict
 from scova.simulate import generate_data
@@ -50,6 +51,47 @@ def test_cross_fit_is_deterministic_and_complete() -> None:
     assert set(first.fold_assignments) == {0, 1, 2, 3}
     assert np.all(np.isfinite(first.propensity_predictions))
     assert np.all(np.isfinite(first.outcome_predictions))
+
+
+def test_default_adaptive_nuisance_selection_is_recorded() -> None:
+    simulation = generate_data("randomized", n=360, seed=20)
+    result = SCOVA().fit(simulation.data, declaration(seed=23))
+    metadata = result.nuisance_metadata
+    assert metadata["nuisance_strategy"] == "adaptive"
+    assert metadata["propensity_model"] == "adaptive"
+    assert metadata["outcome_model"] == "adaptive"
+    selection = metadata["selection"]
+    assert selection["criterion"] == {
+        "propensity": "log_loss",
+        "outcome": "mean_squared_error",
+    }
+    assert len(selection["propensity"]) == 4
+    assert set(selection["outcome"]) == set(result.group_labels)
+
+
+def test_linear_and_custom_nuisance_strategies_remain_available() -> None:
+    simulation = generate_data("randomized", n=240, seed=21)
+    linear = SCOVA(nuisance_strategy="linear").fit(simulation.data, declaration(seed=24))
+    assert linear.nuisance_metadata["propensity_model"] == "LogisticRegression"
+    assert linear.nuisance_metadata["outcome_model"] == "Ridge"
+    custom = SCOVA(
+        propensity_model=LogisticRegression(max_iter=2000),
+        outcome_model=Ridge(alpha=2.0),
+        nuisance_strategy="custom",
+    ).fit(simulation.data, declaration(seed=24))
+    assert custom.nuisance_metadata["nuisance_strategy"] == "custom"
+    with pytest.raises(ValueError, match="supplied together"):
+        SCOVA(propensity_model=LogisticRegression(max_iter=2000))
+    with pytest.raises(ValueError, match="nuisance_strategy"):
+        SCOVA(nuisance_strategy="invalid")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="requires both"):
+        SCOVA(nuisance_strategy="custom")
+    with pytest.raises(ValueError, match="require nuisance_strategy='custom'"):
+        SCOVA(
+            propensity_model=LogisticRegression(max_iter=2000),
+            outcome_model=Ridge(),
+            nuisance_strategy="linear",
+        )
 
 
 def test_row_order_and_group_relabeling_invariance_with_oracles() -> None:
