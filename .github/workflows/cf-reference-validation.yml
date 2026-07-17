@@ -8,6 +8,7 @@ on:
         required: true
         type: choice
         options:
+          - freeze_check
           - pilot
           - calibration
           - calibrate_support
@@ -46,7 +47,7 @@ permissions:
 
 env:
   SPEC: benchmarks/specs/cf_reference_v3.json
-  FREEZE_TAG: scova-cf-reference-v3-freeze
+  FREEZE_TAG: scova-cf-reference-v3-freeze-r2
   PYTHONHASHSEED: "0"
 
 jobs:
@@ -71,7 +72,8 @@ jobs:
 
   campaign_freeze:
     if: >-
-      inputs.tier == 'pilot' || inputs.tier == 'calibration' ||
+      inputs.tier == 'freeze_check' || inputs.tier == 'pilot' ||
+      inputs.tier == 'calibration' ||
       inputs.tier == 'calibrate_support' || inputs.tier == 'aggregate' ||
       inputs.tier == 'external_agreement' ||
       inputs.tier == 'simultaneous_inference' || inputs.tier == 'validation'
@@ -86,11 +88,11 @@ jobs:
       - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
       - run: python -m pip install -e . --no-deps
       - run: >-
-          python scripts/write_cf_freeze_manifest.py --spec "$SPEC"
-          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v3-freeze.json
+          python -m scripts.write_cf_freeze_manifest --spec "$SPEC"
+          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v3-freeze-r2.json
       - uses: actions/upload-artifact@v6
         with:
-          name: cf-reference-v3-freeze
+          name: cf-reference-v3-freeze-r2
           path: freeze/
           retention-days: 90
 
