@@ -7,6 +7,13 @@ among naturally occurring groups. The stable `0.2.0` core implements a
 fixed-study-population (`h(x) = 1`), cross-fitted, multi-group AIPW estimator
 for continuous outcomes with simultaneous finite-family inference.
 
+SCOVA-CF is a distinct, opt-in feature under `scova.cf`. It builds on the base
+SCOVA engine to estimate governed population counterfactual means for a common
+declared population; it does not replace base SCOVA or identify person-specific
+missing outcomes. The randomized continuous-outcome reference slice, its
+current limitations, and a full example are documented in
+[`docs/scova_cf.md`](docs/scova_cf.md).
+
 The `0.3.0.dev0` source tree also contains an experimental finite-grid smooth
 overlap path. It remains experimental pending the frozen directional calibration,
 held-out validation, and pinned-gradient runs. Its production-stabilization machinery and remaining
@@ -23,6 +30,8 @@ The current vertical slice provides:
 
 - immutable, hashed analysis declarations;
 - deterministic stratified cross-fitting;
+- adaptive cross-fitted nuisance learning: regularized linear and
+  histogram-gradient-boosting candidates selected by inner-fold loss;
 - multinomial propensity and group-specific outcome models;
 - standardized group means, pairwise/custom contrasts, influence values, and
   pointwise Wald inference;
@@ -87,6 +96,24 @@ print(result.diagnostics["effective_sample_sizes"])
 
 A complete three-group workflow is available in
 [`examples/three_group.py`](examples/three_group.py).
+The separate SCOVA-CF workflow is demonstrated in
+[`examples/counterfactual_means.py`](examples/counterfactual_means.py).
+An annotated nonlinear comparison against ANOVA-style and linear-ANCOVA
+benchmarks is in
+[`examples/scova_cf_nonlinear_benefit.py`](examples/scova_cf_nonlinear_benefit.py).
+
+### Nuisance-learning defaults
+
+`SCOVA()` defaults to `nuisance_strategy="adaptive"`. Within each outer
+cross-fitting fold it chooses between regularized linear and
+histogram-gradient-boosting nuisance candidates by deterministic inner-fold
+log loss for the propensity model and mean squared error for each group outcome
+model. The result artifact records the selected learner and candidate scores.
+
+Use `SCOVA(nuisance_strategy="linear")` for the former transparent
+Ridge/logistic baseline. Use `nuisance_strategy="custom"` together with both
+`propensity_model` and `outcome_model` to supply compatible scikit-learn
+estimators.
 
 An experimental target-path workflow is available in
 [`examples/overlap_path.py`](examples/overlap_path.py). It uses

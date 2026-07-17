@@ -3,6 +3,7 @@ from hashlib import sha256
 from pathlib import Path
 
 from benchmarks.stage3_campaign import _failed_fit
+from scripts import promote_cf_reference
 from scripts.check_critical_coverage import CRITICAL_SUFFIXES, coverage_failures
 from scripts.check_stage3_release import blocking_reasons
 from scripts.check_stage5b_promotion_audit import blocking_reasons as stage5b_blocking_reasons
@@ -214,3 +215,68 @@ def test_stage5b_workflows_keep_pr_and_full_audit_campaigns_separate() -> None:
     assert "workflow_dispatch:" in audit_workflow
     assert "stage5b_promotion_campaign.py" in audit_workflow
     assert "pull_request:" not in audit_workflow
+
+
+def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
+    workflow = Path(".github/workflows/cf-reference-validation.yml").read_text(
+        encoding="utf-8"
+    )
+    assert 'counts = {"pilot": 16, "simultaneous_inference": 64}' in workflow
+    assert "--shard-count 16 --resume" in workflow
+    assert "--stage external" in workflow
+    assert "--stage inference" in workflow
+    assert "--stage validation" in workflow
+    assert "scova-cf-reference-v3-freeze" in workflow
+    assert "actions/attest-build-provenance@v3" in workflow
+    assert "SCOVA_RELEASE_GPG_PRIVATE_KEY" in workflow
+    assert "gh release create v0.5.0" in workflow
+    ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+    assert '"numpy==2.2.6" "pandas==2.2.3" "scipy==1.15.3"' in ci
+    assert '"scikit-learn==1.6.1"' in ci
+    assert "benchmarks/specs/cf_reference_v3.json" in ci
+    assert "benchmarks/specs/cf_reference_v1.json" not in ci
+    assert "--shard-count 4" in ci
+    assert "--replications 1 --max-cells 4 --skip-stability" in ci
+
+
+def test_cf_promotion_applies_only_exact_evidence_and_release_text(
+    tmp_path: Path, monkeypatch
+) -> None:
+    evidence = tmp_path / "evidence"
+    evidence.mkdir()
+    profile = {
+        "profile_id": "cf-randomized-continuous-aipw-unnormalized-v3-promoted",
+        "profile_checksum": "c" * 64,
+    }
+    proposed = {"schema_version": 1, "profiles": [profile]}
+    (evidence / "cf-reference-support-profile.json").write_text(
+        json.dumps(profile), encoding="utf-8"
+    )
+    (evidence / "proposed-support-profiles.json").write_text(
+        json.dumps(proposed), encoding="utf-8"
+    )
+    manifest = tmp_path / "support_profiles.json"
+    manifest.write_text('{"schema_version":1,"profiles":[]}', encoding="utf-8")
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text('[project]\nversion = "0.3.0.dev0"\n', encoding="utf-8")
+    readme = tmp_path / "README.md"
+    readme.write_text("The `0.3.0.dev0` source tree is provisional.\n", encoding="utf-8")
+    documentation = tmp_path / "scova_cf.md"
+    documentation.write_text(
+        f"{promote_cf_reference.STATUS_START}\ncandidate\n"
+        f"{promote_cf_reference.STATUS_END}\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(promote_cf_reference, "blocking_reasons", lambda *_: [])
+    promote_cf_reference.promote(
+        evidence_root=evidence,
+        spec=tmp_path / "spec.json",
+        packaged_manifest=manifest,
+        pyproject=pyproject,
+        readme=readme,
+        documentation=documentation,
+    )
+    assert json.loads(manifest.read_text(encoding="utf-8")) == proposed
+    assert 'version = "0.5.0"' in pyproject.read_text(encoding="utf-8")
+    assert "The `0.5.0` source tree" in readme.read_text(encoding="utf-8")
+    assert profile["profile_id"] in documentation.read_text(encoding="utf-8")

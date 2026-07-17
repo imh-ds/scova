@@ -3,17 +3,25 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, clone
+from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
 from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.metrics import log_loss, mean_squared_error
 
+from ._aipw import assemble_aipw, validate_probability_matrix
 from ._version import __version__
 from .declaration import JsonLabel, SCOVADeclaration
 from .diagnostics import compute_diagnostics
 from .result import SCOVAResult, Verdict
+
+# Preserve the existing private import surface used by the repository's
+# regression suite while keeping the implementation centralized.
+_validate_probabilities = validate_probability_matrix
+_assemble_aipw = assemble_aipw
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,41 +51,6 @@ def _label_sort_key(value: JsonLabel) -> tuple[int, Any]:
     return (2, value)
 
 
-def _validate_probabilities(probability: np.ndarray, n: int, k: int) -> np.ndarray:
-    values = np.asarray(probability, dtype=float)
-    if values.shape != (n, k):
-        raise ValueError(f"Propensity predictions must have shape {(n, k)}")
-    if not np.all(np.isfinite(values)):
-        raise ValueError("Propensity predictions must be finite")
-    if np.any(values <= 0) or np.any(values > 1):
-        raise ValueError("Propensity predictions must be strictly positive and at most one")
-    if not np.allclose(values.sum(axis=1), 1.0, rtol=1e-7, atol=1e-10):
-        raise ValueError("Each propensity prediction row must sum to one")
-    return values
-
-
-def _assemble_aipw(
-    outcome: np.ndarray,
-    group_codes: np.ndarray,
-    propensity: np.ndarray,
-    outcome_regression: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Return fixed-target means, influence rows, and estimator covariance."""
-    n, n_groups = propensity.shape
-    if outcome_regression.shape != (n, n_groups):
-        raise ValueError(f"Outcome predictions must have shape {(n, n_groups)}")
-    if not np.all(np.isfinite(outcome_regression)):
-        raise ValueError("Outcome predictions must be finite")
-    observed = np.eye(n_groups, dtype=float)[group_codes]
-    signal = outcome_regression + observed / propensity * (outcome[:, None] - outcome_regression)
-    means = signal.mean(axis=0)
-    influence = signal - means
-    covariance = np.cov(influence, rowvar=False, ddof=1) / n
-    covariance = np.atleast_2d(covariance)
-    covariance = (covariance + covariance.T) / 2
-    return means, influence, covariance
-
-
 class SCOVA:
     """Fixed-target, cross-fitted multi-group AIPW estimator."""
 
@@ -86,11 +59,110 @@ class SCOVA:
         *,
         propensity_model: BaseEstimator | None = None,
         outcome_model: BaseEstimator | None = None,
+        nuisance_strategy: Literal["adaptive", "linear", "custom"] = "adaptive",
     ) -> None:
-        self.propensity_model = (
-            LogisticRegression(max_iter=2000) if propensity_model is None else propensity_model
-        )
-        self.outcome_model = Ridge(alpha=1.0) if outcome_model is None else outcome_model
+        if nuisance_strategy not in {"adaptive", "linear", "custom"}:
+            raise ValueError("nuisance_strategy must be 'adaptive', 'linear', or 'custom'")
+        if (propensity_model is None) != (outcome_model is None):
+            raise ValueError("propensity_model and outcome_model must be supplied together")
+        if nuisance_strategy == "custom" and propensity_model is None:
+            raise ValueError("custom nuisance_strategy requires both nuisance models")
+        if nuisance_strategy != "custom" and propensity_model is not None:
+            if nuisance_strategy != "adaptive":
+                raise ValueError("explicit nuisance models require nuisance_strategy='custom'")
+            nuisance_strategy = "custom"
+        self.nuisance_strategy = nuisance_strategy
+        self.propensity_model = propensity_model
+        self.outcome_model = outcome_model
+
+    @staticmethod
+    def _linear_propensity_model() -> BaseEstimator:
+        return LogisticRegression(max_iter=2000)
+
+    @staticmethod
+    def _linear_outcome_model() -> BaseEstimator:
+        return Ridge(alpha=1.0)
+
+    @staticmethod
+    def _adaptive_propensity_candidates() -> dict[str, BaseEstimator]:
+        return {
+            "LogisticRegression": LogisticRegression(max_iter=2000),
+            "HistGradientBoostingClassifier": HistGradientBoostingClassifier(
+                learning_rate=0.05, max_leaf_nodes=15, l2_regularization=1.0, random_state=0
+            ),
+        }
+
+    @staticmethod
+    def _adaptive_outcome_candidates() -> dict[str, BaseEstimator]:
+        return {
+            "Ridge": Ridge(alpha=1.0),
+            "HistGradientBoostingRegressor": HistGradientBoostingRegressor(
+                learning_rate=0.05, max_leaf_nodes=15, l2_regularization=1.0, random_state=0
+            ),
+        }
+
+    @staticmethod
+    def _inner_folds(group_codes: np.ndarray, n_splits: int = 3) -> np.ndarray:
+        """Deterministic stratified folds used only to select nuisance candidates."""
+        counts = np.bincount(group_codes)
+        usable_splits = min(n_splits, int(np.min(counts)))
+        if usable_splits < 2:
+            return np.zeros(len(group_codes), dtype=int)
+        folds = np.empty(len(group_codes), dtype=int)
+        for code in np.unique(group_codes):
+            indices = np.flatnonzero(group_codes == code)
+            folds[indices] = np.arange(len(indices)) % usable_splits
+        return folds
+
+    @classmethod
+    def _select_propensity_model(
+        cls, x: np.ndarray, group_codes: np.ndarray
+    ) -> tuple[BaseEstimator, str, dict[str, float]]:
+        """Choose a probability learner by deterministic inner-fold log loss."""
+        candidates = cls._adaptive_propensity_candidates()
+        folds = cls._inner_folds(group_codes)
+        scores: dict[str, float] = {}
+        for name, candidate in candidates.items():
+            if len(np.unique(folds)) < 2:
+                scores[name] = float("inf")
+                continue
+            predicted = np.empty((len(x), len(np.unique(group_codes))))
+            for fold in np.unique(folds):
+                train = folds != fold
+                test = ~train
+                model = clone(candidate)
+                model.fit(x[train], group_codes[train])
+                probability = np.asarray(model.predict_proba(x[test]), dtype=float)
+                for column, code in enumerate(np.asarray(model.classes_, dtype=int)):
+                    predicted[test, code] = probability[:, column]
+            scores[name] = float(
+                log_loss(group_codes, predicted, labels=np.arange(predicted.shape[1]))
+            )
+        selected_name = min(scores, key=scores.__getitem__)
+        return clone(candidates[selected_name]), selected_name, scores
+
+    @classmethod
+    def _select_outcome_model(
+        cls, x: np.ndarray, outcome: np.ndarray
+    ) -> tuple[BaseEstimator, str, dict[str, float]]:
+        """Choose an outcome learner by deterministic inner-fold squared error."""
+        candidates = cls._adaptive_outcome_candidates()
+        folds = np.arange(len(outcome)) % min(3, len(outcome))
+        scores: dict[str, float] = {}
+        for name, candidate in candidates.items():
+            if len(np.unique(folds)) < 2:
+                scores[name] = float("inf")
+                continue
+            predicted = np.empty(len(outcome))
+            for fold in np.unique(folds):
+                train = folds != fold
+                test = ~train
+                model = clone(candidate)
+                model.fit(x[train], outcome[train])
+                predicted[test] = np.asarray(model.predict(x[test]), dtype=float)
+            scores[name] = float(mean_squared_error(outcome, predicted))
+        selected_name = min(scores, key=scores.__getitem__)
+        return clone(candidates[selected_name]), selected_name, scores
 
     @staticmethod
     def _validate_data(
@@ -158,33 +230,93 @@ class SCOVA:
         outcome: np.ndarray,
         folds: np.ndarray,
         n_groups: int,
+        labels: tuple[JsonLabel, ...],
+        known_propensity: np.ndarray | None = None,
     ) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
         propensity = np.empty((len(outcome), n_groups), dtype=float)
         outcome_regression = np.empty((len(outcome), n_groups), dtype=float)
+        propensity_selected: list[dict[str, Any]] = []
+        outcome_selected: dict[str, list[dict[str, Any]]] = {str(label): [] for label in labels}
+        if known_propensity is not None:
+            known_propensity = validate_probability_matrix(
+                known_propensity, len(outcome), n_groups
+            )
         for fold in sorted(np.unique(folds)):
             test = folds == fold
             train = ~test
-            propensity_model = clone(self.propensity_model)
-            propensity_model.fit(x[train], group_codes[train])
-            raw_probability = np.asarray(propensity_model.predict_proba(x[test]), dtype=float)
-            classes = np.asarray(propensity_model.classes_, dtype=int)
-            if set(classes.tolist()) != set(range(n_groups)):
-                raise ValueError("Every propensity training fold must contain every group")
-            aligned = np.empty((test.sum(), n_groups), dtype=float)
-            for column, group_code in enumerate(classes):
-                aligned[:, group_code] = raw_probability[:, column]
-            propensity[test] = aligned
+            if known_propensity is not None:
+                propensity[test] = known_propensity[test]
+            elif self.nuisance_strategy == "adaptive":
+                (
+                    propensity_model,
+                    propensity_name,
+                    propensity_scores,
+                ) = self._select_propensity_model(x[train], group_codes[train])
+                propensity_selected.append(
+                    {"fold": int(fold), "selected": propensity_name, "scores": propensity_scores}
+                )
+            elif known_propensity is None and self.nuisance_strategy == "linear":
+                propensity_model = self._linear_propensity_model()
+            elif known_propensity is None:
+                assert self.propensity_model is not None
+                propensity_model = clone(self.propensity_model)
+            if known_propensity is None:
+                propensity_model.fit(x[train], group_codes[train])
+                raw_probability = np.asarray(propensity_model.predict_proba(x[test]), dtype=float)
+                classes = np.asarray(propensity_model.classes_, dtype=int)
+                if set(classes.tolist()) != set(range(n_groups)):
+                    raise ValueError("Every propensity training fold must contain every group")
+                aligned = np.empty((test.sum(), n_groups), dtype=float)
+                for column, group_code in enumerate(classes):
+                    aligned[:, group_code] = raw_probability[:, column]
+                propensity[test] = aligned
             for code in range(n_groups):
                 group_train = train & (group_codes == code)
-                model = clone(self.outcome_model)
+                if self.nuisance_strategy == "adaptive":
+                    model, outcome_name, outcome_scores = self._select_outcome_model(
+                        x[group_train], outcome[group_train]
+                    )
+                    outcome_selected[str(labels[code])].append(
+                        {"fold": int(fold), "selected": outcome_name, "scores": outcome_scores}
+                    )
+                elif self.nuisance_strategy == "linear":
+                    model = self._linear_outcome_model()
+                else:
+                    assert self.outcome_model is not None
+                    model = clone(self.outcome_model)
                 model.fit(x[group_train], outcome[group_train])
                 outcome_regression[test, code] = np.asarray(model.predict(x[test]), dtype=float)
-        metadata = {
-            "source": "cross-fitted",
-            "propensity_model": type(self.propensity_model).__name__,
-            "outcome_model": type(self.outcome_model).__name__,
+        metadata: dict[str, Any] = {
+            "source": (
+                "cross-fitted-outcome-known-assignment"
+                if known_propensity is not None
+                else "cross-fitted"
+            ),
+            "nuisance_strategy": self.nuisance_strategy,
+            "propensity_model": (
+                "known-design"
+                if known_propensity is not None
+                else self._metadata_model_name("propensity")
+            ),
+            "outcome_model": self._metadata_model_name("outcome"),
         }
+        if self.nuisance_strategy == "adaptive":
+            metadata["selection"] = {
+                "criterion": {"propensity": "log_loss", "outcome": "mean_squared_error"},
+                "inner_folds": 3,
+                "propensity": propensity_selected if known_propensity is None else [],
+                "outcome": outcome_selected,
+            }
         return propensity, outcome_regression, metadata
+
+    def _metadata_model_name(self, nuisance: Literal["propensity", "outcome"]) -> str:
+        if self.nuisance_strategy == "adaptive":
+            return "adaptive"
+        if self.nuisance_strategy == "linear":
+            return "LogisticRegression" if nuisance == "propensity" else "Ridge"
+        model = self.propensity_model if nuisance == "propensity" else self.outcome_model
+        assert model is not None
+        return type(model).__name__
 
     def fit(
         self,
@@ -199,7 +331,7 @@ class SCOVA:
         folds = self._design_folds(data, declaration, group_codes)
         if nuisance_predictions is None:
             propensity, outcome_regression, nuisance_metadata = self._cross_fit(
-                x, group_codes, outcome, folds, n_groups
+                x, group_codes, outcome, folds, n_groups, labels
             )
         else:
             supplied_labels = tuple(
@@ -214,11 +346,12 @@ class SCOVA:
             outcome_regression = np.asarray(nuisance_predictions.outcome_regression, dtype=float)
             nuisance_metadata = {
                 "source": "supplied",
+                "nuisance_strategy": "supplied",
                 "propensity_model": None,
                 "outcome_model": None,
             }
-        propensity = _validate_probabilities(propensity, n, n_groups)
-        means, influence, covariance = _assemble_aipw(
+        propensity = validate_probability_matrix(propensity, n, n_groups)
+        means, influence, covariance = assemble_aipw(
             outcome, group_codes, propensity, outcome_regression
         )
         diagnostics = compute_diagnostics(

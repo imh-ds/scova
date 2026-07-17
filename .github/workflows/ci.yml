@@ -16,12 +16,17 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-      - run: python -m pip install -e ".[dev]"
+      - run: >-
+          python -m pip install -e ".[dev]"
+          "numpy==2.2.6" "pandas==2.2.3" "scipy==1.15.3"
+          "scikit-learn==1.6.1"
       - run: ruff check src tests examples benchmarks scripts
       - run: mypy src/scova
       - run: python -m pytest --cov=scova --cov-report=term-missing --cov-report=json:coverage.json
       - run: python scripts/check_critical_coverage.py coverage.json
       - run: python examples/three_group.py
+      - run: python examples/counterfactual_means.py
+      - run: python examples/scova_cf_nonlinear_benefit.py
 
   jax-gradient:
     runs-on: ubuntu-latest
@@ -32,3 +37,27 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install -e ".[dev,jax]"
       - run: python -m pytest tests/test_path_tilts.py tests/test_jax_matrix.py -q
+
+  cf-campaign-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: >-
+          python -m pip install -e .
+          "numpy==2.2.6" "pandas==2.2.3" "scipy==1.15.3"
+          "scikit-learn==1.6.1"
+      - run: |
+          for shard in 0 1 2 3; do
+            python benchmarks/cf_reference_campaign.py \
+              --spec benchmarks/specs/cf_reference_v3.json --lane pilot \
+              --output "artifacts/pilot-${shard}.ndjson.gz" \
+              --shard-index "$shard" --shard-count 4 \
+              --replications 1 --max-cells 4 --skip-stability
+          done
+      - run: >-
+          python benchmarks/verify_cf_smoke.py artifacts/*.ndjson.gz
+          --spec benchmarks/specs/cf_reference_v3.json
+          --output artifacts/verified.json
