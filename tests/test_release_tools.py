@@ -231,6 +231,7 @@ def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
     assert "SCOVA_RELEASE_GPG_PRIVATE_KEY" in workflow
     assert "gh release create v0.5.0" in workflow
     ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+    assert 'python -m pip install -e ".[dev]" "scikit-learn==1.6.1"' in ci
     assert "--shard-count 4" in ci
     assert "--replications 1 --max-cells 4 --skip-stability" in ci
 
