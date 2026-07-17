@@ -1,20 +1,20 @@
 # SCOVA-CF randomized reference promotion runbook
 
-This runbook executes protocol `scova-cf-randomized-continuous-aipw-v2`. It may
+This runbook executes protocol `cf-randomized-continuous-aipw-unnormalized-v3`. It may
 promote only randomized, independent-unit, continuous-outcome analyses with
 known constant assignment probabilities and unnormalized cross-fitted AIPW.
 
 ## Immutable baseline
 
 1. Commit all campaign and workflow code on one clean commit.
-2. Create the annotated tag `scova-cf-reference-v2-freeze` at that commit and
+2. Create the annotated tag `scova-cf-reference-v3-freeze` at that commit and
    push both the commit and tag.
 3. Dispatch every tier through `simultaneous_inference` using the freeze tag as
    the workflow ref. The workflow rejects a ref that is not exactly tagged.
 
 Any numerical, estimator, adapter, protocol, metric, cell, threshold-family, or
-seed change requires a new campaign commit. A statistical change requires a v3
-protocol and new validation namespace. Engineering-only corrections require a
+seed change requires a new campaign commit. A statistical change requires a new
+protocol and validation namespace. Engineering-only corrections require a
 new commit and a complete pilot and calibration rerun.
 
 ## Ordered dispatch
@@ -59,4 +59,4 @@ the GitHub release.
 
 If any statistical gate fails, do not apply the promotion patch. Archive the
 evidence, publish the blocking report, keep the package manifest empty, and
-define a v3 protocol with untouched validation seeds before another attempt.
+define a new protocol with untouched validation seeds before another attempt.

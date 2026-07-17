@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "frozen": true,
-  "protocol_id": "cf-randomized-continuous-aipw-unnormalized-v2",
+  "protocol_id": "cf-randomized-continuous-aipw-unnormalized-v3",
   "reference_profile": {
     "mode": "randomized",
     "outcome_type": "continuous",
@@ -813,25 +813,25 @@
     }
   ],
   "seed_partitions": {
-    "pilot": {
-      "start": 10000,
-      "count": 20
-    },
-    "calibration": {
-      "start": 1000000,
-      "count": 1000
-    },
-    "validation": {
-      "start": 100000000,
-      "count": 2000
-    },
-    "external": {
-      "start": 500000000,
-      "count": 50
-    },
-    "inference": {
-      "start": 600000000,
-      "count": 2000
+      "pilot": {
+        "start": 1000000000,
+        "count": 20
+      },
+      "calibration": {
+        "start": 1100000000,
+        "count": 1000
+      },
+      "validation": {
+        "start": 1300000000,
+        "count": 2000
+      },
+      "external": {
+        "start": 1600000000,
+        "count": 50
+      },
+      "inference": {
+        "start": 1700000000,
+        "count": 2000
     }
   },
   "calibration_fit_fraction": 0.6,
@@ -885,8 +885,8 @@
     "econml": "0.16.0"
   },
   "dataset_checksums": {
-    "diabetes": "e9f4db8517bc1152ebec45b3276b3c577d840920cb8c7047d1ca775ca0a6bfda",
-    "breast-cancer": "762833f63f3b53f6308f01f8248592c137c0ea6a392a407e52c163af82589d2c"
+    "diabetes": "28128d0ec207a1c0ac5e23a5fdbad720215a35b5f18741fef26c4ecd254dc278",
+    "breast-cancer": "ba4d19cf8137014a7cbcc9f1d625891c176da5a3dbf2af07333081d81f57e90f"
   },
   "dependency_lock_checksum": "2131bd968e061c12847a100a896903ee1748baa4d5dcdd66d8bcd18a20559f09",
   "design_selection": {

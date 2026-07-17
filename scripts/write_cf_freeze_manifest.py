@@ -1,4 +1,4 @@
-"""Record the immutable commit and checksums for the SCOVA-CF v2 campaign."""
+"""Record the immutable commit and checksums for the SCOVA-CF v3 campaign."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ def freeze_manifest(
     if dependency_lock_checksum() != protocol.dependency_lock_checksum:
         raise ValueError("Dependency lock does not match the frozen protocol")
     values: dict[str, object] = {
-        "artifact_type": "scova-cf-reference-v2-freeze",
+        "artifact_type": "scova-cf-reference-v3-freeze",
         "schema_version": 1,
         "git_commit": commit,
         "required_tag": required_tag,

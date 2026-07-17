@@ -1,0 +1,24 @@
+{
+  "artifact_type": "scova-cf-reference-protocol-block",
+  "schema_version": 1,
+  "protocol_id": "cf-randomized-continuous-aipw-unnormalized-v2",
+  "status": "blocked",
+  "discovered_on_commit": "3d4c794b99b2d538e10b0fce32110ba80a525729",
+  "reason_code": "declared-dataset-version-checksum-mismatch",
+  "declared_scikit_learn_version": "1.6.1",
+  "checksum_generation_scikit_learn_version": "1.9.0",
+  "heldout_validation_inspected": false,
+  "profile_promoted": false,
+  "replacement_protocol_id": "cf-randomized-continuous-aipw-unnormalized-v3",
+  "blocking_record_checksum": "5ef7883295bb4a63e0f2349b6c8b0477bde3aac16a9c7ba5f3cea71074bcd976",
+  "dataset_checksums": {
+    "diabetes": {
+      "blocked_v2": "e9f4db8517bc1152ebec45b3276b3c577d840920cb8c7047d1ca775ca0a6bfda",
+      "declared_environment": "28128d0ec207a1c0ac5e23a5fdbad720215a35b5f18741fef26c4ecd254dc278"
+    },
+    "breast-cancer": {
+      "blocked_v2": "762833f63f3b53f6308f01f8248592c137c0ea6a392a407e52c163af82589d2c",
+      "declared_environment": "ba4d19cf8137014a7cbcc9f1d625891c176da5a3dbf2af07333081d81f57e90f"
+    }
+  }
+}

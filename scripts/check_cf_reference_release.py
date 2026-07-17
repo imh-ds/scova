@@ -1,4 +1,4 @@
-"""Fail closed until every frozen SCOVA-CF v2 promotion artifact agrees."""
+"""Fail closed until every frozen SCOVA-CF v3 promotion artifact agrees."""
 
 from __future__ import annotations
 

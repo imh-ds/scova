@@ -23,11 +23,13 @@ from scova.simulate import generate_data
 from scripts.audit_cf_pilot import audit_pilot
 from scripts.check_cf_campaign_prerequisites import prerequisite_reasons
 
-SPEC = Path("benchmarks/specs/cf_reference_v1.json")
+SPEC = Path("benchmarks/specs/cf_reference_v3.json")
+BLOCKED_V2 = Path("benchmarks/specs/cf_reference_v2_blocked.json")
 
 
 def test_frozen_reference_protocol_has_disjoint_evidence_lanes() -> None:
     protocol = CFValidationProtocol.load(SPEC)
+    assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v3"
     assert protocol.calibration.count == 1000
     assert protocol.validation.count == 2000
     assert protocol.schema_version == 2
@@ -38,19 +40,42 @@ def test_frozen_reference_protocol_has_disjoint_evidence_lanes() -> None:
     assert len(protocol.external_cells) == 8
     assert protocol.external is not None and protocol.external.count == 50
     assert protocol.inference is not None and protocol.inference.count == 2000
+    assert protocol.pilot.start == 1_000_000_000
+    assert protocol.calibration.start == 1_100_000_000
+    assert protocol.validation.start == 1_300_000_000
+    assert protocol.external.start == 1_600_000_000
+    assert protocol.inference.start == 1_700_000_000
+    assert protocol.checksum == (
+        "dfb842e6e54aff3f11a7a5a8780881bfa78e3866a230231407286ce9d9e439c0"
+    )
     assert protocol.checksum == CFValidationProtocol.from_dict(
         protocol.to_dict()
     ).checksum
 
 
+def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:
+    blocked = json.loads(BLOCKED_V2.read_text(encoding="utf-8"))
+    assert blocked["status"] == "blocked"
+    assert blocked["heldout_validation_inspected"] is False
+    assert blocked["profile_promoted"] is False
+    assert blocked["replacement_protocol_id"] == (
+        "cf-randomized-continuous-aipw-unnormalized-v3"
+    )
+    supplied = blocked.pop("blocking_record_checksum")
+    assert supplied == canonical_checksum(blocked)
+
+
 def test_protocol_rejects_overlapping_or_undersized_lanes() -> None:
     values = json.loads(SPEC.read_text(encoding="utf-8"))
-    values["seed_partitions"]["validation"] = {"start": 1000500, "count": 2000}
+    values["seed_partitions"]["validation"] = {
+        "start": 1_100_000_500,
+        "count": 2000,
+    }
     with pytest.raises(ValueError, match="disjoint"):
         CFValidationProtocol.from_dict(values)
 
 
-def test_v2_protocol_rejects_incomplete_frozen_contract() -> None:
+def test_v3_protocol_rejects_incomplete_frozen_contract() -> None:
     original = json.loads(SPEC.read_text(encoding="utf-8"))
 
     def rejected(values: dict[str, object], message: str) -> None:
@@ -96,7 +121,10 @@ def test_v2_protocol_rejects_incomplete_frozen_contract() -> None:
     del values["metrics"]["confidence_level"]
     rejected(values, "missing metrics")
     values = json.loads(SPEC.read_text(encoding="utf-8"))
-    values["seed_partitions"]["calibration"] = {"start": 1000000, "count": 999}
+    values["seed_partitions"]["calibration"] = {
+        "start": 1_100_000_000,
+        "count": 999,
+    }
     with pytest.raises(ValueError, match="1,000"):
         CFValidationProtocol.from_dict(values)
 

@@ -1,4 +1,4 @@
-# SCOVA-CF randomized reference validation v2
+# SCOVA-CF randomized reference validation v3
 
 ## Release state
 
@@ -8,9 +8,12 @@ calibrated profile is bundled in this source tree, so ordinary SCOVA-CF analyses
 `SupportPolicy.packaged(profile_id)` is the sole calibrated activation route and currently
 rejects every identifier.
 
-The frozen manifest is `benchmarks/specs/cf_reference_v1.json` (the historical filename is
-retained for compatibility; its schema and protocol ID are v2). Its checksum locks:
+The frozen manifest is `benchmarks/specs/cf_reference_v3.json`. Protocol v3 replaces the
+blocked v2 manifest with corrected source-data checksums and entirely new evidence seed
+namespaces. Its checksum locks:
 
+- protocol checksum `dfb842e6e54aff3f11a7a5a8780881bfa78e3866a230231407286ce9d9e439c0`;
+- dependency-lock checksum `2131bd968e061c12847a100a896903ee1748baa4d5dcdd66d8bcd18a20559f09`;
 - 48 pairwise-covering simulation cells and 12 plasmode cells;
 - six focused simultaneous-inference cells and eight external-comparison cells;
 - pilot, calibration, held-out validation, inference, and external seed namespaces;
@@ -19,7 +22,12 @@ retained for compatibility; its schema and protocol ID are v2). Its checksum loc
 
 Calibration uses 1,000 replications per cell. Only its first 60% may fit thresholds; its final
 40% is an internal audit. Held-out validation uses a separate 2,000-replication namespace and
-may be evaluated only once. A failure requires a v3 protocol and fresh validation seeds.
+may be evaluated only once. A failure requires a new protocol and fresh validation seeds.
+
+Protocol v2 was blocked before pilot or held-out evidence was accepted. It declared
+scikit-learn 1.6.1 but carried source hashes generated under 1.9.0; the diabetes covariate bytes
+also differ between those versions. The immutable diagnosis and disposition are recorded in
+`docs/cf_reference_v2_blocking_report.md`.
 
 ## What is validated
 

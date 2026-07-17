@@ -45,8 +45,8 @@ permissions:
   contents: read
 
 env:
-  SPEC: benchmarks/specs/cf_reference_v1.json
-  FREEZE_TAG: scova-cf-reference-v2-freeze
+  SPEC: benchmarks/specs/cf_reference_v3.json
+  FREEZE_TAG: scova-cf-reference-v3-freeze
   PYTHONHASHSEED: "0"
 
 jobs:
@@ -87,10 +87,10 @@ jobs:
       - run: python -m pip install -e . --no-deps
       - run: >-
           python scripts/write_cf_freeze_manifest.py --spec "$SPEC"
-          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v2-freeze.json
+          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v3-freeze.json
       - uses: actions/upload-artifact@v6
         with:
-          name: cf-reference-v2-freeze
+          name: cf-reference-v3-freeze
           path: freeze/
           retention-days: 90
 

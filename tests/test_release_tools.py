@@ -226,12 +226,15 @@ def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
     assert "--stage external" in workflow
     assert "--stage inference" in workflow
     assert "--stage validation" in workflow
-    assert "scova-cf-reference-v2-freeze" in workflow
+    assert "scova-cf-reference-v3-freeze" in workflow
     assert "actions/attest-build-provenance@v3" in workflow
     assert "SCOVA_RELEASE_GPG_PRIVATE_KEY" in workflow
     assert "gh release create v0.5.0" in workflow
     ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
-    assert 'python -m pip install -e ".[dev]" "scikit-learn==1.6.1"' in ci
+    assert '"numpy==2.2.6" "pandas==2.2.3" "scipy==1.15.3"' in ci
+    assert '"scikit-learn==1.6.1"' in ci
+    assert "benchmarks/specs/cf_reference_v3.json" in ci
+    assert "benchmarks/specs/cf_reference_v1.json" not in ci
     assert "--shard-count 4" in ci
     assert "--replications 1 --max-cells 4 --skip-stability" in ci
 
@@ -242,7 +245,7 @@ def test_cf_promotion_applies_only_exact_evidence_and_release_text(
     evidence = tmp_path / "evidence"
     evidence.mkdir()
     profile = {
-        "profile_id": "cf-randomized-continuous-aipw-unnormalized-v2-promoted",
+        "profile_id": "cf-randomized-continuous-aipw-unnormalized-v3-promoted",
         "profile_checksum": "c" * 64,
     }
     proposed = {"schema_version": 1, "profiles": [profile]}
