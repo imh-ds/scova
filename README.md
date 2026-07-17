@@ -7,6 +7,13 @@ among naturally occurring groups. The stable `0.2.0` core implements a
 fixed-study-population (`h(x) = 1`), cross-fitted, multi-group AIPW estimator
 for continuous outcomes with simultaneous finite-family inference.
 
+SCOVA-CF is a distinct, opt-in feature under `scova.cf`. It builds on the base
+SCOVA engine to estimate governed population counterfactual means for a common
+declared population; it does not replace base SCOVA or identify person-specific
+missing outcomes. The randomized continuous-outcome reference slice, its
+current limitations, and a full example are documented in
+[`docs/scova_cf.md`](docs/scova_cf.md).
+
 The `0.3.0.dev0` source tree also contains an experimental finite-grid smooth
 overlap path. It remains experimental pending the frozen directional calibration,
 held-out validation, and pinned-gradient runs. Its production-stabilization machinery and remaining
@@ -89,6 +96,8 @@ print(result.diagnostics["effective_sample_sizes"])
 
 A complete three-group workflow is available in
 [`examples/three_group.py`](examples/three_group.py).
+The separate SCOVA-CF workflow is demonstrated in
+[`examples/counterfactual_means.py`](examples/counterfactual_means.py).
 
 ### Nuisance-learning defaults
 

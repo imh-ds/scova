@@ -22,6 +22,7 @@ jobs:
       - run: python -m pytest --cov=scova --cov-report=term-missing --cov-report=json:coverage.json
       - run: python scripts/check_critical_coverage.py coverage.json
       - run: python examples/three_group.py
+      - run: python examples/counterfactual_means.py
 
   jax-gradient:
     runs-on: ubuntu-latest
