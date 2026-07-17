@@ -6,6 +6,7 @@ import json
 from dataclasses import dataclass, field
 from enum import Enum
 from hashlib import sha256
+from importlib.resources import files
 from typing import Any, Literal, TypeAlias
 
 from ..declaration import ContrastSpec, JsonLabel
@@ -136,8 +137,13 @@ class SupportPolicy:
     min_ess_ratio: float = 0.25
     max_normalized_weight: float = 0.20
     max_top_one_percent_weight_share: float = 0.35
+    max_weighted_balance_difference: float = 1.0
+    max_influence_top_one_percent_share: float = 1.0
+    max_seed_standardized_departure: float = 1e9
     calibrated: bool = False
     version: str = "cf-provisional-1"
+    profile_id: str | None = None
+    profile_checksum: str | None = None
 
     def __post_init__(self) -> None:
         if self.min_group_count < 2:
@@ -148,12 +154,73 @@ class SupportPolicy:
             raise ValueError("max_normalized_weight must lie in (0, 1]")
         if not 0 < self.max_top_one_percent_weight_share <= 1:
             raise ValueError("max_top_one_percent_weight_share must lie in (0, 1]")
+        if self.max_weighted_balance_difference <= 0:
+            raise ValueError("max_weighted_balance_difference must be positive")
+        if not 0 < self.max_influence_top_one_percent_share <= 1:
+            raise ValueError("max_influence_top_one_percent_share must lie in (0, 1]")
+        if self.max_seed_standardized_departure <= 0:
+            raise ValueError("max_seed_standardized_departure must be positive")
         if not self.version:
             raise ValueError("Support policy version must not be empty")
         if self.calibrated:
-            raise ValueError(
-                "No calibrated SCOVA-CF support profile is shipped in this release"
-            )
+            if not self.profile_id or not self.profile_checksum:
+                raise ValueError(
+                    "No calibrated SCOVA-CF support profile is shipped in this release"
+                )
+            trusted = self._trusted_profile(self.profile_id)
+            if trusted is None or trusted["profile_checksum"] != self.profile_checksum:
+                raise ValueError("Calibrated support profile is not package-trusted")
+
+    @staticmethod
+    def _trusted_profile(profile_id: str) -> dict[str, Any] | None:
+        resource = files("scova.cf").joinpath("data").joinpath("support_profiles.json")
+        values = json.loads(resource.read_text(encoding="utf-8"))
+        return next(
+            (profile for profile in values["profiles"] if profile["profile_id"] == profile_id),
+            None,
+        )
+
+    @classmethod
+    def packaged(cls, profile_id: str) -> SupportPolicy:
+        """Load a promoted, checksum-bound support profile owned by this package."""
+        values = cls._trusted_profile(profile_id)
+        if values is None or values.get("state") != "promoted":
+            raise ValueError(f"No promoted packaged support profile named {profile_id!r}")
+        from .validation import CFSupportProfile
+
+        profile = CFSupportProfile.from_dict(values)
+        expected = {
+            "mode": "randomized",
+            "outcome_type": "continuous",
+            "estimator": "aipw-unnormalized",
+            "estimand_id": "study-population-standardized-means",
+            "assignment": "known-constant",
+            "independent_unit": "row",
+        }
+        compatibility = dict(profile.compatibility or {})
+        if any(compatibility.get(name) != value for name, value in expected.items()):
+            raise ValueError("Packaged support profile has an incompatible analysis lock")
+        thresholds = profile.thresholds
+        return cls(
+            min_ess_ratio=float(thresholds["minimum_ess_ratio"]),
+            max_normalized_weight=float(thresholds["maximum_normalized_weight"]),
+            max_top_one_percent_weight_share=float(
+                thresholds["maximum_top_one_percent_weight_share"]
+            ),
+            max_weighted_balance_difference=float(
+                thresholds["maximum_absolute_weighted_balance_difference"]
+            ),
+            max_influence_top_one_percent_share=float(
+                thresholds["maximum_influence_top_one_percent_share"]
+            ),
+            max_seed_standardized_departure=float(
+                thresholds["maximum_seed_standardized_departure"]
+            ),
+            calibrated=True,
+            version=profile.profile_id,
+            profile_id=profile.profile_id,
+            profile_checksum=profile.checksum,
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -161,8 +228,13 @@ class SupportPolicy:
             "min_ess_ratio": self.min_ess_ratio,
             "max_normalized_weight": self.max_normalized_weight,
             "max_top_one_percent_weight_share": self.max_top_one_percent_weight_share,
+            "max_weighted_balance_difference": self.max_weighted_balance_difference,
+            "max_influence_top_one_percent_share": self.max_influence_top_one_percent_share,
+            "max_seed_standardized_departure": self.max_seed_standardized_departure,
             "calibrated": self.calibrated,
             "version": self.version,
+            "profile_id": self.profile_id,
+            "profile_checksum": self.profile_checksum,
         }
 
 

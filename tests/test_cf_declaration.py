@@ -5,6 +5,7 @@ import pytest
 from scova import SCOVA, ContrastSpec, SCOVADeclaration
 from scova.cf import (
     AnalysisMode,
+    CFSupportProfile,
     ClaimClass,
     DeclarationAmendment,
     EstimatedAssignment,
@@ -80,8 +81,56 @@ def test_mode_assignment_and_support_contracts_fail_closed() -> None:
         randomized_declaration(contrasts=())
     with pytest.raises(ValueError, match="No calibrated"):
         SupportPolicy(calibrated=True, version="user-claimed-calibration")
+    with pytest.raises(ValueError, match="No promoted packaged"):
+        SupportPolicy.packaged("not-a-real-profile")
     with pytest.raises(ValueError, match="sum to one"):
         KnownAssignment(probabilities=(("a", 0.7), ("b", 0.4)))
+
+
+def test_packaged_support_policy_requires_exact_promoted_compatibility(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    compatibility = {
+        "mode": "randomized",
+        "outcome_type": "continuous",
+        "estimator": "aipw-unnormalized",
+        "estimand_id": "study-population-standardized-means",
+        "assignment": "known-constant",
+        "independent_unit": "row",
+    }
+    thresholds = {
+        "minimum_ess_ratio": 0.25,
+        "maximum_normalized_weight": 0.20,
+        "maximum_top_one_percent_weight_share": 0.35,
+        "maximum_absolute_weighted_balance_difference": 1.0,
+        "maximum_influence_top_one_percent_share": 0.50,
+        "maximum_seed_standardized_departure": 1.5,
+    }
+    profile = CFSupportProfile(
+        profile_id="packaged-test",
+        protocol_checksum="a" * 64,
+        calibration_evidence_checksum="b" * 64,
+        validation_evidence_checksum="c" * 64,
+        thresholds=thresholds,
+        compatibility=compatibility,
+        state="promoted",
+    )
+    monkeypatch.setattr(
+        SupportPolicy,
+        "_trusted_profile",
+        staticmethod(lambda _profile_id: profile.to_dict()),
+    )
+    policy = SupportPolicy.packaged("packaged-test")
+    assert policy.calibrated is True
+    assert policy.profile_checksum == profile.checksum
+    incompatible = replace(profile, compatibility={**compatibility, "mode": "wrong"})
+    monkeypatch.setattr(
+        SupportPolicy,
+        "_trusted_profile",
+        staticmethod(lambda _profile_id: incompatible.to_dict()),
+    )
+    with pytest.raises(ValueError, match="incompatible"):
+        SupportPolicy.packaged("packaged-test")
 
 
 def test_associational_claim_is_derived_not_user_selected() -> None:

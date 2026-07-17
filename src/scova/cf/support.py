@@ -82,6 +82,13 @@ def assess_support(
                 f"group {label!r} top-one-percent weight share {top_one:.3f} exceeds "
                 f"{policy.max_top_one_percent_weight_share:.3f}"
             )
+        maximum_balance = float(np.max(np.abs(balance)))
+        if maximum_balance > policy.max_weighted_balance_difference:
+            warnings.append(
+                f"group {label!r} maximum weighted balance difference "
+                f"{maximum_balance:.3f} exceeds "
+                f"{policy.max_weighted_balance_difference:.3f}"
+            )
         group_diagnostics[str(label)] = {
             "count": count,
             "propensity_target_quantiles": {
@@ -106,7 +113,7 @@ def assess_support(
                 name: float(value)
                 for name, value in zip(covariate_names, balance, strict=True)
             },
-            "maximum_absolute_weighted_balance_difference": float(np.max(np.abs(balance))),
+            "maximum_absolute_weighted_balance_difference": maximum_balance,
         }
     fold_counts = {
         str(int(fold)): {

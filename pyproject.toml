@@ -26,8 +26,8 @@ dependencies = [
 [project.optional-dependencies]
 jax = ["jax>=0.4"]
 cf-validation = [
-  "doubleml>=0.10",
-  "econml>=0.16",
+  "doubleml==0.11.3",
+  "econml==0.16.0",
 ]
 dev = [
   "build>=1.2",

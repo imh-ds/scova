@@ -198,6 +198,28 @@ class SCOVACF:
         """Run SCOVA-CF or return a typed refusal for an unmet prerequisite."""
         if not isinstance(data, pd.DataFrame):
             raise TypeError("data must be a pandas DataFrame")
+        if (
+            declaration.support_policy.calibrated
+            and declaration.mode is not AnalysisMode.RANDOMIZED
+        ):
+            return self._refusal(
+                declaration,
+                code="refused/incompatible-support-profile",
+                reason="The packaged randomized reference profile cannot govern another mode",
+            )
+        if (
+            declaration.support_policy.calibrated
+            and isinstance(declaration.assignment, KnownAssignment)
+            and not declaration.assignment.probabilities
+        ):
+            return self._refusal(
+                declaration,
+                code="refused/incompatible-support-profile",
+                reason=(
+                    "The packaged reference profile validates constant assignment "
+                    "probabilities only"
+                ),
+            )
         if declaration.post_treatment_covariates:
             return self._refusal(
                 declaration,
@@ -540,7 +562,51 @@ class SCOVACF:
                 and result.seed_stability.promotion_eligible
             ),
         }
+        self._apply_calibrated_reliability(result, declaration)
         return result
+
+    @staticmethod
+    def _apply_calibrated_reliability(
+        result: SCOVACFResult, declaration: SCOVACFDeclaration
+    ) -> None:
+        policy = declaration.support_policy
+        if not policy.calibrated:
+            return
+        warnings: list[str] = []
+        influence = result.diagnostics["influence_concentration"].values()
+        maximum_influence = max(
+            value["top_one_percent_variance_share"] for value in influence
+        )
+        if maximum_influence > policy.max_influence_top_one_percent_share:
+            warnings.append("influence concentration exceeds the packaged profile")
+        stability = result.seed_stability
+        if stability is None or not stability.promotion_eligible:
+            warnings.append("five successful full cross-fit refits are required")
+        elif stability.maximum_standardized_departure > policy.max_seed_standardized_departure:
+            warnings.append("cross-seed departure exceeds the packaged profile")
+        if warnings:
+            result.status = SCOVACFStatus(
+                support=SupportStatus.UNSTABLE,
+                code="limited/unstable-support",
+                reason="; ".join(warnings),
+                confirmatory=False,
+            )
+        result.contrasts = {
+            name: replace(
+                contrast,
+                support_status=result.status.support,
+                confirmatory=result.status.confirmatory,
+            )
+            for name, contrast in result.contrasts.items()
+        }
+        result.omnibus = guarded_omnibus(
+            means=result.group_means,
+            covariance=result.covariance,
+            mode=result.mode,
+            claim_class=result.claim_class,
+            status=result.status,
+        )
+        result.evidence_card["support_status"] = result.status.to_dict()
 
     def _seed_stability_diagnostic(
         self,

@@ -1,0 +1,376 @@
+name: SCOVA-CF frozen reference validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: Frozen campaign tier
+        required: true
+        type: choice
+        options:
+          - pilot
+          - calibration
+          - calibrate_support
+          - validation
+          - simultaneous_inference
+          - external_agreement
+          - aggregate
+          - release_audit
+      calibration_run_id:
+        description: Run containing calibration campaign/profile artifacts
+        required: false
+      validation_run_id:
+        description: Run containing held-out validation campaign
+        required: false
+      inference_run_id:
+        description: Run containing simultaneous-inference evidence
+        required: false
+      external_run_id:
+        description: Run containing external-agreement evidence
+        required: false
+      aggregate_run_id:
+        description: Run containing the assembled release-evidence bundle
+        required: false
+      recovery_run_id:
+        description: Optional prior run containing shard checkpoints to resume
+        required: false
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  SPEC: benchmarks/specs/cf_reference_v1.json
+  PYTHONHASHSEED: "0"
+
+jobs:
+  prepare:
+    if: inputs.tier == 'calibration' || inputs.tier == 'validation' || inputs.tier == 'simultaneous_inference'
+    runs-on: ubuntu-latest
+    outputs:
+      shards: ${{ steps.matrix.outputs.shards }}
+    steps:
+      - id: matrix
+        env:
+          TIER: ${{ inputs.tier }}
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          count = 64 if os.environ["TIER"] == "simultaneous_inference" else 128
+          print("shards=" + json.dumps(list(range(count))))
+          PY
+
+  pilot:
+    if: inputs.tier == 'pilot'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+          cache: pip
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - run: >-
+          python benchmarks/cf_reference_campaign.py --spec "$SPEC" --lane pilot
+          --output "artifacts/pilot-${{ matrix.shard }}.ndjson.gz"
+          --shard-index ${{ matrix.shard }} --shard-count 4
+          --replications 1 --max-cells 4 --skip-stability
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: cf-pilot-${{ matrix.shard }}
+          path: artifacts/
+
+  campaign_shard:
+    if: inputs.tier == 'calibration' || inputs.tier == 'validation'
+    needs: [prepare, validation_lock]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.prepare.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+          cache: pip
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        if: inputs.tier == 'validation'
+        with:
+          name: cf-calibrated-candidate
+          path: candidate
+          run-id: ${{ inputs.calibration_run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v6
+        if: inputs.recovery_run_id != ''
+        continue-on-error: true
+        with:
+          name: cf-${{ inputs.tier }}-${{ matrix.shard }}
+          path: artifacts
+          run-id: ${{ inputs.recovery_run_id }}
+          github-token: ${{ github.token }}
+      - env:
+          LANE: ${{ inputs.tier }}
+        run: >-
+          python benchmarks/cf_reference_campaign.py --spec "$SPEC" --lane "$LANE"
+          --output "artifacts/${LANE}-${{ matrix.shard }}.ndjson.gz"
+          --shard-index ${{ matrix.shard }} --shard-count 128 --resume
+          ${{ inputs.tier == 'validation' && '--candidate-profile candidate/cf-reference-candidate-profile.json' || '' }}
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: cf-${{ inputs.tier }}-${{ matrix.shard }}
+          path: artifacts/
+          retention-days: 90
+
+  validation_lock:
+    if: inputs.tier == 'calibration' || inputs.tier == 'validation'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        if: inputs.tier == 'validation'
+        with:
+          name: cf-calibrated-candidate
+          path: candidate
+          run-id: ${{ inputs.calibration_run_id }}
+          github-token: ${{ github.token }}
+      - if: inputs.tier == 'validation'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scova.cf import CFSupportProfile, CFValidationProtocol
+          protocol = CFValidationProtocol.load("benchmarks/specs/cf_reference_v1.json")
+          profile = CFSupportProfile.from_dict(json.loads(Path("candidate/cf-reference-candidate-profile.json").read_text()))
+          assert profile.state == "candidate"
+          assert profile.protocol_checksum == protocol.checksum
+          PY
+
+  campaign_aggregate:
+    if: inputs.tier == 'calibration' || inputs.tier == 'validation'
+    needs: campaign_shard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: cf-${{ inputs.tier }}-*
+          path: shards
+          merge-multiple: true
+      - env:
+          LANE: ${{ inputs.tier }}
+        run: >-
+          python benchmarks/aggregate_cf_campaign.py shards/*.ndjson.gz
+          --spec "$SPEC" --lane "$LANE"
+          --output "evidence/cf-reference-${LANE}-campaign.json.gz"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cf-${{ inputs.tier }}-campaign
+          path: evidence/
+          retention-days: 90
+
+  calibrate_support:
+    if: inputs.tier == 'calibrate_support'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        with:
+          name: cf-calibration-campaign
+          path: evidence
+          run-id: ${{ inputs.calibration_run_id }}
+          github-token: ${{ github.token }}
+      - run: >-
+          python scripts/calibrate_cf_support.py --spec "$SPEC"
+          --calibration-evidence evidence/cf-reference-calibration-campaign.json.gz
+          --output evidence/cf-reference-calibration.json
+          --candidate-output evidence/cf-reference-candidate-profile.json
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cf-calibrated-candidate
+          path: evidence/
+          retention-days: 90
+
+  inference_shard:
+    if: inputs.tier == 'simultaneous_inference'
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.prepare.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        if: inputs.recovery_run_id != ''
+        continue-on-error: true
+        with:
+          name: cf-inference-${{ matrix.shard }}
+          path: artifacts
+          run-id: ${{ inputs.recovery_run_id }}
+          github-token: ${{ github.token }}
+      - run: >-
+          python benchmarks/cf_inference_campaign.py --spec "$SPEC"
+          --output "artifacts/inference-${{ matrix.shard }}.ndjson.gz"
+          --shard-index ${{ matrix.shard }} --shard-count 64 --resume
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: cf-inference-${{ matrix.shard }}
+          path: artifacts/
+          retention-days: 90
+
+  inference_aggregate:
+    if: inputs.tier == 'simultaneous_inference'
+    needs: inference_shard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: cf-inference-*
+          path: shards
+          merge-multiple: true
+      - run: >-
+          python benchmarks/cf_inference_campaign.py --spec "$SPEC"
+          --aggregate shards/*.ndjson.gz --output evidence/cf-reference-inference.json
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cf-inference-evidence
+          path: evidence/
+          retention-days: 90
+
+  external_agreement:
+    if: inputs.tier == 'external_agreement'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+          cache: pip
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - run: >-
+          python benchmarks/cf_external_agreement.py --spec "$SPEC"
+          --output evidence/cf-reference-external-agreement.json
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: cf-external-evidence
+          path: evidence/
+          retention-days: 90
+
+  aggregate_evidence:
+    if: inputs.tier == 'aggregate'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        with:
+          name: cf-calibrated-candidate
+          path: evidence
+          run-id: ${{ inputs.calibration_run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v6
+        with:
+          name: cf-validation-campaign
+          path: evidence
+          run-id: ${{ inputs.validation_run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v6
+        with:
+          name: cf-inference-evidence
+          path: evidence
+          run-id: ${{ inputs.inference_run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v6
+        with:
+          name: cf-external-evidence
+          path: evidence
+          run-id: ${{ inputs.external_run_id }}
+          github-token: ${{ github.token }}
+      - id: heldout
+        continue-on-error: true
+        run: >-
+          python scripts/validate_cf_support.py --spec "$SPEC"
+          --validation-evidence evidence/cf-reference-validation-campaign.json.gz
+          --candidate-profile evidence/cf-reference-candidate-profile.json
+          --inference-evidence evidence/cf-reference-inference.json
+          --external-evidence evidence/cf-reference-external-agreement.json
+          --output evidence/cf-reference-validation.json
+          --profile-output evidence/cf-reference-support-profile.json
+      - if: always()
+        run: >-
+          python scripts/render_cf_validation_report.py --spec "$SPEC"
+          --evidence-root evidence
+          --output evidence/cf-reference-validation-report.md
+      - run: >-
+          python scripts/package_cf_support_profile.py --spec "$SPEC"
+          --evidence-root evidence --output evidence/proposed-support-profiles.json
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: cf-release-evidence
+          path: evidence/
+          retention-days: 90
+
+  release_audit:
+    if: inputs.tier == 'release_audit'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        with:
+          name: cf-release-evidence
+          path: evidence
+          run-id: ${{ inputs.aggregate_run_id }}
+          github-token: ${{ github.token }}
+      - run: >-
+          python scripts/check_cf_reference_release.py --spec "$SPEC"
+          --evidence-root evidence
+          --packaged-manifest src/scova/cf/data/support_profiles.json
