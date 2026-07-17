@@ -98,6 +98,9 @@ A complete three-group workflow is available in
 [`examples/three_group.py`](examples/three_group.py).
 The separate SCOVA-CF workflow is demonstrated in
 [`examples/counterfactual_means.py`](examples/counterfactual_means.py).
+An annotated nonlinear comparison against ANOVA-style and linear-ANCOVA
+benchmarks is in
+[`examples/scova_cf_nonlinear_benefit.py`](examples/scova_cf_nonlinear_benefit.py).
 
 ### Nuisance-learning defaults
 
