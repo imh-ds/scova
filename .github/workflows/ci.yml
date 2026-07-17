@@ -51,13 +51,13 @@ jobs:
           "scikit-learn==1.6.1"
       - run: |
           for shard in 0 1 2 3; do
-            python benchmarks/cf_reference_campaign.py \
+            python -m benchmarks.cf_reference_campaign \
               --spec benchmarks/specs/cf_reference_v3.json --lane pilot \
               --output "artifacts/pilot-${shard}.ndjson.gz" \
               --shard-index "$shard" --shard-count 4 \
               --replications 1 --max-cells 4 --skip-stability
           done
       - run: >-
-          python benchmarks/verify_cf_smoke.py artifacts/*.ndjson.gz
+          python -m benchmarks.verify_cf_smoke artifacts/*.ndjson.gz
           --spec benchmarks/specs/cf_reference_v3.json
           --output artifacts/verified.json

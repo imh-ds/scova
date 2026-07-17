@@ -226,7 +226,7 @@ def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
     assert "--stage external" in workflow
     assert "--stage inference" in workflow
     assert "--stage validation" in workflow
-    assert "scova-cf-reference-v3-freeze-r2" in workflow
+    assert "scova-cf-reference-v3-freeze-r3" in workflow
     assert "- freeze_check" in workflow
     prepare_job = workflow.split("  prepare:", 1)[1].split("  campaign_freeze:", 1)[0]
     freeze_job = workflow.split("  campaign_freeze:", 1)[1].split(
@@ -236,6 +236,14 @@ def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
     assert "inputs.tier == 'freeze_check'" in freeze_job
     assert "python -m scripts.write_cf_freeze_manifest" in workflow
     assert "python scripts/write_cf_freeze_manifest.py" not in workflow
+    for module in (
+        "cf_reference_campaign",
+        "aggregate_cf_campaign",
+        "cf_external_agreement",
+        "cf_inference_campaign",
+    ):
+        assert f"python -m benchmarks.{module}" in workflow
+    assert "python benchmarks/" not in workflow
     assert "actions/attest-build-provenance@v3" in workflow
     assert "SCOVA_RELEASE_GPG_PRIVATE_KEY" in workflow
     assert "gh release create v0.5.0" in workflow
@@ -244,6 +252,7 @@ def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
     assert '"scikit-learn==1.6.1"' in ci
     assert "benchmarks/specs/cf_reference_v3.json" in ci
     assert "benchmarks/specs/cf_reference_v1.json" not in ci
+    assert "python benchmarks/" not in ci
     assert "--shard-count 4" in ci
     assert "--replications 1 --max-cells 4 --skip-stability" in ci
 
