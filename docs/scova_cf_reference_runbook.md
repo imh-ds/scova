@@ -7,10 +7,17 @@ known constant assignment probabilities and unnormalized cross-fitted AIPW.
 ## Immutable baseline
 
 1. Commit all campaign and workflow code on one clean commit.
-2. Create the annotated tag `scova-cf-reference-v3-freeze` at that commit and
+2. Create the annotated tag `scova-cf-reference-v3-freeze-r2` at that commit and
    push both the commit and tag.
-3. Dispatch every tier through `simultaneous_inference` using the freeze tag as
+3. Dispatch `freeze_check` using the freeze tag. This inexpensive preflight must
+   verify the tag, pinned environment, repository imports, dependency lock, protocol
+   checksum, dataset identities, and deterministic freeze manifest before any shard runs.
+4. Dispatch every tier through `simultaneous_inference` using the freeze tag as
    the workflow ref. The workflow rejects a ref that is not exactly tagged.
+
+The original `scova-cf-reference-v3-freeze` tag is retained as a failed engineering
+attempt. Its run stopped at repository import resolution before any pilot record or seed
+was executed; it is not admissible campaign evidence and must not be moved or reused.
 
 Any numerical, estimator, adapter, protocol, metric, cell, threshold-family, or
 seed change requires a new campaign commit. A statistical change requires a new
