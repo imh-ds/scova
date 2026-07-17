@@ -429,3 +429,54 @@ def test_result_validation_branches() -> None:
         result.infer(("g0 - g1", "g0 - g1"), n_bootstrap=10)
     with pytest.raises(ValueError, match="Unknown"):
         result.infer(("unknown",), n_bootstrap=10)
+
+
+def test_locked_seed_refits_are_reported_but_not_pooled(tmp_path: Path) -> None:
+    simulation = generate_data("randomized", n=180, seed=31)
+    declared = replace(declaration(), stability_seeds=(101, 211))
+    result = SCOVACF().analyze(simulation.data, declared)
+    assert isinstance(result, SCOVACFResult)
+    stability = result.seed_stability
+    assert stability is not None
+    assert stability.seeds == (17, 101, 211)
+    assert stability.group_means.shape == (3, 3)
+    assert len(set(stability.fold_hashes)) == 3
+    assert stability.source == "full-cross-fit-refit"
+    assert stability.promotion_eligible is False
+    assert result.random_state == 17
+    assert result.evidence_card["seed_policy"]["aggregation"] == "none"
+
+    path = tmp_path / "stability.scova-cf"
+    result.save(path)
+    loaded = SCOVACFResult.load(path)
+    assert loaded.seed_stability is not None
+    np.testing.assert_allclose(
+        loaded.seed_stability.group_means, stability.group_means
+    )
+
+
+def test_five_full_refits_are_promotion_eligible_but_do_not_upgrade_support() -> None:
+    simulation = generate_data("randomized", n=180, seed=32)
+    declared = replace(declaration(), stability_seeds=(101, 211, 307, 401, 503))
+    result = SCOVACF().analyze(simulation.data, declared)
+    assert isinstance(result, SCOVACFResult)
+    assert result.seed_stability is not None
+    assert result.seed_stability.promotion_eligible is True
+    assert result.status.support is SupportStatus.UNSTABLE
+    assert result.status.confirmatory is False
+
+
+def test_supplied_nuisance_seed_rows_cannot_satisfy_refit_gate() -> None:
+    simulation = generate_data("randomized", n=180, seed=33)
+    declared = replace(declaration(), stability_seeds=(101, 211, 307, 401, 503))
+    result = SCOVACF().analyze(
+        simulation.data,
+        declared,
+        nuisance_predictions=SCOVACFNuisancePredictions(
+            simulation.outcome_regression, simulation.group_labels
+        ),
+    )
+    assert isinstance(result, SCOVACFResult)
+    assert result.seed_stability is not None
+    assert result.seed_stability.source == "fixed-supplied-nuisance"
+    assert result.seed_stability.promotion_eligible is False

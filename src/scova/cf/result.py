@@ -18,7 +18,7 @@ from .declaration import AnalysisMode, ClaimClass, claim_class_for_mode
 from .status import SCOVACFStatus, SupportStatus
 
 CF_ARTIFACT_TYPE = "scova-cf-result"
-CF_SCHEMA_VERSION = 1
+CF_SCHEMA_VERSION = 2
 
 
 def _json_float(value: float) -> float | None:
@@ -43,6 +43,96 @@ class CFDesignLock:
             "fold_hash": self.fold_hash,
             "row_count": self.row_count,
         }
+
+
+@dataclass(frozen=True, slots=True)
+class SeedStabilityResult:
+    """Locked split-refit diagnostic; rows do not represent new observations."""
+
+    seeds: tuple[int, ...]
+    fold_hashes: tuple[str, ...]
+    group_labels: tuple[JsonLabel, ...]
+    group_means: np.ndarray
+    group_standard_errors: np.ndarray
+    contrast_names: tuple[str, ...]
+    contrast_estimates: np.ndarray
+    contrast_standard_errors: np.ndarray
+    source: str
+    promotion_eligible: bool
+    failures: tuple[tuple[int, str], ...] = ()
+
+    @property
+    def group_ranges(self) -> np.ndarray:
+        return np.ptp(self.group_means, axis=0)
+
+    @property
+    def contrast_ranges(self) -> np.ndarray:
+        if self.contrast_estimates.shape[1] == 0:
+            return np.empty(0, dtype=float)
+        return np.ptp(self.contrast_estimates, axis=0)
+
+    @property
+    def maximum_standardized_departure(self) -> float:
+        primary = self.group_means[0]
+        scale = self.group_standard_errors[0]
+        safe = np.where(scale > 0, scale, np.nan)
+        departures = np.abs(self.group_means - primary) / safe
+        if np.all(np.isnan(departures)):
+            return 0.0
+        return float(np.nanmax(departures))
+
+    def to_dict(self) -> dict[str, Any]:
+        critical = float(norm.ppf(0.975))
+        group_margin = critical * self.group_standard_errors
+        contrast_margin = critical * self.contrast_standard_errors
+        return {
+            "seeds": list(self.seeds),
+            "fold_hashes": list(self.fold_hashes),
+            "group_labels": list(self.group_labels),
+            "group_means": self.group_means.tolist(),
+            "group_standard_errors": self.group_standard_errors.tolist(),
+            "group_confidence_intervals": np.stack(
+                (self.group_means - group_margin, self.group_means + group_margin), axis=-1
+            ).tolist(),
+            "group_ranges": self.group_ranges.tolist(),
+            "contrast_names": list(self.contrast_names),
+            "contrast_estimates": self.contrast_estimates.tolist(),
+            "contrast_standard_errors": self.contrast_standard_errors.tolist(),
+            "contrast_confidence_intervals": np.stack(
+                (
+                    self.contrast_estimates - contrast_margin,
+                    self.contrast_estimates + contrast_margin,
+                ),
+                axis=-1,
+            ).tolist(),
+            "contrast_ranges": self.contrast_ranges.tolist(),
+            "maximum_standardized_departure": self.maximum_standardized_departure,
+            "source": self.source,
+            "promotion_eligible": self.promotion_eligible,
+            "failures": [[seed, reason] for seed, reason in self.failures],
+            "interpretation": (
+                "Computational split stability only; refits are not independent observations "
+                "and are not pooled for inference"
+            ),
+        }
+
+    @classmethod
+    def from_dict(cls, values: Mapping[str, Any]) -> SeedStabilityResult:
+        return cls(
+            seeds=tuple(int(seed) for seed in values["seeds"]),
+            fold_hashes=tuple(str(value) for value in values["fold_hashes"]),
+            group_labels=tuple(values["group_labels"]),
+            group_means=np.asarray(values["group_means"], dtype=float),
+            group_standard_errors=np.asarray(values["group_standard_errors"], dtype=float),
+            contrast_names=tuple(str(value) for value in values["contrast_names"]),
+            contrast_estimates=np.asarray(values["contrast_estimates"], dtype=float),
+            contrast_standard_errors=np.asarray(
+                values["contrast_standard_errors"], dtype=float
+            ),
+            source=str(values["source"]),
+            promotion_eligible=bool(values["promotion_eligible"]),
+            failures=tuple((int(seed), str(reason)) for seed, reason in values["failures"]),
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -212,6 +302,7 @@ class SCOVACFResult:
     evidence_card: dict[str, Any]
     omnibus: SCOVACFOmnibusResult
     random_state: int
+    seed_stability: SeedStabilityResult | None = None
     package_version: str = __version__
     contrasts: dict[str, SCOVACFContrastEstimate] = field(default_factory=dict)
     inferences: dict[str, SCOVACFInferenceResult] = field(default_factory=dict)
@@ -359,6 +450,9 @@ class SCOVACFResult:
             "benchmarks": self.benchmarks,
             "evidence_card": self.evidence_card,
             "nuisance_metadata": self.nuisance_metadata,
+            "seed_stability": (
+                None if self.seed_stability is None else self.seed_stability.to_dict()
+            ),
             "inferences": {name: value.to_dict() for name, value in self.inferences.items()},
         }
 
@@ -391,7 +485,8 @@ class SCOVACFResult:
             metadata = json.loads(str(archive["metadata"].item()))
             if metadata.get("artifact_type") != CF_ARTIFACT_TYPE:
                 raise ValueError("Artifact is not a SCOVA-CF result")
-            if int(metadata["schema_version"]) != CF_SCHEMA_VERSION:
+            schema_version = int(metadata["schema_version"])
+            if schema_version not in {1, CF_SCHEMA_VERSION}:
                 raise ValueError("Unsupported SCOVA-CF artifact schema")
             mode = AnalysisMode(metadata["mode"])
             claim_class = ClaimClass(metadata["claim_class"])
@@ -451,6 +546,12 @@ class SCOVACFResult:
                 omnibus=omnibus,
                 random_state=int(metadata["random_state"]),
                 package_version=str(metadata["package_version"]),
+                seed_stability=(
+                    None
+                    if metadata.get("seed_stability") is None
+                    else SeedStabilityResult.from_dict(metadata["seed_stability"])
+                ),
+                schema_version=CF_SCHEMA_VERSION,
             )
             for name, values in metadata["contrasts"].items():
                 result.contrasts[name] = SCOVACFContrastEstimate(

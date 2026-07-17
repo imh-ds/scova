@@ -209,6 +209,7 @@ class SCOVACFDeclaration:
     outcome_nuisance_strategy: Literal["adaptive", "linear", "custom"] = "adaptive"
     n_splits: int = 5
     random_state: int = 0
+    stability_seeds: tuple[int, ...] = field(default_factory=tuple)
     contrasts: tuple[ContrastSpec, ...] = field(default_factory=tuple)
     post_treatment_covariates: tuple[str, ...] = field(default_factory=tuple)
     outcome_direction: Literal["higher", "lower"] = "higher"
@@ -226,6 +227,7 @@ class SCOVACFDeclaration:
     def __post_init__(self) -> None:
         object.__setattr__(self, "covariates", tuple(self.covariates))
         object.__setattr__(self, "contrasts", tuple(self.contrasts))
+        object.__setattr__(self, "stability_seeds", tuple(self.stability_seeds))
         object.__setattr__(self, "group_definitions", tuple(self.group_definitions))
         object.__setattr__(self, "covariate_rationales", tuple(self.covariate_rationales))
         object.__setattr__(self, "post_treatment_covariates", tuple(self.post_treatment_covariates))
@@ -249,6 +251,15 @@ class SCOVACFDeclaration:
             raise ValueError(f"Required scientific declaration fields are empty: {empty}")
         if self.n_splits < 2:
             raise ValueError("n_splits must be at least two")
+        if any(
+            not isinstance(seed, int) or isinstance(seed, bool) or seed < 0
+            for seed in self.stability_seeds
+        ):
+            raise ValueError("stability_seeds must contain nonnegative integers")
+        if len(set(self.stability_seeds)) != len(self.stability_seeds):
+            raise ValueError("stability_seeds must be unique")
+        if self.random_state in self.stability_seeds:
+            raise ValueError("stability_seeds must not contain the primary random_state")
         if self.outcome_nuisance_strategy not in {"adaptive", "linear", "custom"}:
             raise ValueError("Unsupported outcome nuisance strategy")
         group_labels = [label for label, definition in self.group_definitions if definition.strip()]
@@ -291,7 +302,7 @@ class SCOVACFDeclaration:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": 1,
+            "schema_version": 2,
             "outcome": self.outcome,
             "group": self.group,
             "covariates": list(self.covariates),
@@ -310,6 +321,7 @@ class SCOVACFDeclaration:
             "outcome_nuisance_strategy": self.outcome_nuisance_strategy,
             "n_splits": self.n_splits,
             "random_state": self.random_state,
+            "stability_seeds": list(self.stability_seeds),
             "contrasts": [contrast.to_dict() for contrast in self.contrasts],
             "post_treatment_covariates": list(self.post_treatment_covariates),
             "estimand_id": self.estimand_id,

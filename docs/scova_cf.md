@@ -17,6 +17,11 @@ identify individual treatment effects, recreate within-person covariance, or
 turn model predictions into repeated measurements. No paired-test or
 individual-potential-outcome API is provided.
 
+The randomized continuous reference estimator remains nonconfirmatory while
+the frozen calibration and held-out campaign is pending. The validation
+protocol, locked-seed diagnostic, and fail-closed release process are described
+in `docs/cf_reference_validation.md`.
+
 ## Current reference slice
 
 The current implementation provides:

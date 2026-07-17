@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from hashlib import sha256
 from typing import Any
 
@@ -21,7 +21,7 @@ from .declaration import (
     KnownAssignment,
     SCOVACFDeclaration,
 )
-from .result import CFDesignLock, SCOVACFResult, guarded_omnibus
+from .result import CFDesignLock, SCOVACFResult, SeedStabilityResult, guarded_omnibus
 from .status import SCOVACFRefusal, SCOVACFStatus, SupportStatus
 from .support import assess_support, influence_concentration
 
@@ -130,8 +130,16 @@ class SCOVACF:
         hashes = pd.util.hash_pandas_object(design, index=False, categorize=True).to_numpy(
             dtype=np.uint64
         )
-        salt = np.uint64(declaration.random_state % (2**32)) * np.uint64(0x9E3779B1)
+        salt_bytes = sha256(str(declaration.random_state).encode("ascii")).digest()[:8]
+        salt = np.frombuffer(salt_bytes, dtype=np.uint64)[0]
+        # SplitMix64 avalanche makes the seed affect the full ordering. A low-bit XOR
+        # alone leaves almost every ordering unchanged when row hashes differ above it.
         hashes = hashes ^ salt
+        hashes ^= hashes >> np.uint64(30)
+        hashes *= np.uint64(0xBF58476D1CE4E5B9)
+        hashes ^= hashes >> np.uint64(27)
+        hashes *= np.uint64(0x94D049BB133111EB)
+        hashes ^= hashes >> np.uint64(31)
         strata_codes: np.ndarray | None = None
         stratified_by_design = False
         if strata_column is not None:
@@ -517,4 +525,85 @@ class SCOVACF:
         )
         for specification in declaration.contrasts:
             result.contrast(dict(specification.weights), name=specification.name)
+        result.seed_stability = self._seed_stability_diagnostic(
+            data=data,
+            declaration=declaration,
+            primary=result,
+            nuisance_predictions=nuisance_predictions,
+        )
+        result.evidence_card["seed_policy"] = {
+            "primary_seed": declaration.random_state,
+            "stability_seeds": list(declaration.stability_seeds),
+            "aggregation": "none",
+            "promotion_eligible": bool(
+                result.seed_stability is not None
+                and result.seed_stability.promotion_eligible
+            ),
+        }
         return result
+
+    def _seed_stability_diagnostic(
+        self,
+        *,
+        data: pd.DataFrame,
+        declaration: SCOVACFDeclaration,
+        primary: SCOVACFResult,
+        nuisance_predictions: SCOVACFNuisancePredictions | None,
+    ) -> SeedStabilityResult | None:
+        """Refit declared splits without pooling them or changing the primary result."""
+        if not declaration.stability_seeds:
+            return None
+        successful = [primary]
+        failures: list[tuple[int, str]] = []
+        for seed in declaration.stability_seeds:
+            refit_declaration = replace(
+                declaration,
+                random_state=seed,
+                stability_seeds=(),
+            )
+            refit = self.analyze(
+                data,
+                refit_declaration,
+                nuisance_predictions=nuisance_predictions,
+            )
+            if isinstance(refit, SCOVACFRefusal):
+                failures.append((seed, f"{refit.status.code}: {refit.status.reason}"))
+            else:
+                successful.append(refit)
+        contrast_names = tuple(primary.contrasts)
+        source = (
+            "fixed-supplied-nuisance"
+            if nuisance_predictions is not None
+            else "full-cross-fit-refit"
+        )
+        return SeedStabilityResult(
+            seeds=tuple(result.random_state for result in successful),
+            fold_hashes=tuple(result.design_lock.fold_hash for result in successful),
+            group_labels=primary.group_labels,
+            group_means=np.vstack([result.group_means for result in successful]),
+            group_standard_errors=np.vstack(
+                [result.group_standard_errors for result in successful]
+            ),
+            contrast_names=contrast_names,
+            contrast_estimates=np.array(
+                [
+                    [result.contrasts[name].estimate for name in contrast_names]
+                    for result in successful
+                ],
+                dtype=float,
+            ),
+            contrast_standard_errors=np.array(
+                [
+                    [result.contrasts[name].standard_error for name in contrast_names]
+                    for result in successful
+                ],
+                dtype=float,
+            ),
+            source=source,
+            promotion_eligible=(
+                source == "full-cross-fit-refit"
+                and len(declaration.stability_seeds) >= 5
+                and not failures
+            ),
+            failures=tuple(failures),
+        )

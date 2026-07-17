@@ -222,3 +222,26 @@ def test_string_mode_is_canonicalized() -> None:
     declaration = randomized_declaration(mode="randomized")
     assert declaration.mode is AnalysisMode.RANDOMIZED
     assert replace(declaration, random_state=99).declaration_hash != declaration.declaration_hash
+
+
+@pytest.mark.parametrize(
+    ("seeds", "message"),
+    [
+        ((0,), "primary"),
+        ((2, 2), "unique"),
+        ((-1,), "nonnegative"),
+        ((True,), "nonnegative"),
+    ],
+)
+def test_stability_seed_registry_is_governed(
+    seeds: tuple[int, ...], message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        randomized_declaration(stability_seeds=seeds)
+
+
+def test_stability_seeds_are_part_of_declaration_identity() -> None:
+    baseline = randomized_declaration()
+    declared = replace(baseline, stability_seeds=(101, 211, 307, 401, 503))
+    assert declared.to_dict()["stability_seeds"] == [101, 211, 307, 401, 503]
+    assert declared.declaration_hash != baseline.declaration_hash

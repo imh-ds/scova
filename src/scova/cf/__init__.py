@@ -16,12 +16,21 @@ from .result import (
     SCOVACFInferenceResult,
     SCOVACFOmnibusResult,
     SCOVACFResult,
+    SeedStabilityResult,
 )
 from .status import SCOVACFRefusal, SCOVACFStatus, SupportStatus
+from .validation import (
+    CFSupportProfile,
+    CFValidationProtocol,
+    SeedPartition,
+    canonical_checksum,
+)
 
 __all__ = [
     "AnalysisMode",
     "CFDesignLock",
+    "CFSupportProfile",
+    "CFValidationProtocol",
     "ClaimClass",
     "DeclarationAmendment",
     "EstimatedAssignment",
@@ -35,6 +44,9 @@ __all__ = [
     "SCOVACFRefusal",
     "SCOVACFResult",
     "SCOVACFStatus",
+    "SeedStabilityResult",
+    "SeedPartition",
     "SupportPolicy",
     "SupportStatus",
+    "canonical_checksum",
 ]
