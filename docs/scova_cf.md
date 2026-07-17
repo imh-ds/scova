@@ -1,5 +1,10 @@
 # SCOVA-CF
 
+<!-- CF_REFERENCE_PROFILE_STATUS_START -->
+The randomized continuous unnormalized-AIPW reference profile remains a candidate.
+No packaged policy can issue calibrated support until the frozen campaign passes.
+<!-- CF_REFERENCE_PROFILE_STATUS_END -->
+
 SCOVA-CF is an opt-in feature of the SCOVA package for governed estimation of
 population counterfactual means. It builds on SCOVA's nonlinear nuisance
 learning and multi-group AIPW machinery without changing base SCOVA's role as
@@ -39,9 +44,9 @@ The current implementation provides:
 - mandatory unadjusted and fully interacted linear benchmarks; and
 - label-preserving, non-pickle replay artifacts.
 
-The bundled support profile is deliberately provisional. It can emit
-`unstable` or `unsupported`, but it cannot emit a confirmatory `supported`
-result until held-out simulation calibration is completed. Hájek AIPW, TMLE,
+The default support policy is deliberately provisional. It can emit `unstable`
+or `unsupported`, but it cannot emit a confirmatory `supported` result. An exact
+promoted packaged policy may do so only when explicitly selected. Hájek AIPW, TMLE,
 repeated-cross-fit aggregation, ratio/odds scales, clustered inference,
 missing-outcome scores, overlap targets, and individual-effect bounds remain
 gated future modules.
@@ -94,7 +99,7 @@ else:
 ## Interpretation rules
 
 - `randomized` results receive the `randomization-supported` claim class, but
-  remain nonconfirmatory while the support profile is provisional.
+  remain nonconfirmatory unless an eligible promoted packaged policy is selected.
 - `observational-causal` results are assumption-dependent and require a
   prespecified quantitative unmeasured-confounding sensitivity analysis before
   eventual promotion.

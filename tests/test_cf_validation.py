@@ -17,8 +17,11 @@ from scova.cf import (
     CFSupportProfile,
     CFValidationProtocol,
     SeedPartition,
+    canonical_checksum,
 )
 from scova.simulate import generate_data
+from scripts.audit_cf_pilot import audit_pilot
+from scripts.check_cf_campaign_prerequisites import prerequisite_reasons
 
 SPEC = Path("benchmarks/specs/cf_reference_v1.json")
 
@@ -254,3 +257,100 @@ def test_heldout_shard_requires_and_records_candidate_lock(tmp_path: Path) -> No
         candidate_profile=candidate,
     )
     assert output.read_bytes() == first_bytes
+
+
+def test_full_pilot_audit_enforces_runtime_margin_and_complete_metadata(
+    tmp_path: Path,
+) -> None:
+    protocol = CFValidationProtocol.load(SPEC)
+    evidence = {
+        "protocol_checksum": protocol.checksum,
+        "evidence_checksum": "e" * 64,
+        "lane": "pilot",
+        "complete_frozen_lane": True,
+        "cell_count": 60,
+        "replications_per_cell": 20,
+        "shard_count": 16,
+        "execution_error_count": 0,
+    }
+    paths = []
+    for index in range(16):
+        values = {
+            "complete_frozen_lane_configuration": True,
+            "protocol_checksum": protocol.checksum,
+            "shard_index": index,
+            "elapsed_seconds": 60.0,
+            "record_count": 75,
+        }
+        values["metadata_checksum"] = canonical_checksum(values)
+        path = tmp_path / f"pilot-{index}.metadata.json"
+        path.write_text(json.dumps(values), encoding="utf-8")
+        paths.append(path)
+    result = audit_pilot(evidence, paths, protocol)
+    assert result["passed"] is True
+    assert result["promotion_eligible"] is False
+    evidence["execution_error_count"] = 1
+    assert audit_pilot(evidence, paths, protocol)["passed"] is False
+    evidence["execution_error_count"] = 0
+    assert audit_pilot(evidence, paths, protocol, job_limit_minutes=1)["passed"] is False
+
+
+def test_campaign_prerequisites_lock_order_commit_and_evidence() -> None:
+    protocol = CFValidationProtocol.load(SPEC)
+    commit = "a" * 40
+    campaign = {
+        "protocol_checksum": protocol.checksum,
+        "git_commit": commit,
+    }
+    campaign["evidence_checksum"] = canonical_checksum(campaign)
+    audit = {
+        "all_calibration_gates_passed": True,
+        "calibration_evidence_checksum": campaign["evidence_checksum"],
+    }
+    candidate = CFSupportProfile(
+        profile_id="frozen-candidate",
+        protocol_checksum=protocol.checksum,
+        calibration_evidence_checksum=campaign["evidence_checksum"],
+        validation_evidence_checksum=None,
+        thresholds={"minimum_ess_ratio": 0.25},
+        compatibility=protocol.reference_profile,
+    ).to_dict()
+    external = {
+        "protocol_checksum": protocol.checksum,
+        "git_commit": commit,
+        "all_numerical_agreement_gates_passed": True,
+    }
+    external["evidence_checksum"] = canonical_checksum(external)
+    inference = {
+        "protocol_checksum": protocol.checksum,
+        "git_commit": commit,
+        "all_inference_gates_passed": True,
+    }
+    inference["evidence_checksum"] = canonical_checksum(inference)
+    assert prerequisite_reasons(
+        "validation",
+        protocol,
+        calibration_campaign=campaign,
+        calibration_audit=audit,
+        candidate=candidate,
+        expected_commit=commit,
+        external=external,
+        inference=inference,
+    ) == []
+    assert "external-agreement evidence is required" in prerequisite_reasons(
+        "validation",
+        protocol,
+        calibration_campaign=campaign,
+        calibration_audit=audit,
+        candidate=candidate,
+        expected_commit=commit,
+        inference=inference,
+    )
+    assert "calibration campaign commit mismatch" in prerequisite_reasons(
+        "external",
+        protocol,
+        calibration_campaign=campaign,
+        calibration_audit=audit,
+        candidate=candidate,
+        expected_commit="b" * 40,
+    )

@@ -97,6 +97,8 @@ def aggregate_shards(
     if len(shard_counts) != 1:
         raise ValueError("Campaign shards disagree on shard_count")
     shard_count = shard_counts.pop()
+    if lane == "pilot" and shard_count != 16:
+        raise ValueError("The full frozen pilot requires 16 shards")
     if lane in {"calibration", "validation"} and shard_count != 128:
         raise ValueError("Frozen calibration and validation evidence requires 128 shards")
     indices = [int(value["shard_index"]) for value in metadata]
@@ -180,6 +182,9 @@ def aggregate_shards(
         "replications_per_cell": partition.count,
         "cell_count": len(cells),
         "shard_count": shard_count,
+        "execution_error_count": sum(
+            record.get("status_code") == "execution-error" for record in records
+        ),
         "summaries": _summaries(records),
         "records": records,
         "promotion_decision": "blocked/pending-profile-validation",

@@ -69,6 +69,14 @@ def blocking_reasons(
     inference = values["inference"]
     external = values["external"]
     profile = CFSupportProfile.from_dict(values["profile"])
+    campaign_commits = {
+        calibration_campaign.get("git_commit"),
+        validation_campaign.get("git_commit"),
+        inference.get("git_commit"),
+        external.get("git_commit"),
+    }
+    if None in campaign_commits or len(campaign_commits) != 1:
+        reasons.append("campaign evidence does not share one frozen commit")
     if profile.state != "promoted":
         reasons.append("support profile is not promoted")
     if profile.protocol_checksum != protocol.checksum:

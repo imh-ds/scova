@@ -19,6 +19,7 @@ from benchmarks.cf_external_validation import (
 )
 from benchmarks.cf_reference_campaign import (
     _declaration,
+    _git_commit,
     dependency_lock_checksum,
     simulate_reference_cell,
 )
@@ -265,6 +266,7 @@ def run_external_agreement(
         "artifact_type": "scova-cf-external-agreement",
         "schema_version": 2,
         "protocol_checksum": protocol.checksum,
+        "git_commit": _git_commit(),
         "dependency_lock_checksum": dependency_lock_checksum(),
         "environment": environment,
         "complete_frozen_lane": complete,
