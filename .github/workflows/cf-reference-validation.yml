@@ -47,7 +47,7 @@ permissions:
 
 env:
   SPEC: benchmarks/specs/cf_reference_v3.json
-  FREEZE_TAG: scova-cf-reference-v3-freeze-r2
+  FREEZE_TAG: scova-cf-reference-v3-freeze-r3
   PYTHONHASHSEED: "0"
 
 jobs:
@@ -87,12 +87,18 @@ jobs:
           python-version: 3.12.13
       - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
       - run: python -m pip install -e . --no-deps
+      - name: Validate every campaign entry point
+        run: |
+          python -m benchmarks.cf_reference_campaign --help
+          python -m benchmarks.aggregate_cf_campaign --help
+          python -m benchmarks.cf_external_agreement --help
+          python -m benchmarks.cf_inference_campaign --help
       - run: >-
           python -m scripts.write_cf_freeze_manifest --spec "$SPEC"
-          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v3-freeze-r2.json
+          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v3-freeze-r3.json
       - uses: actions/upload-artifact@v6
         with:
-          name: cf-reference-v3-freeze-r2
+          name: cf-reference-v3-freeze-r3
           path: freeze/
           retention-days: 90
 
@@ -180,14 +186,14 @@ jobs:
           run-id: ${{ inputs.recovery_run_id }}
           github-token: ${{ github.token }}
       - run: >-
-          python benchmarks/cf_reference_campaign.py --spec "$SPEC" --lane pilot
+          python -m benchmarks.cf_reference_campaign --spec "$SPEC" --lane pilot
           --output "artifacts/pilot-${{ matrix.shard }}.ndjson.gz"
           --shard-index ${{ matrix.shard }} --shard-count 16 --resume
       - name: Verify checkpoint replay is byte-stable
         shell: bash
         run: |
           before=$(sha256sum "artifacts/pilot-${{ matrix.shard }}.ndjson.gz" | cut -d' ' -f1)
-          python benchmarks/cf_reference_campaign.py --spec "$SPEC" --lane pilot \
+          python -m benchmarks.cf_reference_campaign --spec "$SPEC" --lane pilot \
             --output "artifacts/pilot-${{ matrix.shard }}.ndjson.gz" \
             --shard-index ${{ matrix.shard }} --shard-count 16 --resume
           after=$(sha256sum "artifacts/pilot-${{ matrix.shard }}.ndjson.gz" | cut -d' ' -f1)
@@ -216,7 +222,7 @@ jobs:
           path: shards
           merge-multiple: true
       - run: >-
-          python benchmarks/aggregate_cf_campaign.py shards/*.ndjson.gz
+          python -m benchmarks.aggregate_cf_campaign shards/*.ndjson.gz
           --spec "$SPEC" --lane pilot
           --output evidence/cf-reference-pilot-campaign.json.gz
       - run: >-
@@ -268,7 +274,7 @@ jobs:
       - env:
           LANE: ${{ inputs.tier }}
         run: >-
-          python benchmarks/cf_reference_campaign.py --spec "$SPEC" --lane "$LANE"
+          python -m benchmarks.cf_reference_campaign --spec "$SPEC" --lane "$LANE"
           --output "artifacts/${LANE}-${{ matrix.shard }}.ndjson.gz"
           --shard-index ${{ matrix.shard }} --shard-count 128 --resume
           ${{ inputs.tier == 'validation' && '--candidate-profile candidate/cf-reference-candidate-profile.json' || '' }}
@@ -298,7 +304,7 @@ jobs:
       - env:
           LANE: ${{ inputs.tier }}
         run: >-
-          python benchmarks/aggregate_cf_campaign.py shards/*.ndjson.gz
+          python -m benchmarks.aggregate_cf_campaign shards/*.ndjson.gz
           --spec "$SPEC" --lane "$LANE"
           --output "evidence/cf-reference-${LANE}-campaign.json.gz"
       - uses: actions/upload-artifact@v6
@@ -358,7 +364,7 @@ jobs:
       - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
       - run: python -m pip install -e . --no-deps
       - run: >-
-          python benchmarks/cf_external_agreement.py --spec "$SPEC"
+          python -m benchmarks.cf_external_agreement --spec "$SPEC"
           --output evidence/cf-reference-external-agreement.json
       - uses: actions/upload-artifact@v6
         if: always()
@@ -392,7 +398,7 @@ jobs:
           run-id: ${{ inputs.recovery_run_id }}
           github-token: ${{ github.token }}
       - run: >-
-          python benchmarks/cf_inference_campaign.py --spec "$SPEC"
+          python -m benchmarks.cf_inference_campaign --spec "$SPEC"
           --output "artifacts/inference-${{ matrix.shard }}.ndjson.gz"
           --shard-index ${{ matrix.shard }} --shard-count 64 --resume
       - uses: actions/upload-artifact@v6
@@ -419,7 +425,7 @@ jobs:
           path: shards
           merge-multiple: true
       - run: >-
-          python benchmarks/cf_inference_campaign.py --spec "$SPEC"
+          python -m benchmarks.cf_inference_campaign --spec "$SPEC"
           --aggregate shards/*.ndjson.gz --output evidence/cf-reference-inference.json
       - uses: actions/upload-artifact@v6
         with:
