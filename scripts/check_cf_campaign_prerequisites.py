@@ -36,18 +36,25 @@ def prerequisite_reasons(
     *,
     calibration_campaign: dict[str, Any],
     calibration_audit: dict[str, Any],
-    candidate: dict[str, Any],
+    candidate: dict[str, Any] | None,
     expected_commit: str,
     external: dict[str, Any] | None = None,
     inference: dict[str, Any] | None = None,
 ) -> list[str]:
     reasons: list[str] = []
-    try:
-        profile = CFSupportProfile.from_dict(candidate)
-    except (KeyError, TypeError, ValueError) as error:
-        return [f"invalid candidate profile: {error}"]
-    if profile.state != "candidate" or profile.protocol_checksum != protocol.checksum:
-        reasons.append("candidate is not frozen for this protocol")
+    profile: CFSupportProfile | None = None
+    if candidate is None:
+        reasons.append(
+            "candidate profile is missing because calibration did not promote a support policy"
+        )
+    else:
+        try:
+            profile = CFSupportProfile.from_dict(candidate)
+        except (KeyError, TypeError, ValueError) as error:
+            reasons.append(f"invalid candidate profile: {error}")
+        else:
+            if profile.state != "candidate" or profile.protocol_checksum != protocol.checksum:
+                reasons.append("candidate is not frozen for this protocol")
     if calibration_campaign.get("protocol_checksum") != protocol.checksum:
         reasons.append("calibration campaign protocol mismatch")
     if calibration_campaign.get("git_commit") != expected_commit:
@@ -60,7 +67,10 @@ def prerequisite_reasons(
         "evidence_checksum"
     ):
         reasons.append("calibration audit is not bound to its campaign")
-    if profile.calibration_evidence_checksum != calibration_campaign.get("evidence_checksum"):
+    if (
+        profile is not None
+        and profile.calibration_evidence_checksum != calibration_campaign.get("evidence_checksum")
+    ):
         reasons.append("candidate is not bound to the calibration campaign")
 
     if stage in {"inference", "validation"}:
@@ -105,7 +115,9 @@ def main() -> None:
         CFValidationProtocol.load(args.spec),
         calibration_campaign=_read(args.calibration_campaign),
         calibration_audit=_read(args.calibration_audit),
-        candidate=_read(args.candidate_profile),
+        candidate=(
+            _read(args.candidate_profile) if args.candidate_profile.is_file() else None
+        ),
         expected_commit=_current_commit(),
         external=None if args.external_evidence is None else _read(args.external_evidence),
         inference=None if args.inference_evidence is None else _read(args.inference_evidence),
