@@ -21,9 +21,11 @@ from scova.cf import (
 )
 from scova.simulate import generate_data
 from scripts.audit_cf_pilot import audit_pilot
+from scripts.calibrate_cf_support import _screening_cell_gate
 from scripts.check_cf_campaign_prerequisites import prerequisite_reasons
 
 SPEC = Path("benchmarks/specs/cf_reference_v3.json")
+V4_SPEC = Path("benchmarks/specs/cf_reference_v4.json")
 BLOCKED_V2 = Path("benchmarks/specs/cf_reference_v2_blocked.json")
 
 
@@ -51,6 +53,46 @@ def test_frozen_reference_protocol_has_disjoint_evidence_lanes() -> None:
     assert protocol.checksum == CFValidationProtocol.from_dict(
         protocol.to_dict()
     ).checksum
+
+
+def test_v4_protocol_uses_new_seed_namespaces_and_calibration_screening() -> None:
+    protocol = CFValidationProtocol.load(V4_SPEC)
+    assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v4"
+    assert protocol.checksum == "002d1b3e06f2d54bbc4f391f2e855892418275d44ae8a6cf69fee72fbdbd3cff"
+    assert protocol.pilot.start == 2_000_000_000
+    assert protocol.calibration.start == 2_100_000_000
+    assert protocol.validation.start == 2_300_000_000
+    assert protocol.calibration_candidate_retention_fraction == 0.85
+    assert protocol.calibration_gate_metrics["maximum_standardized_bias"] == 0.15
+    assert protocol.calibration_gate_metrics["minimum_se_ratio"] == 0.8
+    assert protocol.calibration_gate_metrics["maximum_se_ratio"] == 1.25
+    assert CFValidationProtocol.from_dict(protocol.to_dict()).checksum == protocol.checksum
+
+
+def test_one_sided_calibration_screening_allows_conservative_inference() -> None:
+    # The empirical error SD matches the reported SE, but all intervals are
+    # conservative and no null is rejected.  The v4 calibration screen must
+    # reserve this for held-out adjudication rather than reject it here.
+    records = [
+        {
+            "contrasts": [
+                {
+                    "covered": True,
+                    "estimate": error,
+                    "truth": 0.0,
+                    "standard_error": 1.0,
+                    "null": True,
+                    "rejected": False,
+                }
+            ]
+        }
+        for error in (-1.0, 1.0) * 10
+    ]
+    protocol = CFValidationProtocol.load(V4_SPEC)
+    passed, audit = _screening_cell_gate(records, protocol.calibration_gate_metrics)
+    assert passed is True
+    assert audit["coverage_ok"] is True
+    assert audit["type_i_ok"] is True
 
 
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:

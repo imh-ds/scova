@@ -66,6 +66,8 @@ class CFValidationProtocol:
     inference: SeedPartition | None = None
     calibration_fit_fraction: float = 0.60
     threshold_quantiles: Mapping[str, tuple[float, ...]] | None = None
+    calibration_screening: Mapping[str, float] | None = None
+    calibration_candidate_retention_fraction: float = 1.0
     frozen: bool = False
     schema_version: int = 1
 
@@ -101,6 +103,8 @@ class CFValidationProtocol:
                 raise ValueError("Version-2 protocols require pairwise-design provenance")
         if not 0 < self.calibration_fit_fraction < 1:
             raise ValueError("calibration_fit_fraction must lie in (0, 1)")
+        if not 0 < self.calibration_candidate_retention_fraction <= 1:
+            raise ValueError("calibration_candidate_retention_fraction must lie in (0, 1]")
         for cell in self.retained_cells:
             if set(cell) != set(self.factors):
                 raise ValueError("Every retained cell must specify every campaign factor")
@@ -152,6 +156,13 @@ class CFValidationProtocol:
         missing = required_metrics.difference(self.metrics)
         if missing:
             raise ValueError(f"Validation protocol is missing metrics: {sorted(missing)}")
+        if self.calibration_screening is not None:
+            missing = required_metrics.difference(self.calibration_screening)
+            if missing:
+                raise ValueError(
+                    "Calibration screening is missing metrics: "
+                    f"{sorted(missing)}"
+                )
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -174,6 +185,15 @@ class CFValidationProtocol:
             "calibration_fit_fraction": self.calibration_fit_fraction,
             **(
                 {}
+                if self.calibration_candidate_retention_fraction == 1.0
+                else {
+                    "calibration_candidate_retention_fraction": (
+                        self.calibration_candidate_retention_fraction
+                    )
+                }
+            ),
+            **(
+                {}
                 if self.threshold_quantiles is None
                 else {
                     "threshold_quantiles": {
@@ -181,6 +201,11 @@ class CFValidationProtocol:
                         for name, levels in self.threshold_quantiles.items()
                     }
                 }
+            ),
+            **(
+                {}
+                if self.calibration_screening is None
+                else {"calibration_screening": dict(self.calibration_screening)}
             ),
             "learners": list(self.learners),
             "metrics": dict(self.metrics),
@@ -193,6 +218,11 @@ class CFValidationProtocol:
     @property
     def checksum(self) -> str:
         return canonical_checksum(self.to_dict())
+
+    @property
+    def calibration_gate_metrics(self) -> Mapping[str, float]:
+        """Return v4 screening metrics or the legacy common metrics."""
+        return self.metrics if self.calibration_screening is None else self.calibration_screening
 
     @classmethod
     def from_dict(cls, values: Mapping[str, Any]) -> CFValidationProtocol:
@@ -223,12 +253,23 @@ class CFValidationProtocol:
                 else SeedPartition(**partitions["inference"])
             ),
             calibration_fit_fraction=float(values.get("calibration_fit_fraction", 0.60)),
+            calibration_candidate_retention_fraction=float(
+                values.get("calibration_candidate_retention_fraction", 1.0)
+            ),
             threshold_quantiles=(
                 None
                 if "threshold_quantiles" not in values
                 else {
                     str(name): tuple(float(level) for level in levels)
                     for name, levels in values["threshold_quantiles"].items()
+                }
+            ),
+            calibration_screening=(
+                None
+                if values.get("calibration_screening") is None
+                else {
+                    str(name): float(value)
+                    for name, value in values["calibration_screening"].items()
                 }
             ),
             learners=tuple(str(value) for value in values["learners"]),
