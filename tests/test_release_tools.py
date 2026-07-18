@@ -226,7 +226,7 @@ def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
     assert "--stage external" in workflow
     assert "--stage inference" in workflow
     assert "--stage validation" in workflow
-    assert "scova-cf-reference-v3-freeze-r3" in workflow
+    assert "scova-cf-reference-v3-freeze-r4" in workflow
     assert "- freeze_check" in workflow
     prepare_job = workflow.split("  prepare:", 1)[1].split("  campaign_freeze:", 1)[0]
     freeze_job = workflow.split("  campaign_freeze:", 1)[1].split(
@@ -244,6 +244,11 @@ def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
     ):
         assert f"python -m benchmarks.{module}" in workflow
     assert "python benchmarks/" not in workflow
+    aggregate_job = workflow.split("  campaign_aggregate:", 1)[1].split(
+        "  calibrate_support:", 1
+    )[0]
+    assert "always()" in aggregate_job
+    assert "needs.campaign_shard.result == 'success'" in aggregate_job
     assert "actions/attest-build-provenance@v3" in workflow
     assert "SCOVA_RELEASE_GPG_PRIVATE_KEY" in workflow
     assert "gh release create v0.5.0" in workflow
