@@ -226,7 +226,7 @@ def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
     assert "--stage external" in workflow
     assert "--stage inference" in workflow
     assert "--stage validation" in workflow
-    assert "scova-cf-reference-v3-freeze-r4" in workflow
+    assert "scova-cf-reference-v3-freeze-r5" in workflow
     assert "- freeze_check" in workflow
     prepare_job = workflow.split("  prepare:", 1)[1].split("  campaign_freeze:", 1)[0]
     freeze_job = workflow.split("  campaign_freeze:", 1)[1].split(

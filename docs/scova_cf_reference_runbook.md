@@ -7,7 +7,7 @@ known constant assignment probabilities and unnormalized cross-fitted AIPW.
 ## Immutable baseline
 
 1. Commit all campaign and workflow code on one clean commit.
-2. Create the annotated tag `scova-cf-reference-v3-freeze-r4` at that commit and
+2. Create the annotated tag `scova-cf-reference-v3-freeze-r5` at that commit and
    push both the commit and tag.
 3. Dispatch `freeze_check` using the freeze tag. This inexpensive preflight must
    verify the tag, pinned environment, repository imports, dependency lock, protocol
