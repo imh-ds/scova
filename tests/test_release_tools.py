@@ -249,6 +249,11 @@ def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
     )[0]
     assert "always()" in aggregate_job
     assert "needs.campaign_shard.result == 'success'" in aggregate_job
+    calibrate_job = workflow.split("  calibrate_support:", 1)[1].split(
+        "  external_agreement:", 1
+    )[0]
+    assert "--require-candidate" in calibrate_job
+    assert "if: always()" in calibrate_job
     assert "actions/attest-build-provenance@v3" in workflow
     assert "SCOVA_RELEASE_GPG_PRIVATE_KEY" in workflow
     assert "gh release create v0.5.0" in workflow

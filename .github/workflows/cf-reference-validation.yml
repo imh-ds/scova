@@ -347,7 +347,9 @@ jobs:
           --calibration-evidence evidence/cf-reference-calibration-campaign.json.gz
           --output evidence/cf-reference-calibration.json
           --candidate-output evidence/cf-reference-candidate-profile.json
+          --require-candidate
       - uses: actions/upload-artifact@v6
+        if: always()
         with:
           name: cf-calibrated-candidate
           path: evidence/

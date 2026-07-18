@@ -300,6 +300,11 @@ def main() -> None:
     parser.add_argument("--calibration-evidence", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--candidate-output", type=Path)
+    parser.add_argument(
+        "--require-candidate",
+        action="store_true",
+        help="Exit nonzero after writing the calibration report when no profile is promoted.",
+    )
     args = parser.parse_args()
     result = calibrate(CFValidationProtocol.load(args.spec), read_json(args.calibration_evidence))
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -311,6 +316,12 @@ def main() -> None:
         args.candidate_output.write_text(
             json.dumps(result["candidate_profile"], indent=2, sort_keys=True),
             encoding="utf-8",
+        )
+    if args.require_candidate and result["candidate_profile"] is None:
+        raise SystemExit(
+            "Calibration did not promote a candidate support profile: no preregistered "
+            "threshold rule passed the internal calibration gates. Inspect the calibration "
+            "report artifact; do not dispatch external agreement, inference, or validation."
         )
 
 

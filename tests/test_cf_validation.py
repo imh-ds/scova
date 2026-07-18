@@ -382,3 +382,19 @@ def test_campaign_prerequisites_lock_order_commit_and_evidence() -> None:
         candidate=candidate,
         expected_commit="b" * 40,
     )
+    blocked = prerequisite_reasons(
+        "external",
+        protocol,
+        calibration_campaign=campaign,
+        calibration_audit={
+            "all_calibration_gates_passed": False,
+            "calibration_evidence_checksum": campaign["evidence_checksum"],
+        },
+        candidate=None,
+        expected_commit=commit,
+    )
+    assert "calibration gates did not pass" in blocked
+    assert (
+        "candidate profile is missing because calibration did not promote a support policy"
+        in blocked
+    )
