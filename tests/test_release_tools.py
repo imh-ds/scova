@@ -267,6 +267,16 @@ def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
     assert "--replications 1 --max-cells 4 --skip-stability" in ci
 
 
+def test_cf_v4_workflow_is_isolated_from_v3_campaign_identity() -> None:
+    workflow = Path(".github/workflows/cf-reference-v4-validation.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "SCOVA-CF v4 frozen reference validation" in workflow
+    assert "benchmarks/specs/cf_reference_v4.json" in workflow
+    assert "scova-cf-reference-v4-freeze-r1" in workflow
+    assert "cf-reference-v3-freeze" not in workflow
+
+
 def test_cf_promotion_applies_only_exact_evidence_and_release_text(
     tmp_path: Path, monkeypatch
 ) -> None:
