@@ -130,6 +130,28 @@ def test_v6_inference_amendment_binds_archived_upstream_evidence() -> None:
         assert cell["support"] == "strong"
         assert cell["n_groups"] <= 3
         assert cell["n_per_group"] >= 80
+    assert CFValidationProtocol.from_dict(protocol.to_dict()).checksum == protocol.checksum
+
+
+@pytest.mark.parametrize(
+    ("source", "field", "message"),
+    (
+        ("candidate_source", "profile_checksum", "candidate source is missing fields"),
+        ("external_source", "evidence_checksum", "external source is missing fields"),
+        (
+            "failed_inference_source",
+            "git_commit",
+            "failed inference source is missing fields",
+        ),
+    ),
+)
+def test_v6_protocol_rejects_incomplete_reused_evidence_sources(
+    source: str, field: str, message: str
+) -> None:
+    values = json.loads(V6_SPEC.read_text(encoding="utf-8"))
+    del values[source][field]
+    with pytest.raises(ValueError, match=message):
+        CFValidationProtocol.from_dict(values)
 
 
 def test_known_randomization_adapter_never_estimates_fixture_propensities() -> None:
