@@ -117,6 +117,7 @@ def test_known_randomization_adapter_never_estimates_fixture_propensities() -> N
         adapter.predict_proba(np.ones((3, 2))),
         np.array([[0.2, 0.3, 0.5], [0.2, 0.3, 0.5], [0.2, 0.3, 0.5]]),
     )
+    assert np.array_equal(adapter.predict(np.ones((2, 2))), np.array([2, 2]))
 
 
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:

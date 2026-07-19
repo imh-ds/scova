@@ -53,6 +53,11 @@ class KnownRandomizationClassifier(ClassifierMixin, BaseEstimator):
     def predict_proba(self, x: np.ndarray) -> np.ndarray:
         return np.tile(np.asarray(self.probabilities, dtype=float), (len(x), 1))
 
+    def predict(self, x: np.ndarray) -> np.ndarray:
+        """Return the modal declared arm for APIs that require classifier labels."""
+        probability = self.predict_proba(x)
+        return self.classes_[np.argmax(probability, axis=1)]
+
 
 def fixed_nuisance_score(
     outcome: np.ndarray,
