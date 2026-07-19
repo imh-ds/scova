@@ -101,8 +101,12 @@ def run_shard(
     with partial.open("a", encoding="utf-8") as stream:
         written = 0
         for focused_index, reference in enumerate(protocol.inference_cells):
-            cell_index = int(reference["simulation_cell_index"])
-            cell = protocol.retained_cells[cell_index]
+            cell_index = reference.get("simulation_cell_index")
+            cell = (
+                protocol.retained_cells[int(cell_index)]
+                if cell_index is not None
+                else reference["cell"]
+            )
             for repetition in range(count):
                 global_index = focused_index * count + repetition
                 if (

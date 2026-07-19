@@ -1,3 +1,4 @@
+import gzip
 import json
 import sys
 from pathlib import Path
@@ -34,7 +35,7 @@ from scripts.check_cf_campaign_prerequisites import prerequisite_reasons
 
 SPEC = Path("benchmarks/specs/cf_reference_v3.json")
 V4_SPEC = Path("benchmarks/specs/cf_reference_v4.json")
-V5_SPEC = Path("benchmarks/specs/cf_reference_v5.json")
+V6_SPEC = Path("benchmarks/specs/cf_reference_v6.json")
 BLOCKED_V2 = Path("benchmarks/specs/cf_reference_v2_blocked.json")
 
 
@@ -104,17 +105,31 @@ def test_one_sided_calibration_screening_allows_conservative_inference() -> None
     assert audit["type_i_ok"] is True
 
 
-def test_v5_amendment_binds_only_the_archived_v4_calibration_source() -> None:
-    protocol = CFValidationProtocol.load(V5_SPEC)
-    assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v5"
+def test_v6_inference_amendment_binds_archived_upstream_evidence() -> None:
+    protocol = CFValidationProtocol.load(V6_SPEC)
+    assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v6"
     assert protocol.calibration_source == {
         "protocol_id": "cf-randomized-continuous-aipw-unnormalized-v4",
         "protocol_checksum": "002d1b3e06f2d54bbc4f391f2e855892418275d44ae8a6cf69fee72fbdbd3cff",
         "evidence_checksum": "bbfa9374c3fe3af99c73f695a163f71110ff990531fe245d6108bd3b64978bf3",
         "git_commit": "2abca2746530ba033a0e857b32f7d34edba5711c",
     }
+    assert protocol.candidate_source == {
+        "protocol_id": "cf-randomized-continuous-aipw-unnormalized-v5",
+        "protocol_checksum": "7521cf977c51e97498ef7623c6facadfb8423a22e0740c2145d3ee7bbe68431b",
+        "profile_checksum": "ea2614448b9c62b4db8c302aa56d2d8d8df4f8d6417dbc1ea65e5400c9639904",
+    }
+    assert protocol.external_source is not None
+    assert protocol.failed_inference_source is not None
     assert protocol.reference_profile["minimum_group_count"] == 50
     assert protocol.reference_profile["maximum_group_count"] == 3
+    assert protocol.inference is not None and protocol.inference.start == 3_900_000_000
+    assert all("cell" in reference for reference in protocol.inference_cells)
+    for reference in protocol.inference_cells:
+        cell = reference["cell"]
+        assert cell["support"] == "strong"
+        assert cell["n_groups"] <= 3
+        assert cell["n_per_group"] >= 80
 
 
 def test_known_randomization_adapter_never_estimates_fixture_propensities() -> None:
@@ -158,7 +173,7 @@ def test_inference_aggregate_main_creates_requested_output_directory(
         [
             "cf_inference_campaign",
             "--spec",
-            str(V5_SPEC),
+            str(V6_SPEC),
             "--aggregate",
             "unused-shard.ndjson.gz",
             "--output",
@@ -168,6 +183,21 @@ def test_inference_aggregate_main_creates_requested_output_directory(
     monkeypatch.setattr(cf_inference_campaign, "aggregate", lambda *_args, **_kwargs: {"ok": True})
     cf_inference_campaign.main()
     assert json.loads(output.read_text(encoding="utf-8")) == {"ok": True}
+
+
+def test_v6_inference_shard_accepts_checksum_bound_inline_cells(tmp_path: Path) -> None:
+    output = tmp_path / "inference-0.ndjson.gz"
+    cf_inference_campaign.run_shard(
+        CFValidationProtocol.load(V6_SPEC),
+        output=output,
+        shard_index=0,
+        shard_count=1,
+        replications=1,
+    )
+    with gzip.open(output, "rt", encoding="utf-8") as stream:
+        record = json.loads(stream.readline())
+    assert record["simulation_cell_index"] is None
+    assert record["cell"]["support"] == "strong"
 
 
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:

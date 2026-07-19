@@ -69,6 +69,9 @@ class CFValidationProtocol:
     calibration_screening: Mapping[str, float] | None = None
     calibration_candidate_retention_fraction: float = 1.0
     calibration_source: Mapping[str, str] | None = None
+    candidate_source: Mapping[str, str] | None = None
+    external_source: Mapping[str, str] | None = None
+    failed_inference_source: Mapping[str, str] | None = None
     frozen: bool = False
     schema_version: int = 1
 
@@ -181,6 +184,25 @@ class CFValidationProtocol:
                 for name in ("protocol_id", "protocol_checksum", "evidence_checksum", "git_commit")
             ):
                 raise ValueError("Calibration source values must not be empty")
+        for name, source, required in (
+            (
+                "candidate source",
+                self.candidate_source,
+                {"protocol_id", "protocol_checksum", "profile_checksum"},
+            ),
+            (
+                "external source",
+                self.external_source,
+                {"protocol_id", "protocol_checksum", "evidence_checksum", "git_commit"},
+            ),
+            (
+                "failed inference source",
+                self.failed_inference_source,
+                {"protocol_id", "protocol_checksum", "evidence_checksum", "git_commit"},
+            ),
+        ):
+            if source is not None and required.difference(source):
+                raise ValueError(f"{name} is missing fields: {sorted(required.difference(source))}")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -229,6 +251,21 @@ class CFValidationProtocol:
                 {}
                 if self.calibration_source is None
                 else {"calibration_source": dict(self.calibration_source)}
+            ),
+            **(
+                {}
+                if self.candidate_source is None
+                else {"candidate_source": dict(self.candidate_source)}
+            ),
+            **(
+                {}
+                if self.external_source is None
+                else {"external_source": dict(self.external_source)}
+            ),
+            **(
+                {}
+                if self.failed_inference_source is None
+                else {"failed_inference_source": dict(self.failed_inference_source)}
             ),
             "learners": list(self.learners),
             "metrics": dict(self.metrics),
@@ -301,6 +338,24 @@ class CFValidationProtocol:
                 else {
                     str(name): str(value)
                     for name, value in values["calibration_source"].items()
+                }
+            ),
+            candidate_source=(
+                None
+                if values.get("candidate_source") is None
+                else {str(name): str(value) for name, value in values["candidate_source"].items()}
+            ),
+            external_source=(
+                None
+                if values.get("external_source") is None
+                else {str(name): str(value) for name, value in values["external_source"].items()}
+            ),
+            failed_inference_source=(
+                None
+                if values.get("failed_inference_source") is None
+                else {
+                    str(name): str(value)
+                    for name, value in values["failed_inference_source"].items()
                 }
             ),
             learners=tuple(str(value) for value in values["learners"]),

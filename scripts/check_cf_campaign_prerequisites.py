@@ -90,7 +90,15 @@ def prerequisite_reasons(
         except (KeyError, TypeError, ValueError) as error:
             reasons.append(f"invalid candidate profile: {error}")
         else:
-            if profile.state != "candidate" or profile.protocol_checksum != protocol.checksum:
+            candidate_source = protocol.candidate_source
+            sourced_candidate = bool(
+                candidate_source
+                and profile.protocol_checksum == candidate_source.get("protocol_checksum")
+                and profile.checksum == candidate_source.get("profile_checksum")
+            )
+            if profile.state != "candidate" or (
+                profile.protocol_checksum != protocol.checksum and not sourced_candidate
+            ):
                 reasons.append("candidate is not frozen for this protocol")
     source = protocol.calibration_source
     source_campaign = bool(
@@ -123,7 +131,14 @@ def prerequisite_reasons(
         else:
             if not _valid_checksum(external, "evidence_checksum"):
                 reasons.append("external evidence checksum mismatch")
-            if external.get("protocol_checksum") != protocol.checksum:
+            external_source = protocol.external_source
+            sourced_external = bool(
+                external_source
+                and external.get("protocol_checksum") == external_source.get("protocol_checksum")
+                and external.get("evidence_checksum") == external_source.get("evidence_checksum")
+                and external.get("git_commit") == external_source.get("git_commit")
+            )
+            if external.get("protocol_checksum") != protocol.checksum and not sourced_external:
                 reasons.append("external evidence protocol mismatch")
             external_matches = _same_cf_numerical_implementation(
                 str(external.get("git_commit")), expected_commit
