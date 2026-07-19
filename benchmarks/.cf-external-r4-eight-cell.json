@@ -1,0 +1,336 @@
+{
+  "all_numerical_agreement_gates_passed": false,
+  "artifact_type": "scova-cf-external-agreement",
+  "cell_count": 8,
+  "complete_frozen_lane": false,
+  "dependency_lock_checksum": "2131bd968e061c12847a100a896903ee1748baa4d5dcdd66d8bcd18a20559f09",
+  "end_to_end": {
+    "implementations": [
+      {
+        "blocked_details": [],
+        "implementation": "DoubleMLAPOS",
+        "maximum_absolute_difference_in_scova_se": 1.3684236342794654e-14,
+        "mean_absolute_difference_in_scova_se": 3.6753843524243315e-15,
+        "mean_signed_difference_in_scova_se": 2.3884466843124557e-16,
+        "status": "complete"
+      },
+      {
+        "blocked_details": [],
+        "implementation": "EconML.DRLearner",
+        "maximum_absolute_difference_in_scova_se": 1.3356807506510863e-14,
+        "mean_absolute_difference_in_scova_se": 5.091282151354277e-15,
+        "mean_signed_difference_in_scova_se": 2.5996608073780725e-15,
+        "status": "complete"
+      }
+    ],
+    "maximum_absolute_tolerance_in_scova_se": 1.0,
+    "mean_absolute_tolerance_in_scova_se": 0.25,
+    "mean_signed_tolerance_in_scova_se": 0.05
+  },
+  "environment": {
+    "doubleml": "0.11.3",
+    "econml": "0.16.0",
+    "numpy": "2.2.6",
+    "pandas": "2.2.3",
+    "python": "3.12.13",
+    "scikit-learn": "1.6.1",
+    "scipy": "1.15.3"
+  },
+  "evidence_checksum": "e45d30c140876a72216bf9c9e83fd4a00542d04ac06161c6052159712c2c409d",
+  "git_commit": "d84afcdb9fd6ea78d78119d483c3bd0cbe2e53aa",
+  "protocol_checksum": "7521cf977c51e97498ef7623c6facadfb8423a22e0740c2145d3ee7bbe68431b",
+  "replications_per_cell": 1,
+  "run_details": [
+    {
+      "cell_index": 0,
+      "doubleml": {
+        "detail": "Known-design propensities; independently fitted DoubleML outcome nuisances",
+        "estimates": [
+          0.1956942855596424,
+          -0.020232153180641317
+        ],
+        "implementation": "DoubleMLAPOS",
+        "raw_standard_errors": [],
+        "standard_errors": [
+          0.07242195176717342,
+          0.07724366407518937
+        ],
+        "status": "complete",
+        "version": "0.11.3"
+      },
+      "econml": {
+        "detail": "Known-design propensities; X=None; W=covariates; intercept-only final model",
+        "estimates": [
+          -0.2159264387402838
+        ],
+        "implementation": "EconML.DRLearner",
+        "raw_standard_errors": [],
+        "standard_errors": [],
+        "status": "complete",
+        "version": "0.16.0"
+      },
+      "repetition": 0,
+      "seed": 3600000000
+    },
+    {
+      "cell_index": 1,
+      "doubleml": {
+        "detail": "Known-design propensities; independently fitted DoubleML outcome nuisances",
+        "estimates": [
+          0.37883539837311636,
+          1.1089874310543966
+        ],
+        "implementation": "DoubleMLAPOS",
+        "raw_standard_errors": [],
+        "standard_errors": [
+          0.06655818635853561,
+          0.11092272863590268
+        ],
+        "status": "complete",
+        "version": "0.11.3"
+      },
+      "econml": {
+        "detail": "Known-design propensities; X=None; W=covariates; intercept-only final model",
+        "estimates": [
+          0.7301520326812806
+        ],
+        "implementation": "EconML.DRLearner",
+        "raw_standard_errors": [],
+        "standard_errors": [],
+        "status": "complete",
+        "version": "0.16.0"
+      },
+      "repetition": 0,
+      "seed": 3600000050
+    },
+    {
+      "cell_index": 2,
+      "doubleml": {
+        "detail": "Known-design propensities; independently fitted DoubleML outcome nuisances",
+        "estimates": [
+          -0.029838359061411947,
+          0.37808969898446076,
+          0.7230350129621423
+        ],
+        "implementation": "DoubleMLAPOS",
+        "raw_standard_errors": [],
+        "standard_errors": [
+          0.06716059335731123,
+          0.08401380287328686,
+          0.07497996432988122
+        ],
+        "status": "complete",
+        "version": "0.11.3"
+      },
+      "econml": {
+        "detail": "Known-design propensities; X=None; W=covariates; intercept-only final model",
+        "estimates": [
+          0.4079280580458727,
+          0.7528733720235542
+        ],
+        "implementation": "EconML.DRLearner",
+        "raw_standard_errors": [],
+        "standard_errors": [],
+        "status": "complete",
+        "version": "0.16.0"
+      },
+      "repetition": 0,
+      "seed": 3600000100
+    },
+    {
+      "cell_index": 3,
+      "doubleml": {
+        "detail": "Known-design propensities; independently fitted DoubleML outcome nuisances",
+        "estimates": [
+          0.24876593098151148,
+          0.3818553790688997,
+          1.16391941833413
+        ],
+        "implementation": "DoubleMLAPOS",
+        "raw_standard_errors": [],
+        "standard_errors": [
+          0.05108884147439563,
+          0.07776566563364669,
+          0.09850396124966163
+        ],
+        "status": "complete",
+        "version": "0.11.3"
+      },
+      "econml": {
+        "detail": "Known-design propensities; X=None; W=covariates; intercept-only final model",
+        "estimates": [
+          0.13308944808738818,
+          0.9151534873526185
+        ],
+        "implementation": "EconML.DRLearner",
+        "raw_standard_errors": [],
+        "standard_errors": [],
+        "status": "complete",
+        "version": "0.16.0"
+      },
+      "repetition": 0,
+      "seed": 3600000150
+    },
+    {
+      "cell_index": 4,
+      "doubleml": {
+        "detail": "Known-design propensities; independently fitted DoubleML outcome nuisances",
+        "estimates": [
+          0.1777289044410664,
+          0.4736287231196913,
+          0.4907336541465579,
+          0.38385208589225894,
+          0.24544549955573788
+        ],
+        "implementation": "DoubleMLAPOS",
+        "raw_standard_errors": [],
+        "standard_errors": [
+          0.0866902681951167,
+          0.12929923078628952,
+          0.1091705210350388,
+          0.11675360540702208,
+          0.1148515133385289
+        ],
+        "status": "complete",
+        "version": "0.11.3"
+      },
+      "econml": {
+        "detail": "Known-design propensities; X=None; W=covariates; intercept-only final model",
+        "estimates": [
+          0.295899818678625,
+          0.31300474970549114,
+          0.20612318145119254,
+          0.06771659511467158
+        ],
+        "implementation": "EconML.DRLearner",
+        "raw_standard_errors": [],
+        "standard_errors": [],
+        "status": "complete",
+        "version": "0.16.0"
+      },
+      "repetition": 0,
+      "seed": 3600000200
+    },
+    {
+      "cell_index": 5,
+      "doubleml": {
+        "detail": "Known-design propensities; independently fitted DoubleML outcome nuisances",
+        "estimates": [
+          0.42672965759371745,
+          0.5482612029138035,
+          0.8784339817254811,
+          0.9658444361216861,
+          1.1974323150846367
+        ],
+        "implementation": "DoubleMLAPOS",
+        "raw_standard_errors": [],
+        "standard_errors": [
+          0.0628406721135244,
+          0.07636474598142184,
+          0.07736758102043013,
+          0.09846486477176439,
+          0.12480360429119064
+        ],
+        "status": "complete",
+        "version": "0.11.3"
+      },
+      "econml": {
+        "detail": "Known-design propensities; X=None; W=covariates; intercept-only final model",
+        "estimates": [
+          0.12153154532008623,
+          0.4517043241317638,
+          0.5391147785279689,
+          0.7707026574909195
+        ],
+        "implementation": "EconML.DRLearner",
+        "raw_standard_errors": [],
+        "standard_errors": [],
+        "status": "complete",
+        "version": "0.16.0"
+      },
+      "repetition": 0,
+      "seed": 3600000250
+    },
+    {
+      "cell_index": 6,
+      "doubleml": {
+        "detail": "Known-design propensities; independently fitted DoubleML outcome nuisances",
+        "estimates": [
+          -0.026957086283198727,
+          0.7817634243925456
+        ],
+        "implementation": "DoubleMLAPOS",
+        "raw_standard_errors": [],
+        "standard_errors": [
+          0.058126508265898554,
+          0.11454076396166603
+        ],
+        "status": "complete",
+        "version": "0.11.3"
+      },
+      "econml": {
+        "detail": "Known-design propensities; X=None; W=covariates; intercept-only final model",
+        "estimates": [
+          0.8087205106757447
+        ],
+        "implementation": "EconML.DRLearner",
+        "raw_standard_errors": [],
+        "standard_errors": [],
+        "status": "complete",
+        "version": "0.16.0"
+      },
+      "repetition": 0,
+      "seed": 3600000300
+    },
+    {
+      "cell_index": 7,
+      "doubleml": {
+        "detail": "Known-design propensities; independently fitted DoubleML outcome nuisances",
+        "estimates": [
+          0.390753854625147,
+          0.10783548935562969,
+          1.1088883511754581
+        ],
+        "implementation": "DoubleMLAPOS",
+        "raw_standard_errors": [],
+        "standard_errors": [
+          0.08015387234990064,
+          0.07849019454003352,
+          0.0972929085351925
+        ],
+        "status": "complete",
+        "version": "0.11.3"
+      },
+      "econml": {
+        "detail": "Known-design propensities; X=None; W=covariates; intercept-only final model",
+        "estimates": [
+          -0.28291836526951747,
+          0.7181344965503113
+        ],
+        "implementation": "EconML.DRLearner",
+        "raw_standard_errors": [],
+        "standard_errors": [],
+        "status": "complete",
+        "version": "0.16.0"
+      },
+      "repetition": 0,
+      "seed": 3600000350
+    }
+  ],
+  "schema_version": 2,
+  "shared_score": {
+    "doubleml_maximum_absolute_errors": {
+      "contrast_standard_errors": 2.7755575615628914e-17,
+      "contrasts": 1.5543122344752192e-15,
+      "covariance": 3.469446951953614e-18,
+      "influence": 7.105427357601002e-15,
+      "means": 1.3322676295501878e-15,
+      "standard_errors": 2.7755575615628914e-17
+    },
+    "doubleml_tolerance": 1e-10,
+    "literal_maximum_absolute_error": 7.105427357601002e-15,
+    "literal_tolerance": 1e-12,
+    "passed": true,
+    "variance_convention": "DoubleML raw SE uses n; aligned comparison uses n-1"
+  }
+}
