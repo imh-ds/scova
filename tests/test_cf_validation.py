@@ -26,6 +26,7 @@ from scripts.check_cf_campaign_prerequisites import prerequisite_reasons
 
 SPEC = Path("benchmarks/specs/cf_reference_v3.json")
 V4_SPEC = Path("benchmarks/specs/cf_reference_v4.json")
+V5_SPEC = Path("benchmarks/specs/cf_reference_v5.json")
 BLOCKED_V2 = Path("benchmarks/specs/cf_reference_v2_blocked.json")
 
 
@@ -93,6 +94,19 @@ def test_one_sided_calibration_screening_allows_conservative_inference() -> None
     assert passed is True
     assert audit["coverage_ok"] is True
     assert audit["type_i_ok"] is True
+
+
+def test_v5_amendment_binds_only_the_archived_v4_calibration_source() -> None:
+    protocol = CFValidationProtocol.load(V5_SPEC)
+    assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v5"
+    assert protocol.calibration_source == {
+        "protocol_id": "cf-randomized-continuous-aipw-unnormalized-v4",
+        "protocol_checksum": "002d1b3e06f2d54bbc4f391f2e855892418275d44ae8a6cf69fee72fbdbd3cff",
+        "evidence_checksum": "bbfa9374c3fe3af99c73f695a163f71110ff990531fe245d6108bd3b64978bf3",
+        "git_commit": "2abca2746530ba033a0e857b32f7d34edba5711c",
+    }
+    assert protocol.reference_profile["minimum_group_count"] == 50
+    assert protocol.reference_profile["maximum_group_count"] == 3
 
 
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:

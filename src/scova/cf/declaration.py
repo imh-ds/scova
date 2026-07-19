@@ -140,6 +140,7 @@ class SupportPolicy:
     max_weighted_balance_difference: float = 1.0
     max_influence_top_one_percent_share: float = 1.0
     max_seed_standardized_departure: float = 1e9
+    maximum_group_count: int | None = None
     calibrated: bool = False
     version: str = "cf-provisional-1"
     profile_id: str | None = None
@@ -160,6 +161,8 @@ class SupportPolicy:
             raise ValueError("max_influence_top_one_percent_share must lie in (0, 1]")
         if self.max_seed_standardized_departure <= 0:
             raise ValueError("max_seed_standardized_departure must be positive")
+        if self.maximum_group_count is not None and self.maximum_group_count < 2:
+            raise ValueError("maximum_group_count must be at least two when supplied")
         if not self.version:
             raise ValueError("Support policy version must not be empty")
         if self.calibrated:
@@ -202,6 +205,7 @@ class SupportPolicy:
             raise ValueError("Packaged support profile has an incompatible analysis lock")
         thresholds = profile.thresholds
         return cls(
+            min_group_count=int(compatibility.get("minimum_group_count", 20)),
             min_ess_ratio=float(thresholds["minimum_ess_ratio"]),
             max_normalized_weight=float(thresholds["maximum_normalized_weight"]),
             max_top_one_percent_weight_share=float(
@@ -215,6 +219,11 @@ class SupportPolicy:
             ),
             max_seed_standardized_departure=float(
                 thresholds["maximum_seed_standardized_departure"]
+            ),
+            maximum_group_count=(
+                None
+                if "maximum_group_count" not in compatibility
+                else int(compatibility["maximum_group_count"])
             ),
             calibrated=True,
             version=profile.profile_id,
@@ -231,6 +240,11 @@ class SupportPolicy:
             "max_weighted_balance_difference": self.max_weighted_balance_difference,
             "max_influence_top_one_percent_share": self.max_influence_top_one_percent_share,
             "max_seed_standardized_departure": self.max_seed_standardized_departure,
+            **(
+                {}
+                if self.maximum_group_count is None
+                else {"maximum_group_count": self.maximum_group_count}
+            ),
             "calibrated": self.calibrated,
             "version": self.version,
             "profile_id": self.profile_id,
