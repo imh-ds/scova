@@ -11,6 +11,7 @@ on:
           - freeze_check
           - pilot
           - calibrate_support
+          - external_smoke
           - external_agreement
           - simultaneous_inference
           - validation
@@ -46,7 +47,7 @@ permissions:
 
 env:
   SPEC: benchmarks/specs/cf_reference_v5.json
-  FREEZE_TAG: scova-cf-reference-v5-freeze-r1
+  FREEZE_TAG: scova-cf-reference-v5-freeze-r2
   PYTHONHASHSEED: "0"
 
 jobs:
@@ -73,6 +74,7 @@ jobs:
     if: >-
       inputs.tier == 'freeze_check' || inputs.tier == 'pilot' ||
       inputs.tier == 'calibrate_support' || inputs.tier == 'aggregate' ||
+      inputs.tier == 'external_smoke' ||
       inputs.tier == 'external_agreement' ||
       inputs.tier == 'simultaneous_inference' || inputs.tier == 'validation'
     runs-on: ubuntu-latest
@@ -93,16 +95,16 @@ jobs:
           python -m benchmarks.cf_inference_campaign --help
       - run: >-
           python -m scripts.write_cf_freeze_manifest --spec "$SPEC"
-          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v5-freeze-r1.json
+          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v5-freeze-r2.json
       - uses: actions/upload-artifact@v6
         with:
-          name: cf-reference-v5-freeze-r1
+          name: cf-reference-v5-freeze-r2
           path: freeze/
           retention-days: 90
 
   prerequisite_lock:
     if: >-
-      inputs.tier == 'external_agreement' ||
+      inputs.tier == 'external_smoke' || inputs.tier == 'external_agreement' ||
       inputs.tier == 'simultaneous_inference' || inputs.tier == 'validation'
     needs: campaign_freeze
     runs-on: ubuntu-latest
@@ -133,7 +135,7 @@ jobs:
           path: prerequisite
           run-id: ${{ inputs.inference_run_id }}
           github-token: ${{ github.token }}
-      - if: inputs.tier == 'external_agreement'
+      - if: inputs.tier == 'external_smoke' || inputs.tier == 'external_agreement'
         run: >-
           python scripts/check_cf_campaign_prerequisites.py --stage external
           --spec "$SPEC"
@@ -359,7 +361,7 @@ jobs:
           retention-days: 90
 
   external_agreement:
-    if: inputs.tier == 'external_agreement'
+    if: inputs.tier == 'external_smoke' || inputs.tier == 'external_agreement'
     needs: [campaign_freeze, prerequisite_lock]
     runs-on: ubuntu-latest
     timeout-minutes: 360
@@ -374,10 +376,11 @@ jobs:
       - run: >-
           python -m benchmarks.cf_external_agreement --spec "$SPEC"
           --output evidence/cf-reference-external-agreement.json
+          ${{ inputs.tier == 'external_smoke' && '--replications 1 --max-cells 1 --allow-incomplete' || '' }}
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: cf-external-evidence
+          name: ${{ inputs.tier == 'external_smoke' && 'cf-external-smoke' || 'cf-external-evidence' }}
           path: evidence/
           retention-days: 90
 

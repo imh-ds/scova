@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from benchmarks.cf_external_validation import fixed_nuisance_score
+from benchmarks.cf_external_validation import KnownRandomizationClassifier, fixed_nuisance_score
 from benchmarks.cf_reference_campaign import (
     plasmode_source_checksum,
     run_campaign,
@@ -107,6 +107,16 @@ def test_v5_amendment_binds_only_the_archived_v4_calibration_source() -> None:
     }
     assert protocol.reference_profile["minimum_group_count"] == 50
     assert protocol.reference_profile["maximum_group_count"] == 3
+
+
+def test_known_randomization_adapter_never_estimates_fixture_propensities() -> None:
+    adapter = KnownRandomizationClassifier((0.2, 0.3, 0.5)).fit(
+        np.zeros((4, 2)), np.array([0, 1, 2, 1])
+    )
+    assert np.allclose(
+        adapter.predict_proba(np.ones((3, 2))),
+        np.array([[0.2, 0.3, 0.5], [0.2, 0.3, 0.5], [0.2, 0.3, 0.5]]),
+    )
 
 
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:

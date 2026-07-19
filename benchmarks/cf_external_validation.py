@@ -7,6 +7,7 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 import numpy as np
+from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
 from sklearn.linear_model import LogisticRegression, Ridge
 
@@ -33,6 +34,24 @@ class ExternalAgreement:
             "raw_standard_errors": list(self.raw_standard_errors),
             "detail": self.detail,
         }
+
+
+class KnownRandomizationClassifier(ClassifierMixin, BaseEstimator):
+    """Sklearn-compatible fixed multinomial assignment model for randomized fixtures."""
+
+    def __init__(self, probabilities: tuple[float, ...]) -> None:
+        self.probabilities = probabilities
+
+    def fit(self, x: np.ndarray, y: np.ndarray) -> KnownRandomizationClassifier:
+        self.classes_ = np.sort(np.unique(y))
+        if tuple(int(value) for value in self.classes_) != tuple(range(len(self.probabilities))):
+            raise ValueError("Known randomization levels do not match observed treatment levels")
+        if not np.isclose(sum(self.probabilities), 1.0):
+            raise ValueError("Known randomization probabilities must sum to one")
+        return self
+
+    def predict_proba(self, x: np.ndarray) -> np.ndarray:
+        return np.tile(np.asarray(self.probabilities, dtype=float), (len(x), 1))
 
 
 def fixed_nuisance_score(
@@ -161,8 +180,9 @@ def doubleml_apos(
     folds: np.ndarray,
     *,
     learner_policy: str,
+    known_probabilities: tuple[float, ...],
 ) -> ExternalAgreement:
-    """Fit DoubleMLAPOS end-to-end with frozen folds and learner classes."""
+    """Fit DoubleML outcome nuisances with known randomized assignment probabilities."""
     try:
         import doubleml as dml
         from doubleml.utils import PSProcessorConfig
@@ -185,14 +205,18 @@ def doubleml_apos(
             draw_sample_splitting=False,
         )
         model.set_sample_splitting(_splits(folds))
-        model.fit()
+        external = {
+            level: {"ml_m": np.full((len(outcome), 1), known_probabilities[code])}
+            for code, level in enumerate(levels)
+        }
+        model.fit(external_predictions=external)
         return ExternalAgreement(
             "DoubleMLAPOS",
             version("doubleml"),
             "complete",
             tuple(float(value) for value in np.ravel(model.coef)),
             tuple(float(value) for value in np.ravel(model.se)),
-            detail="End-to-end one-vs-rest nuisance fits; 1e-12 propensity floor",
+            detail="Known-design propensities; independently fitted DoubleML outcome nuisances",
         )
     except (Exception, PackageNotFoundError) as error:  # pragma: no cover - external API
         return ExternalAgreement(
@@ -210,6 +234,7 @@ def econml_drlearner(
     folds: np.ndarray,
     *,
     learner_policy: str,
+    known_probabilities: tuple[float, ...],
 ) -> ExternalAgreement:
     """Fit EconML with X=None, covariates in W, and frozen fold indices."""
     try:
@@ -217,10 +242,10 @@ def econml_drlearner(
     except ImportError:
         return ExternalAgreement("EconML.DRLearner", "not-installed", "blocked/missing-dependency")
     try:
-        propensity_model, outcome_model = _learners(learner_policy)
+        _, outcome_model = _learners(learner_policy)
         levels = tuple(int(value) for value in np.unique(treatment))
         model = DRLearner(
-            model_propensity=propensity_model,
+            model_propensity=KnownRandomizationClassifier(known_probabilities),
             model_regression=outcome_model,
             categories=levels,
             cv=_splits(folds),
@@ -237,7 +262,7 @@ def econml_drlearner(
             version("econml"),
             "complete",
             estimates,
-            detail="X=None; W=covariates; intercept-only final model; 1e-12 floor",
+            detail="Known-design propensities; X=None; W=covariates; intercept-only final model",
         )
     except (Exception, PackageNotFoundError) as error:  # pragma: no cover - external API
         return ExternalAgreement(
