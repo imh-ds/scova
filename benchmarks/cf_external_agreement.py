@@ -206,6 +206,7 @@ def run_external_agreement(
                 treatment,
                 result.fold_assignments,
                 learner_policy=str(cell["learner"]),
+                known_probabilities=generated.probabilities,
             )
             econ = econml_drlearner(
                 x,
@@ -213,6 +214,7 @@ def run_external_agreement(
                 treatment,
                 result.fold_assignments,
                 learner_policy=str(cell["learner"]),
+                known_probabilities=generated.probabilities,
             )
             if dml.status == "complete":
                 scale = np.where(
@@ -303,6 +305,11 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--replications", type=int)
     parser.add_argument("--max-cells", type=int)
+    parser.add_argument(
+        "--allow-incomplete",
+        action="store_true",
+        help="Write a non-authoritative smoke artifact without requiring the full frozen lane.",
+    )
     args = parser.parse_args()
     evidence = run_external_agreement(
         CFValidationProtocol.load(args.spec),
@@ -314,7 +321,15 @@ def main() -> None:
         json.dumps(evidence, indent=2, sort_keys=True, allow_nan=False),
         encoding="utf-8",
     )
-    if not evidence["all_numerical_agreement_gates_passed"]:
+    partial_agreement_passed = bool(
+        evidence["shared_score"]["passed"]
+        and all(
+            row["status"] == "complete" for row in evidence["end_to_end"]["implementations"]
+        )
+    )
+    if not evidence["all_numerical_agreement_gates_passed"] and not (
+        args.allow_incomplete and partial_agreement_passed
+    ):
         raise SystemExit("External numerical agreement did not pass")
 
 
