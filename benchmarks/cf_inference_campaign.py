@@ -26,7 +26,13 @@ N_BOOTSTRAP = 999
 
 _CF_NUMERICAL_PATHS = (
     "src/scova/_aipw.py",
-    "src/scova/cf",
+    "src/scova/cf/__init__.py",
+    "src/scova/cf/benchmarks.py",
+    "src/scova/cf/declaration.py",
+    "src/scova/cf/estimator.py",
+    "src/scova/cf/result.py",
+    "src/scova/cf/status.py",
+    "src/scova/cf/support.py",
     "benchmarks/cf_external_agreement.py",
     "benchmarks/cf_external_validation.py",
     "benchmarks/cf_reference_campaign.py",
