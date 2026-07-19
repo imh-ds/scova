@@ -3,8 +3,14 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from sklearn.linear_model import Ridge
 
-from benchmarks.cf_external_validation import KnownRandomizationClassifier, fixed_nuisance_score
+from benchmarks.cf_external_validation import (
+    KnownRandomizationClassifier,
+    SelectedOutcomeRegressor,
+    TreatmentSpecificOutcomeRegressor,
+    fixed_nuisance_score,
+)
 from benchmarks.cf_reference_campaign import (
     plasmode_source_checksum,
     run_campaign,
@@ -118,6 +124,26 @@ def test_known_randomization_adapter_never_estimates_fixture_propensities() -> N
         np.array([[0.2, 0.3, 0.5], [0.2, 0.3, 0.5], [0.2, 0.3, 0.5]]),
     )
     assert np.array_equal(adapter.predict(np.ones((2, 2))), np.array([2, 2]))
+
+
+def test_external_outcome_adapters_preserve_treatment_specific_linear_policy() -> None:
+    features = np.array([[0.0], [1.0], [2.0], [3.0], [0.0], [1.0], [2.0], [3.0]])
+    treatment = np.array([0, 0, 0, 0, 1, 1, 1, 1])
+    outcome = np.where(treatment == 0, 1.0 + 2.0 * features[:, 0], -3.0 + 5.0 * features[:, 0])
+    design = np.column_stack([features, treatment])
+    fitted = TreatmentSpecificOutcomeRegressor(n_groups=2, learner_policy="linear").fit(
+        design, outcome
+    )
+    counterfactual_design = np.array([[4.0, 0.0], [4.0, 1.0]])
+    expected = np.array(
+        [
+            Ridge(alpha=1.0).fit(features[:4], outcome[:4]).predict([[4.0]])[0],
+            Ridge(alpha=1.0).fit(features[4:], outcome[4:]).predict([[4.0]])[0],
+        ]
+    )
+    assert np.allclose(fitted.predict(counterfactual_design), expected)
+    selected = SelectedOutcomeRegressor("linear").fit(features[:4], outcome[:4])
+    assert selected.selected_name_ == "Ridge"
 
 
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:
