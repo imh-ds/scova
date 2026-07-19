@@ -1,10 +1,12 @@
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
 from sklearn.linear_model import Ridge
 
+from benchmarks import cf_inference_campaign
 from benchmarks.cf_external_validation import (
     KnownRandomizationClassifier,
     SelectedOutcomeRegressor,
@@ -144,6 +146,28 @@ def test_external_outcome_adapters_preserve_treatment_specific_linear_policy() -
     assert np.allclose(fitted.predict(counterfactual_design), expected)
     selected = SelectedOutcomeRegressor("linear").fit(features[:4], outcome[:4])
     assert selected.selected_name_ == "Ridge"
+
+
+def test_inference_aggregate_main_creates_requested_output_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    output = tmp_path / "nested" / "evidence" / "inference.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "cf_inference_campaign",
+            "--spec",
+            str(V5_SPEC),
+            "--aggregate",
+            "unused-shard.ndjson.gz",
+            "--output",
+            str(output),
+        ],
+    )
+    monkeypatch.setattr(cf_inference_campaign, "aggregate", lambda *_args, **_kwargs: {"ok": True})
+    cf_inference_campaign.main()
+    assert json.loads(output.read_text(encoding="utf-8")) == {"ok": True}
 
 
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:

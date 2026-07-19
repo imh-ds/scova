@@ -24,6 +24,14 @@ from scova.cf import CFValidationProtocol, canonical_checksum
 
 N_BOOTSTRAP = 999
 
+_CF_NUMERICAL_PATHS = (
+    "src/scova/_aipw.py",
+    "src/scova/cf",
+    "benchmarks/cf_external_agreement.py",
+    "benchmarks/cf_external_validation.py",
+    "benchmarks/cf_reference_campaign.py",
+)
+
 
 def _version(name: str) -> str:
     try:
@@ -39,6 +47,20 @@ def _commit() -> str:
         ).strip()
     except (OSError, subprocess.SubprocessError):
         return "unavailable"
+
+
+def _cf_numerical_fingerprint(commit: str) -> str:
+    paths = subprocess.check_output(
+        ["git", "ls-tree", "-r", "--name-only", commit, "--", *_CF_NUMERICAL_PATHS],
+        text=True,
+    ).splitlines()
+    digest = sha256()
+    for path in sorted(paths):
+        digest.update(path.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(subprocess.check_output(["git", "show", f"{commit}:{path}"]))
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def run_shard(
@@ -194,6 +216,13 @@ def aggregate(
     environments = {json.dumps(value["environment"], sort_keys=True) for value in metadata}
     if len(commits) != 1 or len(environments) != 1:
         raise ValueError("Inference shards mix commits or environments")
+    source_commits = sorted(commits)
+    execution_commit = _commit()
+    if execution_commit == "unavailable":
+        raise ValueError("Inference aggregation requires a Git commit")
+    source_fingerprints = {_cf_numerical_fingerprint(commit) for commit in source_commits}
+    if source_fingerprints != {_cf_numerical_fingerprint(execution_commit)}:
+        raise ValueError("Inference shards use a different SCOVA-CF numerical implementation")
     environment = json.loads(next(iter(environments)))
     for package, expected_version in protocol.software.items():
         if package in environment and environment[package] != expected_version:
@@ -259,7 +288,9 @@ def aggregate(
         "artifact_type": "scova-cf-inference-validation",
         "schema_version": 2,
         "protocol_checksum": protocol.checksum,
-        "git_commit": commits.pop(),
+        "git_commit": execution_commit,
+        "source_git_commits": source_commits,
+        "numerical_implementation_checksum": source_fingerprints.pop(),
         "environment": json.loads(environments.pop()),
         "bootstrap_replications": N_BOOTSTRAP,
         "all_inference_gates_passed": all_passed,
@@ -282,6 +313,7 @@ def main() -> None:
     protocol = CFValidationProtocol.load(args.spec)
     if args.aggregate:
         evidence = aggregate(args.aggregate, protocol=protocol)
+        args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(evidence, indent=2, sort_keys=True), encoding="utf-8")
     else:
         if args.shard_index is None or args.shard_count is None:

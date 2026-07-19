@@ -504,9 +504,11 @@ class SCOVADesign:
         outcome_model: BaseEstimator | None = None,
         thresholds: DiagnosticThresholds | None = None,
     ) -> None:
-        self.propensity_model = propensity_model or LogisticRegression(max_iter=2000)
-        self.outcome_model = outcome_model or Ridge(alpha=1.0)
-        self.thresholds = thresholds or production_thresholds()
+        self.propensity_model = (
+            LogisticRegression(max_iter=2000) if propensity_model is None else propensity_model
+        )
+        self.outcome_model = Ridge(alpha=1.0) if outcome_model is None else outcome_model
+        self.thresholds = production_thresholds() if thresholds is None else thresholds
 
     def prepare_design(
         self, data: OutcomeFreeDesignData, declaration: DesignDeclaration

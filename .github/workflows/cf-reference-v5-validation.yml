@@ -14,6 +14,7 @@ on:
           - external_smoke
           - external_agreement
           - simultaneous_inference
+          - inference_reaggregate
           - validation
           - aggregate
           - promotion_patch
@@ -47,7 +48,7 @@ permissions:
 
 env:
   SPEC: benchmarks/specs/cf_reference_v5.json
-  FREEZE_TAG: scova-cf-reference-v5-freeze-r4
+  FREEZE_TAG: scova-cf-reference-v5-freeze-r5
   PYTHONHASHSEED: "0"
 
 jobs:
@@ -76,7 +77,8 @@ jobs:
       inputs.tier == 'calibrate_support' || inputs.tier == 'aggregate' ||
       inputs.tier == 'external_smoke' ||
       inputs.tier == 'external_agreement' ||
-      inputs.tier == 'simultaneous_inference' || inputs.tier == 'validation'
+      inputs.tier == 'simultaneous_inference' ||
+      inputs.tier == 'inference_reaggregate' || inputs.tier == 'validation'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -95,10 +97,10 @@ jobs:
           python -m benchmarks.cf_inference_campaign --help
       - run: >-
           python -m scripts.write_cf_freeze_manifest --spec "$SPEC"
-          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v5-freeze-r4.json
+          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v5-freeze-r5.json
       - uses: actions/upload-artifact@v6
         with:
-          name: cf-reference-v5-freeze-r4
+          name: cf-reference-v5-freeze-r5
           path: freeze/
           retention-days: 90
 
@@ -110,6 +112,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: 3.12.13
@@ -435,6 +439,35 @@ jobs:
           pattern: cf-inference-*
           path: shards
           merge-multiple: true
+      - run: >-
+          python -m benchmarks.cf_inference_campaign --spec "$SPEC"
+          --aggregate shards/*.ndjson.gz --output evidence/cf-reference-inference.json
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cf-inference-evidence
+          path: evidence/
+          retention-days: 90
+
+  inference_reaggregate:
+    if: inputs.tier == 'inference_reaggregate'
+    needs: campaign_freeze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: cf-inference-*
+          path: shards
+          merge-multiple: true
+          run-id: ${{ inputs.recovery_run_id }}
+          github-token: ${{ github.token }}
       - run: >-
           python -m benchmarks.cf_inference_campaign --spec "$SPEC"
           --aggregate shards/*.ndjson.gz --output evidence/cf-reference-inference.json

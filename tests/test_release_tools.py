@@ -283,10 +283,11 @@ def test_cf_v5_workflow_disables_new_calibration_shards() -> None:
     )
     assert "SCOVA-CF v5 amended-profile validation" in workflow
     assert "benchmarks/specs/cf_reference_v5.json" in workflow
-    assert "scova-cf-reference-v5-freeze-r4" in workflow
+    assert "scova-cf-reference-v5-freeze-r5" in workflow
     assert "- calibration\n" not in workflow
     assert "calibration_source" in workflow
     assert "- external_smoke" in workflow
+    assert "- inference_reaggregate" in workflow
     assert "--replications 1 --max-cells 1 --allow-incomplete" in workflow
 
 
