@@ -18,7 +18,7 @@ implementation identities before accepting them as sources.
 
 ## Dispatch order
 
-1. Dispatch `freeze_check` from tag `scova-cf-reference-v6-freeze-r1`.
+1. Dispatch `freeze_check` from tag `scova-cf-reference-v6-freeze-r2`.
 2. Dispatch `simultaneous_inference` from the same tag, entering the two
    upstream run IDs above in the candidate-profile and external-evidence fields.
 3. Only after the inference evidence passes, dispatch `validation` from the
