@@ -55,9 +55,16 @@ def prerequisite_reasons(
         else:
             if profile.state != "candidate" or profile.protocol_checksum != protocol.checksum:
                 reasons.append("candidate is not frozen for this protocol")
-    if calibration_campaign.get("protocol_checksum") != protocol.checksum:
+    source = protocol.calibration_source
+    source_campaign = bool(
+        source
+        and calibration_campaign.get("protocol_checksum") == source.get("protocol_checksum")
+        and calibration_campaign.get("evidence_checksum") == source.get("evidence_checksum")
+        and calibration_campaign.get("git_commit") == source.get("git_commit")
+    )
+    if calibration_campaign.get("protocol_checksum") != protocol.checksum and not source_campaign:
         reasons.append("calibration campaign protocol mismatch")
-    if calibration_campaign.get("git_commit") != expected_commit:
+    if calibration_campaign.get("git_commit") != expected_commit and not source_campaign:
         reasons.append("calibration campaign commit mismatch")
     if not _valid_checksum(calibration_campaign, "evidence_checksum"):
         reasons.append("calibration campaign checksum mismatch")

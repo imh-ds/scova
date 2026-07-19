@@ -68,6 +68,7 @@ class CFValidationProtocol:
     threshold_quantiles: Mapping[str, tuple[float, ...]] | None = None
     calibration_screening: Mapping[str, float] | None = None
     calibration_candidate_retention_fraction: float = 1.0
+    calibration_source: Mapping[str, str] | None = None
     frozen: bool = False
     schema_version: int = 1
 
@@ -163,6 +164,23 @@ class CFValidationProtocol:
                     "Calibration screening is missing metrics: "
                     f"{sorted(missing)}"
                 )
+        if self.calibration_source is not None:
+            required_source = {
+                "protocol_id",
+                "protocol_checksum",
+                "evidence_checksum",
+                "git_commit",
+            }
+            missing = required_source.difference(self.calibration_source)
+            if missing:
+                raise ValueError(
+                    "Calibration source is missing fields: " f"{sorted(missing)}"
+                )
+            if any(
+                not self.calibration_source[name]
+                for name in ("protocol_id", "protocol_checksum", "evidence_checksum", "git_commit")
+            ):
+                raise ValueError("Calibration source values must not be empty")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -206,6 +224,11 @@ class CFValidationProtocol:
                 {}
                 if self.calibration_screening is None
                 else {"calibration_screening": dict(self.calibration_screening)}
+            ),
+            **(
+                {}
+                if self.calibration_source is None
+                else {"calibration_source": dict(self.calibration_source)}
             ),
             "learners": list(self.learners),
             "metrics": dict(self.metrics),
@@ -270,6 +293,14 @@ class CFValidationProtocol:
                 else {
                     str(name): float(value)
                     for name, value in values["calibration_screening"].items()
+                }
+            ),
+            calibration_source=(
+                None
+                if values.get("calibration_source") is None
+                else {
+                    str(name): str(value)
+                    for name, value in values["calibration_source"].items()
                 }
             ),
             learners=tuple(str(value) for value in values["learners"]),

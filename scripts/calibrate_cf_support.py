@@ -148,10 +148,13 @@ def _strong(
     cell: dict[str, Any],
     kind: str,
     minimum_expected_arm_count: float = 30.0,
+    maximum_group_count: int | None = None,
 ) -> bool:
     if kind != "plasmode" and cell.get("support") != "strong":
         return False
     k = int(cell["n_groups"])
+    if maximum_group_count is not None and k > maximum_group_count:
+        return False
     allocation = str(cell["allocation"])
     if allocation == "balanced":
         weights = np.ones(k)
@@ -165,17 +168,35 @@ def _strong(
     return expected_minimum >= minimum_expected_arm_count
 
 
+def _profile_scope(protocol: CFValidationProtocol) -> tuple[float, int | None]:
+    compatibility = dict(protocol.reference_profile)
+    return (
+        max(
+            float(protocol.calibration_gate_metrics["strong_support_minimum_expected_arm_count"]),
+            float(compatibility.get("minimum_group_count", 2)),
+        ),
+        (
+            None
+            if "maximum_group_count" not in compatibility
+            else int(compatibility["maximum_group_count"])
+        ),
+    )
+
+
+def _profile_eligible(
+    protocol: CFValidationProtocol, cell: dict[str, Any], kind: str
+) -> bool:
+    minimum, maximum = _profile_scope(protocol)
+    return _strong(cell, kind, minimum, maximum)
+
+
 def _usefulness(
     records: list[dict[str, Any]], thresholds: dict[str, float], protocol: CFValidationProtocol
 ) -> tuple[bool, float]:
     strong_cells = {
         int(record["cell_index"])
         for record in records
-        if _strong(
-            record["cell"],
-            record["cell_kind"],
-            float(protocol.metrics["strong_support_minimum_expected_arm_count"]),
-        )
+        if _profile_eligible(protocol, record["cell"], record["cell_kind"])
     }
     passing_cells = 0
     supported_total = 0
@@ -205,8 +226,16 @@ def calibrate(
     _verify_evidence(evidence)
     if evidence["lane"] != "calibration" or not evidence["complete_frozen_lane"]:
         raise ValueError("Only a complete frozen calibration lane can create a profile")
-    if evidence["protocol_checksum"] != protocol.checksum:
-        raise ValueError("Calibration evidence uses a different protocol")
+    source = protocol.calibration_source
+    matches_protocol = evidence["protocol_checksum"] == protocol.checksum
+    matches_declared_source = bool(
+        source
+        and evidence["protocol_checksum"] == source["protocol_checksum"]
+        and evidence.get("evidence_checksum") == source["evidence_checksum"]
+        and evidence.get("git_commit") == source["git_commit"]
+    )
+    if not matches_protocol and not matches_declared_source:
+        raise ValueError("Calibration evidence uses a different protocol or declared source")
     execution_failures = [
         record for record in evidence["records"] if record.get("status_code") == "execution-error"
     ]
@@ -285,12 +314,22 @@ def calibrate(
     selected_audit: list[dict[str, Any]] = []
     attempts: list[tuple[float, tuple[float, ...], dict[str, float], list[dict[str, Any]]]] = []
     candidate_limit = len(ranked) if protocol.calibration_screening is not None else 256
+    records_by_cell = {
+        cell_index: [
+            record for record in evidence["records"] if int(record["cell_index"]) == cell_index
+        ]
+        for cell_index in sorted({int(record["cell_index"]) for record in evidence["records"]})
+    }
+    audit_records_by_cell = {
+        cell_index: [
+            record for record in audit_records if int(record["cell_index"]) == cell_index
+        ]
+        for cell_index in records_by_cell
+    }
     for negative_objective, conservative, thresholds in ranked[:candidate_limit]:
         audits = []
         passed = True
-        cell_indices = sorted({int(record["cell_index"]) for record in evidence["records"]})
-        for cell_index in cell_indices:
-            all_cell = [r for r in evidence["records"] if r["cell_index"] == cell_index]
+        for cell_index, all_cell in records_by_cell.items():
             cell = all_cell[0]["cell"]
             if _structural(cell):
                 audit = {
@@ -300,8 +339,8 @@ def calibrate(
             else:
                 supported = [
                     r
-                    for r in audit_records
-                    if r["cell_index"] == cell_index and _passes(r, thresholds)
+                    for r in audit_records_by_cell[cell_index]
+                    if _passes(r, thresholds)
                 ]
                 if protocol.calibration_screening is None:
                     audit_passed, audit = _cell_gate(supported, protocol.metrics)
@@ -312,15 +351,7 @@ def calibrate(
                     ) and not supported:
                         audit_passed = True
                         audit = {"passed": True, "reason": "unstable-cell-no-supported-results"}
-                elif not _strong(
-                    cell,
-                    all_cell[0]["cell_kind"],
-                    float(
-                        protocol.calibration_gate_metrics[
-                            "strong_support_minimum_expected_arm_count"
-                        ]
-                    ),
-                ):
+                elif not _profile_eligible(protocol, cell, all_cell[0]["cell_kind"]):
                     audit_passed = True
                     audit = {
                         "passed": True,
@@ -391,6 +422,7 @@ def calibrate(
         "schema_version": 2,
         "protocol_checksum": protocol.checksum,
         "calibration_evidence_checksum": evidence["evidence_checksum"],
+        "calibration_source_protocol_checksum": evidence["protocol_checksum"],
         "fit_replications_per_cell": split,
         "audit_replications_per_cell": protocol.calibration.count - split,
         "candidate_count": len(ranked),

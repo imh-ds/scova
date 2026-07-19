@@ -44,6 +44,11 @@ def assess_support(
     overall_sd = x.std(axis=0, ddof=1)
     safe_sd = np.where(overall_sd > 0, overall_sd, 1.0)
     warnings: list[str] = []
+    if policy.maximum_group_count is not None and n_groups > policy.maximum_group_count:
+        warnings.append(
+            f"number of groups {n_groups} exceeds the calibrated maximum "
+            f"{policy.maximum_group_count}"
+        )
     group_diagnostics: dict[str, Any] = {}
     for code, label in enumerate(group_labels):
         observed = group_codes == code

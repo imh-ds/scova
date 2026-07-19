@@ -277,6 +277,17 @@ def test_cf_v4_workflow_is_isolated_from_v3_campaign_identity() -> None:
     assert "cf-reference-v3-freeze" not in workflow
 
 
+def test_cf_v5_workflow_disables_new_calibration_shards() -> None:
+    workflow = Path(".github/workflows/cf-reference-v5-validation.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "SCOVA-CF v5 amended-profile validation" in workflow
+    assert "benchmarks/specs/cf_reference_v5.json" in workflow
+    assert "scova-cf-reference-v5-freeze-r1" in workflow
+    assert "- calibration\n" not in workflow
+    assert "calibration_source" in workflow
+
+
 def test_cf_promotion_applies_only_exact_evidence_and_release_text(
     tmp_path: Path, monkeypatch
 ) -> None:

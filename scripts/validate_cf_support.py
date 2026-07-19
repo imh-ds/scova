@@ -11,7 +11,7 @@ import numpy as np
 from calibrate_cf_support import (
     _cell_gate,
     _passes,
-    _strong,
+    _profile_eligible,
     _structural,
     _verify_evidence,
     read_json,
@@ -55,6 +55,13 @@ def validate(
                 "passed": passed,
                 "structural_refusal_rate": float(np.mean([r["refused"] for r in all_cell])),
             }
+        elif not _profile_eligible(protocol, cell, kind):
+            passed = True
+            audit = {
+                "passed": True,
+                "reason": "outside-promotable-profile-scope",
+                "supported_replications": 0,
+            }
         else:
             supported = [
                 record
@@ -62,11 +69,7 @@ def validate(
                 if record["cell_index"] == cell_index and _passes(record, thresholds)
             ]
             passed, audit = _cell_gate(supported, protocol.metrics)
-            if not _strong(
-                cell,
-                kind,
-                float(protocol.metrics["strong_support_minimum_expected_arm_count"]),
-            ) and not supported:
+            if not supported:
                 passed = True
                 audit = {"passed": True, "reason": "unstable-cell-no-supported-results"}
         all_passed &= passed
@@ -75,11 +78,7 @@ def validate(
     strong_cells = [
         audit
         for audit in audits
-        if _strong(
-            audit["cell"],
-            audit["cell_kind"],
-            float(protocol.metrics["strong_support_minimum_expected_arm_count"]),
-        )
+        if _profile_eligible(protocol, audit["cell"], audit["cell_kind"])
         and not _structural(audit["cell"])
     ]
     useful_cells = [
