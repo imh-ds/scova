@@ -18,15 +18,18 @@ implementation identities before accepting them as sources.
 
 ## Dispatch order
 
-1. Dispatch `freeze_check` from tag `scova-cf-reference-v6-freeze-r4`.
+1. Dispatch `freeze_check` from tag `scova-cf-reference-v6-freeze-r7`.
 2. Dispatch `simultaneous_inference` from the same tag, entering the two
    upstream run IDs above in the candidate-profile and external-evidence fields.
    If all 64 shards finish but only their aggregate refuses a host-platform
    mismatch, dispatch `inference_reaggregate` from the current freeze tag and
    enter the failed shard run in the optional recovery-run field. This reuses
    those exact shards; it never recomputes simulation records.
-3. Only after the inference evidence passes, dispatch `validation` from the
-   same tag with those two IDs and the successful v6 inference run ID.
+3. Before the full held-out run, dispatch `validation_preflight` from the same
+   tag with those two IDs and the successful v6 inference run ID. It runs one
+   reduced shard only and proves the source-candidate lock.
+4. Only after the preflight passes, dispatch `validation` from the same tag
+   with those two IDs and the successful v6 inference run ID.
 
 Do not use v5 inference evidence for validation. The v5 validation namespace is
 untouched and remains the one allowed held-out validation lane for V6.

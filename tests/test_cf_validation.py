@@ -1,13 +1,14 @@
 import gzip
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
 import pytest
 from sklearn.linear_model import Ridge
 
-from benchmarks import cf_inference_campaign
+from benchmarks import aggregate_cf_campaign, cf_inference_campaign
 from benchmarks.cf_external_validation import (
     KnownRandomizationClassifier,
     SelectedOutcomeRegressor,
@@ -26,6 +27,7 @@ from scova.cf import (
     CFSupportProfile,
     CFValidationProtocol,
     SeedPartition,
+    _numerical_identity,
     canonical_checksum,
 )
 from scova.simulate import generate_data
@@ -265,6 +267,138 @@ def test_inference_fwer_gate_requires_control_only_when_a_true_null_exists() -> 
     assert cf_inference_campaign._familywise_error_gate(
         inflated, alpha=0.05, multiplier=2.0
     ) == (0.2, False)
+
+
+def test_validation_accepts_the_checksum_bound_source_candidate(tmp_path: Path) -> None:
+    protocol = CFValidationProtocol.load(V6_SPEC)
+    candidate = CFSupportProfile(
+        profile_id="source-candidate",
+        protocol_checksum="source-protocol-checksum",
+        calibration_evidence_checksum="a" * 64,
+        validation_evidence_checksum=None,
+        thresholds={"minimum_ess_ratio": 0.25},
+        compatibility=protocol.reference_profile,
+    )
+    sourced_protocol = replace(
+        protocol,
+        candidate_source={
+            "protocol_id": "source-protocol",
+            "protocol_checksum": candidate.protocol_checksum,
+            "profile_checksum": candidate.checksum,
+        },
+    )
+    output = tmp_path / "sourced-validation.ndjson.gz"
+    run_shard(
+        sourced_protocol,
+        lane="validation",
+        output=output,
+        shard_index=0,
+        shard_count=128,
+        resume=False,
+        replications_override=1,
+        max_cells=1,
+        include_stability=False,
+        candidate_profile=candidate,
+    )
+    metadata = json.loads(
+        output.with_suffix(output.suffix + ".metadata.json").read_text(encoding="utf-8")
+    )
+    assert metadata["candidate_profile_checksum"] == candidate.checksum
+
+
+def test_campaign_environment_identity_ignores_only_host_platform() -> None:
+    base = {
+        "python": "3.12.13",
+        "scova": "0.3.0.dev0",
+        "numpy": "2.2.6",
+        "pandas": "2.2.3",
+        "scipy": "1.15.3",
+        "scikit-learn": "1.6.1",
+        "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+    }
+    other_host = {**base, "platform": "Linux-6.17.0-1018-azure-x86_64-with-glibc2.39"}
+    assert (
+        aggregate_cf_campaign._numerical_environment_identity(base)
+        == aggregate_cf_campaign._numerical_environment_identity(other_host)
+    )
+    assert (
+        aggregate_cf_campaign._numerical_environment_identity({**base, "pandas": "2.3.0"})
+        != aggregate_cf_campaign._numerical_environment_identity(base)
+    )
+
+
+def _fake_numerical_source(commit: str, path: str) -> bytes:
+    if path.endswith(".json"):
+        return b"{}"
+    if path == "benchmarks/cf_reference_campaign.py":
+        governance = "candidate_source = True" if commit == "after-governance" else "pass"
+        return f"""
+STABILITY_SEEDS = (1, 2)
+class CampaignData: pass
+def _probabilities(): pass
+def _conditional_means(): pass
+def _errors(): pass
+def simulate_reference_cell(): pass
+def _declaration(): pass
+def _contrast_summary(): pass
+def _support_features(): pass
+def fit_campaign_record(): pass
+def run_shard():
+    {governance}
+""".encode()
+    if path == "benchmarks/cf_inference_campaign.py":
+        gate = "True" if commit == "after-inference-gate" else "False"
+        fingerprint = (
+            "cf_numerical_fingerprint('commit', 'inference')"
+            if commit == "after-identity-refactor"
+            else "_cf_numerical_fingerprint('commit')"
+        )
+        return f"""
+N_BOOTSTRAP = 999
+_NUMERICAL_ENVIRONMENT_FIELDS = ('python',)
+def _version(): pass
+def _commit(): pass
+def _numerical_environment_identity(): pass
+def _familywise_error_gate(): return {gate}
+def run_shard(): pass
+def aggregate(): return {fingerprint}
+""".encode()
+    return b"value = 1\n"
+
+
+def test_numerical_fingerprints_ignore_only_campaign_governance(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(_numerical_identity, "_committed_file", _fake_numerical_source)
+    for kind in ("external", "inference"):
+        assert _numerical_identity.cf_numerical_fingerprint("before-governance", kind) == (
+            _numerical_identity.cf_numerical_fingerprint("after-governance", kind)
+        )
+
+
+def test_numerical_fingerprints_are_evidence_specific(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(_numerical_identity, "_committed_file", _fake_numerical_source)
+    assert _numerical_identity.cf_numerical_fingerprint(
+        "before-inference-gate", "external"
+    ) == _numerical_identity.cf_numerical_fingerprint("after-inference-gate", "external")
+    assert _numerical_identity.cf_numerical_fingerprint(
+        "before-inference-gate", "inference"
+    ) != _numerical_identity.cf_numerical_fingerprint("after-inference-gate", "inference")
+
+
+def test_numerical_fingerprint_refactor_does_not_invalidate_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(_numerical_identity, "_committed_file", _fake_numerical_source)
+    before = _numerical_identity.cf_numerical_fingerprint(
+        "before-identity-refactor", "inference"
+    )
+    after = _numerical_identity.cf_numerical_fingerprint(
+        "after-identity-refactor", "inference"
+    )
+    assert before == after
 
 
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:

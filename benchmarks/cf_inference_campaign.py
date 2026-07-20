@@ -21,6 +21,7 @@ from benchmarks.cf_reference_campaign import (
     write_deterministic_gzip,
 )
 from scova.cf import CFValidationProtocol, canonical_checksum
+from scova.cf._numerical_identity import cf_numerical_fingerprint
 
 N_BOOTSTRAP = 999
 
@@ -34,21 +35,6 @@ _NUMERICAL_ENVIRONMENT_FIELDS = (
     "scipy",
     "scikit-learn",
 )
-
-_CF_NUMERICAL_PATHS = (
-    "src/scova/_aipw.py",
-    "src/scova/cf/__init__.py",
-    "src/scova/cf/benchmarks.py",
-    "src/scova/cf/declaration.py",
-    "src/scova/cf/estimator.py",
-    "src/scova/cf/result.py",
-    "src/scova/cf/status.py",
-    "src/scova/cf/support.py",
-    "benchmarks/cf_external_agreement.py",
-    "benchmarks/cf_external_validation.py",
-    "benchmarks/cf_reference_campaign.py",
-)
-
 
 def _version(name: str) -> str:
     try:
@@ -91,20 +77,6 @@ def _familywise_error_gate(
     )
     mcse = np.sqrt(alpha * (1.0 - alpha) / len(records))
     return familywise_error, bool(familywise_error <= alpha + multiplier * mcse)
-
-
-def _cf_numerical_fingerprint(commit: str) -> str:
-    paths = subprocess.check_output(
-        ["git", "ls-tree", "-r", "--name-only", commit, "--", *_CF_NUMERICAL_PATHS],
-        text=True,
-    ).splitlines()
-    digest = sha256()
-    for path in sorted(paths):
-        digest.update(path.encode("utf-8"))
-        digest.update(b"\0")
-        digest.update(subprocess.check_output(["git", "show", f"{commit}:{path}"]))
-        digest.update(b"\0")
-    return digest.hexdigest()
 
 
 def run_shard(
@@ -272,8 +244,10 @@ def aggregate(
     execution_commit = _commit()
     if execution_commit == "unavailable":
         raise ValueError("Inference aggregation requires a Git commit")
-    source_fingerprints = {_cf_numerical_fingerprint(commit) for commit in source_commits}
-    if source_fingerprints != {_cf_numerical_fingerprint(execution_commit)}:
+    source_fingerprints = {
+        cf_numerical_fingerprint(commit, "inference") for commit in source_commits
+    }
+    if source_fingerprints != {cf_numerical_fingerprint(execution_commit, "inference")}:
         raise ValueError("Inference shards use a different SCOVA-CF numerical implementation")
     environment = json.loads(next(iter(numerical_environments)))
     for package, expected_version in protocol.software.items():

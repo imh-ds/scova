@@ -11,6 +11,7 @@ on:
           - freeze_check
           - simultaneous_inference
           - inference_reaggregate
+          - validation_preflight
           - validation
           - aggregate
           - promotion_patch
@@ -44,7 +45,7 @@ permissions:
 
 env:
   SPEC: benchmarks/specs/cf_reference_v6.json
-  FREEZE_TAG: scova-cf-reference-v6-freeze-r4
+  FREEZE_TAG: scova-cf-reference-v6-freeze-r7
   PYTHONHASHSEED: "0"
 
 jobs:
@@ -70,7 +71,7 @@ jobs:
     if: >-
       inputs.tier == 'freeze_check' || inputs.tier == 'aggregate' ||
       inputs.tier == 'simultaneous_inference' || inputs.tier == 'inference_reaggregate' ||
-      inputs.tier == 'validation'
+      inputs.tier == 'validation_preflight' || inputs.tier == 'validation'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -89,16 +90,17 @@ jobs:
           python -m benchmarks.cf_inference_campaign --help
       - run: >-
           python -m scripts.write_cf_freeze_manifest --spec "$SPEC"
-          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v6-freeze-r4.json
+          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v6-freeze-r7.json
       - uses: actions/upload-artifact@v6
         with:
-          name: cf-reference-v6-freeze-r4
+          name: cf-reference-v6-freeze-r7
           path: freeze/
           retention-days: 90
 
   prerequisite_lock:
     if: >-
-      inputs.tier == 'simultaneous_inference' || inputs.tier == 'validation'
+      inputs.tier == 'simultaneous_inference' || inputs.tier == 'validation_preflight' ||
+      inputs.tier == 'validation'
     needs: campaign_freeze
     runs-on: ubuntu-latest
     steps:
@@ -117,14 +119,16 @@ jobs:
           run-id: ${{ inputs.calibration_run_id }}
           github-token: ${{ github.token }}
       - uses: actions/download-artifact@v6
-        if: inputs.tier == 'simultaneous_inference' || inputs.tier == 'validation'
+        if: >-
+          inputs.tier == 'simultaneous_inference' || inputs.tier == 'validation_preflight' ||
+          inputs.tier == 'validation'
         with:
           name: cf-external-evidence
           path: prerequisite
           run-id: ${{ inputs.external_run_id }}
           github-token: ${{ github.token }}
       - uses: actions/download-artifact@v6
-        if: inputs.tier == 'validation'
+        if: inputs.tier == 'validation_preflight' || inputs.tier == 'validation'
         with:
           name: cf-inference-evidence
           path: prerequisite
@@ -145,7 +149,7 @@ jobs:
           --calibration-audit prerequisite/cf-reference-calibration.json
           --candidate-profile prerequisite/cf-reference-candidate-profile.json
           --external-evidence prerequisite/cf-reference-external-agreement.json
-      - if: inputs.tier == 'validation'
+      - if: inputs.tier == 'validation_preflight' || inputs.tier == 'validation'
         run: >-
           python scripts/check_cf_campaign_prerequisites.py --stage validation
           --spec "$SPEC"
@@ -154,6 +158,34 @@ jobs:
           --candidate-profile prerequisite/cf-reference-candidate-profile.json
           --external-evidence prerequisite/cf-reference-external-agreement.json
           --inference-evidence prerequisite/cf-reference-inference.json
+
+  validation_preflight:
+    if: inputs.tier == 'validation_preflight'
+    needs: [campaign_freeze, prerequisite_lock]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        with:
+          name: cf-calibrated-candidate
+          path: candidate
+          run-id: ${{ inputs.calibration_run_id }}
+          github-token: ${{ github.token }}
+      - run: >-
+          python -m benchmarks.cf_reference_campaign --spec "$SPEC" --lane validation
+          --output artifacts/validation-preflight.ndjson.gz --shard-index 0 --shard-count 128
+          --replications 1 --max-cells 1 --skip-stability
+          --candidate-profile candidate/cf-reference-candidate-profile.json
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cf-validation-preflight
+          path: artifacts/
+          retention-days: 90
 
   pilot_shard:
     if: inputs.tier == 'pilot'

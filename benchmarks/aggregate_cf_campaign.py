@@ -17,6 +17,23 @@ from benchmarks.cf_reference_campaign import (
 )
 from scova.cf import CFValidationProtocol, canonical_checksum
 
+_NUMERICAL_ENVIRONMENT_FIELDS = (
+    "python",
+    "scova",
+    "numpy",
+    "pandas",
+    "scipy",
+    "scikit-learn",
+)
+
+
+def _numerical_environment_identity(environment: dict[str, Any]) -> dict[str, str]:
+    """Return portable, pinned dependency identity while retaining host audit data."""
+    missing = [field for field in _NUMERICAL_ENVIRONMENT_FIELDS if field not in environment]
+    if missing:
+        raise ValueError(f"Campaign shard environment is missing fields: {missing}")
+    return {field: str(environment[field]) for field in _NUMERICAL_ENVIRONMENT_FIELDS}
+
 
 def _read_metadata(path: Path) -> dict[str, Any]:
     metadata_path = path.with_suffix(path.suffix + ".metadata.json")
@@ -105,8 +122,12 @@ def aggregate_shards(
     if sorted(indices) != list(range(shard_count)):
         raise ValueError("Campaign shard indices are incomplete or duplicated")
     commits = {value["git_commit"] for value in metadata}
-    environments = {json.dumps(value["environment"], sort_keys=True) for value in metadata}
-    if len(commits) != 1 or len(environments) != 1 or "unavailable" in commits:
+    environments = [value["environment"] for value in metadata]
+    numerical_environments = {
+        json.dumps(_numerical_environment_identity(environment), sort_keys=True)
+        for environment in environments
+    }
+    if len(commits) != 1 or len(numerical_environments) != 1 or "unavailable" in commits:
         raise ValueError("Campaign shards mix commits or environments")
     candidate_checksums = {value.get("candidate_profile_checksum") for value in metadata}
     nonnull_candidates = {value for value in candidate_checksums if value is not None}
@@ -174,7 +195,10 @@ def aggregate_shards(
         "lane": lane,
         "complete_frozen_lane": True,
         "git_commit": commits.pop(),
-        "environment": json.loads(environments.pop()),
+        "environment": json.loads(numerical_environments.pop()),
+        "host_platforms": sorted(
+            {str(environment.get("platform", "unavailable")) for environment in environments}
+        ),
         "plasmode_source_checksums": expected_sources,
         "candidate_profile_checksum": (
             None if not nonnull_candidates else nonnull_candidates.pop()
