@@ -27,10 +27,10 @@ from scova.cf import (
     CFSupportProfile,
     CFValidationProtocol,
     SeedPartition,
+    _numerical_identity,
     canonical_checksum,
 )
 from scova.simulate import generate_data
-from scripts import check_cf_campaign_prerequisites
 from scripts.audit_cf_pilot import audit_pilot
 from scripts.calibrate_cf_support import _screening_cell_gate
 from scripts.check_cf_campaign_prerequisites import prerequisite_reasons
@@ -327,11 +327,78 @@ def test_campaign_environment_identity_ignores_only_host_platform() -> None:
     )
 
 
-def test_numerical_fingerprints_exclude_campaign_governance() -> None:
-    assert "benchmarks/cf_reference_campaign.py" not in (
-        check_cf_campaign_prerequisites._CF_NUMERICAL_PATHS
+def _fake_numerical_source(commit: str, path: str) -> bytes:
+    if path.endswith(".json"):
+        return b"{}"
+    if path == "benchmarks/cf_reference_campaign.py":
+        governance = "candidate_source = True" if commit == "after-governance" else "pass"
+        return f"""
+STABILITY_SEEDS = (1, 2)
+class CampaignData: pass
+def _probabilities(): pass
+def _conditional_means(): pass
+def _errors(): pass
+def simulate_reference_cell(): pass
+def _declaration(): pass
+def _contrast_summary(): pass
+def _support_features(): pass
+def fit_campaign_record(): pass
+def run_shard():
+    {governance}
+""".encode()
+    if path == "benchmarks/cf_inference_campaign.py":
+        gate = "True" if commit == "after-inference-gate" else "False"
+        fingerprint = (
+            "cf_numerical_fingerprint('commit', 'inference')"
+            if commit == "after-identity-refactor"
+            else "_cf_numerical_fingerprint('commit')"
+        )
+        return f"""
+N_BOOTSTRAP = 999
+_NUMERICAL_ENVIRONMENT_FIELDS = ('python',)
+def _version(): pass
+def _commit(): pass
+def _numerical_environment_identity(): pass
+def _familywise_error_gate(): return {gate}
+def run_shard(): pass
+def aggregate(): return {fingerprint}
+""".encode()
+    return b"value = 1\n"
+
+
+def test_numerical_fingerprints_ignore_only_campaign_governance(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(_numerical_identity, "_committed_file", _fake_numerical_source)
+    for kind in ("external", "inference"):
+        assert _numerical_identity.cf_numerical_fingerprint("before-governance", kind) == (
+            _numerical_identity.cf_numerical_fingerprint("after-governance", kind)
+        )
+
+
+def test_numerical_fingerprints_are_evidence_specific(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(_numerical_identity, "_committed_file", _fake_numerical_source)
+    assert _numerical_identity.cf_numerical_fingerprint(
+        "before-inference-gate", "external"
+    ) == _numerical_identity.cf_numerical_fingerprint("after-inference-gate", "external")
+    assert _numerical_identity.cf_numerical_fingerprint(
+        "before-inference-gate", "inference"
+    ) != _numerical_identity.cf_numerical_fingerprint("after-inference-gate", "inference")
+
+
+def test_numerical_fingerprint_refactor_does_not_invalidate_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(_numerical_identity, "_committed_file", _fake_numerical_source)
+    before = _numerical_identity.cf_numerical_fingerprint(
+        "before-identity-refactor", "inference"
     )
-    assert "benchmarks/cf_reference_campaign.py" not in cf_inference_campaign._CF_NUMERICAL_PATHS
+    after = _numerical_identity.cf_numerical_fingerprint(
+        "after-identity-refactor", "inference"
+    )
+    assert before == after
 
 
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:

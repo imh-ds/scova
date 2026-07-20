@@ -6,30 +6,13 @@ import argparse
 import gzip
 import json
 import subprocess
-from hashlib import sha256
 from pathlib import Path
 from typing import Any, Literal
 
 from scova.cf import CFSupportProfile, CFValidationProtocol, canonical_checksum
+from scova.cf._numerical_identity import same_cf_numerical_implementation
 
 Stage = Literal["external", "inference", "validation"]
-
-# These files determine the randomized SCOVA-CF estimator and the frozen
-# external-agreement comparison. Campaign sharding, artifact serialization,
-# and source-candidate admission deliberately remain outside this identity.
-_CF_NUMERICAL_PATHS = (
-    "src/scova/_aipw.py",
-    "src/scova/cf/__init__.py",
-    "src/scova/cf/benchmarks.py",
-    "src/scova/cf/declaration.py",
-    "src/scova/cf/estimator.py",
-    "src/scova/cf/result.py",
-    "src/scova/cf/status.py",
-    "src/scova/cf/support.py",
-    "benchmarks/cf_external_agreement.py",
-    "benchmarks/cf_external_validation.py",
-)
-
 
 def _read(path: Path) -> dict[str, Any]:
     if path.suffix == ".gz":
@@ -40,30 +23,6 @@ def _read(path: Path) -> dict[str, Any]:
 
 def _current_commit() -> str:
     return subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-
-
-def cf_numerical_fingerprint(commit: str) -> str:
-    """Hash the committed SCOVA-CF numerical implementation at ``commit``."""
-    paths = subprocess.check_output(
-        ["git", "ls-tree", "-r", "--name-only", commit, "--", *_CF_NUMERICAL_PATHS],
-        text=True,
-    ).splitlines()
-    digest = sha256()
-    for path in sorted(paths):
-        digest.update(path.encode("utf-8"))
-        digest.update(b"\0")
-        digest.update(
-            subprocess.check_output(["git", "show", f"{commit}:{path}"])
-        )
-        digest.update(b"\0")
-    return digest.hexdigest()
-
-
-def _same_cf_numerical_implementation(left: str, right: str) -> bool:
-    try:
-        return cf_numerical_fingerprint(left) == cf_numerical_fingerprint(right)
-    except (OSError, subprocess.SubprocessError):
-        return False
 
 
 def _valid_checksum(values: dict[str, Any], field: str) -> bool:
@@ -144,8 +103,8 @@ def prerequisite_reasons(
             )
             if external.get("protocol_checksum") != protocol.checksum and not sourced_external:
                 reasons.append("external evidence protocol mismatch")
-            external_matches = _same_cf_numerical_implementation(
-                str(external.get("git_commit")), expected_commit
+            external_matches = same_cf_numerical_implementation(
+                str(external.get("git_commit")), expected_commit, "external"
             )
             if external.get("git_commit") != expected_commit and not external_matches:
                 reasons.append("external evidence numerical implementation mismatch")
@@ -159,8 +118,8 @@ def prerequisite_reasons(
                 reasons.append("inference evidence checksum mismatch")
             if inference.get("protocol_checksum") != protocol.checksum:
                 reasons.append("inference evidence protocol mismatch")
-            inference_matches = _same_cf_numerical_implementation(
-                str(inference.get("git_commit")), expected_commit
+            inference_matches = same_cf_numerical_implementation(
+                str(inference.get("git_commit")), expected_commit, "inference"
             )
             if inference.get("git_commit") != expected_commit and not inference_matches:
                 reasons.append("inference evidence numerical implementation mismatch")
