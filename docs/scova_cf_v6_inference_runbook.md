@@ -18,7 +18,7 @@ implementation identities before accepting them as sources.
 
 ## Dispatch order
 
-1. Dispatch `freeze_check` from tag `scova-cf-reference-v6-freeze-r5`.
+1. Dispatch `freeze_check` from tag `scova-cf-reference-v6-freeze-r6`.
 2. Dispatch `simultaneous_inference` from the same tag, entering the two
    upstream run IDs above in the candidate-profile and external-evidence fields.
    If all 64 shards finish but only their aggregate refuses a host-platform

@@ -30,6 +30,7 @@ from scova.cf import (
     canonical_checksum,
 )
 from scova.simulate import generate_data
+from scripts import check_cf_campaign_prerequisites
 from scripts.audit_cf_pilot import audit_pilot
 from scripts.calibrate_cf_support import _screening_cell_gate
 from scripts.check_cf_campaign_prerequisites import prerequisite_reasons
@@ -324,6 +325,13 @@ def test_campaign_environment_identity_ignores_only_host_platform() -> None:
         aggregate_cf_campaign._numerical_environment_identity({**base, "pandas": "2.3.0"})
         != aggregate_cf_campaign._numerical_environment_identity(base)
     )
+
+
+def test_numerical_fingerprints_exclude_campaign_governance() -> None:
+    assert "benchmarks/cf_reference_campaign.py" not in (
+        check_cf_campaign_prerequisites._CF_NUMERICAL_PATHS
+    )
+    assert "benchmarks/cf_reference_campaign.py" not in cf_inference_campaign._CF_NUMERICAL_PATHS
 
 
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:

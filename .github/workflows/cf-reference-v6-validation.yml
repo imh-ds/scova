@@ -45,7 +45,7 @@ permissions:
 
 env:
   SPEC: benchmarks/specs/cf_reference_v6.json
-  FREEZE_TAG: scova-cf-reference-v6-freeze-r5
+  FREEZE_TAG: scova-cf-reference-v6-freeze-r6
   PYTHONHASHSEED: "0"
 
 jobs:
@@ -90,10 +90,10 @@ jobs:
           python -m benchmarks.cf_inference_campaign --help
       - run: >-
           python -m scripts.write_cf_freeze_manifest --spec "$SPEC"
-          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v6-freeze-r5.json
+          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v6-freeze-r6.json
       - uses: actions/upload-artifact@v6
         with:
-          name: cf-reference-v6-freeze-r5
+          name: cf-reference-v6-freeze-r6
           path: freeze/
           retention-days: 90
 

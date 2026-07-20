@@ -15,9 +15,8 @@ from scova.cf import CFSupportProfile, CFValidationProtocol, canonical_checksum
 Stage = Literal["external", "inference", "validation"]
 
 # These files determine the randomized SCOVA-CF estimator and the frozen
-# external-agreement comparison.  A workflow-only or evidence-serialization
-# repair may safely reuse upstream numerical evidence only when this digest is
-# unchanged between the evidence commit and the current execution commit.
+# external-agreement comparison. Campaign sharding, artifact serialization,
+# and source-candidate admission deliberately remain outside this identity.
 _CF_NUMERICAL_PATHS = (
     "src/scova/_aipw.py",
     "src/scova/cf/__init__.py",
@@ -29,7 +28,6 @@ _CF_NUMERICAL_PATHS = (
     "src/scova/cf/support.py",
     "benchmarks/cf_external_agreement.py",
     "benchmarks/cf_external_validation.py",
-    "benchmarks/cf_reference_campaign.py",
 )
 
 

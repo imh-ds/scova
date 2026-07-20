@@ -46,7 +46,6 @@ _CF_NUMERICAL_PATHS = (
     "src/scova/cf/support.py",
     "benchmarks/cf_external_agreement.py",
     "benchmarks/cf_external_validation.py",
-    "benchmarks/cf_reference_campaign.py",
 )
 
 
