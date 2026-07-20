@@ -20,6 +20,35 @@ from calibrate_cf_support import (
 from scova.cf import CFSupportProfile, CFValidationProtocol, canonical_checksum
 
 
+def _candidate_matches_protocol(
+    protocol: CFValidationProtocol, candidate: CFSupportProfile
+) -> bool:
+    """Accept either a native candidate or the exact candidate frozen by the protocol."""
+    if candidate.protocol_checksum == protocol.checksum:
+        return True
+    source = protocol.candidate_source
+    return bool(
+        source
+        and candidate.protocol_checksum == source.get("protocol_checksum")
+        and candidate.checksum == source.get("profile_checksum")
+    )
+
+
+def _external_matches_protocol(
+    protocol: CFValidationProtocol, evidence: dict[str, Any]
+) -> bool:
+    """Accept current-protocol evidence or the exact frozen external source."""
+    if evidence.get("protocol_checksum") == protocol.checksum:
+        return True
+    source = protocol.external_source
+    return bool(
+        source
+        and evidence.get("protocol_checksum") == source.get("protocol_checksum")
+        and evidence.get("evidence_checksum") == source.get("evidence_checksum")
+        and evidence.get("git_commit") == source.get("git_commit")
+    )
+
+
 def validate(
     protocol: CFValidationProtocol,
     campaign: dict[str, Any],
@@ -33,7 +62,7 @@ def validate(
         raise ValueError("Only the complete frozen held-out lane can promote a profile")
     if campaign["protocol_checksum"] != protocol.checksum:
         raise ValueError("Validation evidence uses a different protocol")
-    if candidate.state != "candidate" or candidate.protocol_checksum != protocol.checksum:
+    if candidate.state != "candidate" or not _candidate_matches_protocol(protocol, candidate):
         raise ValueError("Candidate profile is not bound to this protocol")
     if campaign.get("candidate_profile_checksum") != candidate.checksum:
         raise ValueError("Held-out evidence was not generated under this candidate profile")
@@ -136,7 +165,7 @@ def validate(
     external_passed = bool(
         external_evidence
         and external_evidence.get("all_numerical_agreement_gates_passed", False)
-        and external_evidence.get("protocol_checksum") == protocol.checksum
+        and _external_matches_protocol(protocol, external_evidence)
     )
     all_passed &= inference_passed and external_passed
     result: dict[str, Any] = {
@@ -174,8 +203,8 @@ def validate(
     promoted = None
     if all_passed:
         promoted = CFSupportProfile(
-            profile_id=candidate.profile_id.removesuffix("-candidate") + "-promoted",
-            protocol_checksum=candidate.protocol_checksum,
+            profile_id=protocol.protocol_id + "-promoted",
+            protocol_checksum=protocol.checksum,
             calibration_evidence_checksum=candidate.calibration_evidence_checksum,
             validation_evidence_checksum=result["evidence_checksum"],
             thresholds=candidate.thresholds,

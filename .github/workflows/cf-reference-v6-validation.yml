@@ -45,7 +45,7 @@ permissions:
 
 env:
   SPEC: benchmarks/specs/cf_reference_v6.json
-  FREEZE_TAG: scova-cf-reference-v6-freeze-r7
+  FREEZE_TAG: scova-cf-reference-v6-freeze-r8
   PYTHONHASHSEED: "0"
 
 jobs:
@@ -90,10 +90,10 @@ jobs:
           python -m benchmarks.cf_inference_campaign --help
       - run: >-
           python -m scripts.write_cf_freeze_manifest --spec "$SPEC"
-          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v6-freeze-r7.json
+          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v6-freeze-r8.json
       - uses: actions/upload-artifact@v6
         with:
-          name: cf-reference-v6-freeze-r7
+          name: cf-reference-v6-freeze-r8
           path: freeze/
           retention-days: 90
 
@@ -550,7 +550,8 @@ jobs:
           python scripts/render_cf_validation_report.py --spec "$SPEC"
           --evidence-root evidence
           --output evidence/cf-reference-validation-report.md
-      - run: >-
+      - if: steps.heldout.outcome == 'success'
+        run: >-
           python scripts/package_cf_support_profile.py --spec "$SPEC"
           --evidence-root evidence --output evidence/proposed-support-profiles.json
       - uses: actions/upload-artifact@v6
@@ -559,6 +560,10 @@ jobs:
           name: cf-release-evidence
           path: evidence/
           retention-days: 90
+      - if: steps.heldout.outcome != 'success'
+        run: |
+          echo "Held-out validation blocked promotion. See cf-release-evidence/cf-reference-validation-report.md."
+          exit 1
 
   promotion_patch:
     if: inputs.tier == 'promotion_patch'

@@ -3,7 +3,7 @@ from hashlib import sha256
 from pathlib import Path
 
 from benchmarks.stage3_campaign import _failed_fit
-from scripts import promote_cf_reference
+from scripts import check_cf_reference_release, promote_cf_reference
 from scripts.check_critical_coverage import CRITICAL_SUFFIXES, coverage_failures
 from scripts.check_stage3_release import blocking_reasons
 from scripts.check_stage5b_promotion_audit import blocking_reasons as stage5b_blocking_reasons
@@ -60,6 +60,20 @@ def test_evidence_and_campaign_failures_are_explicit(tmp_path: Path) -> None:
         "type": "RuntimeError",
         "message": "deliberate",
     }
+
+
+def test_release_audit_accepts_only_an_exact_declared_evidence_source() -> None:
+    source = {
+        "protocol_checksum": "source-protocol",
+        "evidence_checksum": "source-evidence",
+        "git_commit": "source-commit",
+    }
+    evidence = dict(source)
+
+    assert check_cf_reference_release._matches_declared_source(evidence, source)
+    assert not check_cf_reference_release._matches_declared_source(
+        {**evidence, "evidence_checksum": "tampered"}, source
+    )
 
 
 def _write_hashed(
@@ -283,7 +297,7 @@ def test_cf_v6_workflow_limits_execution_to_the_inference_amendment() -> None:
     )
     assert "SCOVA-CF v6 inference-profile amendment" in workflow
     assert "benchmarks/specs/cf_reference_v6.json" in workflow
-    assert "scova-cf-reference-v6-freeze-r7" in workflow
+    assert "scova-cf-reference-v6-freeze-r8" in workflow
     assert "- calibration\n" not in workflow
     assert "calibration_source" in workflow
     assert "- simultaneous_inference" in workflow
