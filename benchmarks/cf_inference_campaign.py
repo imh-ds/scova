@@ -74,6 +74,25 @@ def _numerical_environment_identity(environment: dict[str, Any]) -> dict[str, st
     return {field: str(environment[field]) for field in _NUMERICAL_ENVIRONMENT_FIELDS}
 
 
+def _familywise_error_gate(
+    records: list[dict[str, Any]], *, alpha: float, multiplier: float
+) -> tuple[float | None, bool]:
+    """Check FWER control only for a family containing a true null contrast.
+
+    A family with no true null has a structural FWER of zero; requiring it to
+    equal ``alpha`` would incorrectly reject valid non-null simulations.
+    Simultaneous procedures may also be conservative, so validity requires an
+    upper bound rather than equality to the nominal error rate.
+    """
+    if not any(any(contrast["null"] for contrast in record["contrasts"]) for record in records):
+        return None, True
+    familywise_error = float(
+        np.mean([record["simultaneous"]["any_null_rejected"] for record in records])
+    )
+    mcse = np.sqrt(alpha * (1.0 - alpha) / len(records))
+    return familywise_error, bool(familywise_error <= alpha + multiplier * mcse)
+
+
 def _cf_numerical_fingerprint(commit: str) -> str:
     paths = subprocess.check_output(
         ["git", "ls-tree", "-r", "--name-only", commit, "--", *_CF_NUMERICAL_PATHS],
@@ -284,7 +303,11 @@ def aggregate(
         if any(r["refused"] for r in cell_records):
             audit = {"passed": False, "reason": "unexpected-refusal"}
         else:
-            fwer = float(np.mean([r["simultaneous"]["any_null_rejected"] for r in cell_records]))
+            fwer, fwer_passed = _familywise_error_gate(
+                cell_records,
+                alpha=float(protocol.metrics["type_i_error"]),
+                multiplier=multiplier,
+            )
             coverage = float(np.mean([r["simultaneous"]["covered_family"] for r in cell_records]))
             mcse = np.sqrt(0.05 * 0.95 / len(cell_records))
             effect = str(cell_records[0]["cell"]["effect"])
@@ -305,7 +328,7 @@ def aggregate(
                 or abs(omnibus_size - 0.05) <= multiplier * mcse
             )
             passed = bool(
-                abs(fwer - 0.05) <= multiplier * mcse
+                fwer_passed
                 and coverage >= 0.95 - multiplier * mcse
                 and omnibus_passed
             )

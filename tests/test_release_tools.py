@@ -283,7 +283,7 @@ def test_cf_v6_workflow_limits_execution_to_the_inference_amendment() -> None:
     )
     assert "SCOVA-CF v6 inference-profile amendment" in workflow
     assert "benchmarks/specs/cf_reference_v6.json" in workflow
-    assert "scova-cf-reference-v6-freeze-r3" in workflow
+    assert "scova-cf-reference-v6-freeze-r4" in workflow
     assert "- calibration\n" not in workflow
     assert "calibration_source" in workflow
     assert "- simultaneous_inference" in workflow

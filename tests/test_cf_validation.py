@@ -246,6 +246,27 @@ def test_inference_environment_identity_ignores_only_host_platform() -> None:
         cf_inference_campaign._numerical_environment_identity(incomplete)
 
 
+def test_inference_fwer_gate_requires_control_only_when_a_true_null_exists() -> None:
+    no_null = [{"contrasts": [{"null": False}], "simultaneous": {"any_null_rejected": False}}]
+    assert cf_inference_campaign._familywise_error_gate(
+        no_null, alpha=0.05, multiplier=2.0
+    ) == (None, True)
+    conservative = [
+        {"contrasts": [{"null": True}], "simultaneous": {"any_null_rejected": False}}
+        for _ in range(100)
+    ]
+    assert cf_inference_campaign._familywise_error_gate(
+        conservative, alpha=0.05, multiplier=2.0
+    ) == (0.0, True)
+    inflated = [
+        {"contrasts": [{"null": True}], "simultaneous": {"any_null_rejected": index < 20}}
+        for index in range(100)
+    ]
+    assert cf_inference_campaign._familywise_error_gate(
+        inflated, alpha=0.05, multiplier=2.0
+    ) == (0.2, False)
+
+
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:
     blocked = json.loads(BLOCKED_V2.read_text(encoding="utf-8"))
     assert blocked["status"] == "blocked"
