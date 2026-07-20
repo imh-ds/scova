@@ -1,4 +1,4 @@
-name: SCOVA-CF v5 amended-profile validation
+name: SCOVA-CF v6 inference-profile amendment
 
 on:
   workflow_dispatch:
@@ -9,19 +9,14 @@ on:
         type: choice
         options:
           - freeze_check
-          - pilot
-          - calibrate_support
-          - external_smoke
-          - external_agreement
           - simultaneous_inference
-          - inference_reaggregate
           - validation
           - aggregate
           - promotion_patch
           - release_audit
           - release
       calibration_run_id:
-        description: Run containing the v5 recalibrated-profile artifact
+        description: Run containing the checksum-bound v5 candidate profile artifact
         required: false
       validation_run_id:
         description: Run containing held-out validation campaign
@@ -47,14 +42,13 @@ permissions:
   contents: read
 
 env:
-  SPEC: benchmarks/specs/cf_reference_v5.json
-  FREEZE_TAG: scova-cf-reference-v5-freeze-r5
+  SPEC: benchmarks/specs/cf_reference_v6.json
+  FREEZE_TAG: scova-cf-reference-v6-freeze-r2
   PYTHONHASHSEED: "0"
 
 jobs:
   prepare:
     if: >-
-      inputs.tier == 'pilot' ||
       inputs.tier == 'validation' || inputs.tier == 'simultaneous_inference'
     runs-on: ubuntu-latest
     outputs:
@@ -66,19 +60,16 @@ jobs:
         run: |
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json, os
-          counts = {"pilot": 16, "simultaneous_inference": 64}
+          counts = {"simultaneous_inference": 64}
           count = counts.get(os.environ["TIER"], 128)
           print("shards=" + json.dumps(list(range(count))))
           PY
 
   campaign_freeze:
     if: >-
-      inputs.tier == 'freeze_check' || inputs.tier == 'pilot' ||
-      inputs.tier == 'calibrate_support' || inputs.tier == 'aggregate' ||
-      inputs.tier == 'external_smoke' ||
-      inputs.tier == 'external_agreement' ||
+      inputs.tier == 'freeze_check' || inputs.tier == 'aggregate' ||
       inputs.tier == 'simultaneous_inference' ||
-      inputs.tier == 'inference_reaggregate' || inputs.tier == 'validation'
+      inputs.tier == 'validation'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -97,16 +88,15 @@ jobs:
           python -m benchmarks.cf_inference_campaign --help
       - run: >-
           python -m scripts.write_cf_freeze_manifest --spec "$SPEC"
-          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v5-freeze-r5.json
+          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v6-freeze-r2.json
       - uses: actions/upload-artifact@v6
         with:
-          name: cf-reference-v5-freeze-r5
+          name: cf-reference-v6-freeze-r2
           path: freeze/
           retention-days: 90
 
   prerequisite_lock:
     if: >-
-      inputs.tier == 'external_smoke' || inputs.tier == 'external_agreement' ||
       inputs.tier == 'simultaneous_inference' || inputs.tier == 'validation'
     needs: campaign_freeze
     runs-on: ubuntu-latest

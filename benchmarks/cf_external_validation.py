@@ -7,9 +7,10 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 import numpy as np
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin, clone
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
 from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.metrics import mean_squared_error
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,6 +53,109 @@ class KnownRandomizationClassifier(ClassifierMixin, BaseEstimator):
 
     def predict_proba(self, x: np.ndarray) -> np.ndarray:
         return np.tile(np.asarray(self.probabilities, dtype=float), (len(x), 1))
+
+    def predict(self, x: np.ndarray) -> np.ndarray:
+        """Return the modal declared arm for APIs that require classifier labels."""
+        probability = self.predict_proba(x)
+        return self.classes_[np.argmax(probability, axis=1)]
+
+
+class SelectedOutcomeRegressor(RegressorMixin, BaseEstimator):
+    """Validation-only replica of the declared per-arm outcome learner policy.
+
+    DoubleML fits its outcome nuisance separately for each treatment level.  This
+    wrapper makes that fit choose the same candidate family and inner-fold rule
+    as SCOVA-CF's declared ``linear`` or ``adaptive`` outcome policy.
+    """
+
+    def __init__(self, learner_policy: str) -> None:
+        self.learner_policy = learner_policy
+
+    def fit(self, x: np.ndarray, y: np.ndarray) -> SelectedOutcomeRegressor:
+        features = np.asarray(x, dtype=float)
+        outcome = np.asarray(y, dtype=float)
+        if self.learner_policy == "linear":
+            self.selected_name_ = "Ridge"
+            self.selection_scores_ = {"Ridge": 0.0}
+            self.model_ = Ridge(alpha=1.0).fit(features, outcome)
+            return self
+        if self.learner_policy != "adaptive":
+            raise ValueError(f"Unknown learner policy: {self.learner_policy}")
+        candidates = {
+            "Ridge": Ridge(alpha=1.0),
+            "HistGradientBoostingRegressor": HistGradientBoostingRegressor(
+                learning_rate=0.05,
+                max_leaf_nodes=15,
+                l2_regularization=1.0,
+                random_state=0,
+            ),
+        }
+        folds = np.arange(len(outcome)) % min(3, len(outcome))
+        scores: dict[str, float] = {}
+        for name, candidate in candidates.items():
+            if len(np.unique(folds)) < 2:
+                scores[name] = float("inf")
+                continue
+            predicted = np.empty(len(outcome))
+            for fold in np.unique(folds):
+                train = folds != fold
+                test = ~train
+                model = clone(candidate).fit(features[train], outcome[train])
+                predicted[test] = np.asarray(model.predict(features[test]), dtype=float)
+            scores[name] = float(mean_squared_error(outcome, predicted))
+        self.selected_name_ = min(scores, key=scores.__getitem__)
+        self.selection_scores_ = scores
+        self.model_ = clone(candidates[self.selected_name_]).fit(features, outcome)
+        return self
+
+    def predict(self, x: np.ndarray) -> np.ndarray:
+        return np.asarray(self.model_.predict(np.asarray(x, dtype=float)), dtype=float)
+
+
+class TreatmentSpecificOutcomeRegressor(RegressorMixin, BaseEstimator):
+    """Fit the declared outcome policy separately for each discrete treatment.
+
+    EconML supplies covariates followed by one-hot non-reference treatment
+    columns to ``model_regression``.  Splitting those rows restores the
+    treatment-specific nuisance structure used by SCOVA-CF while EconML still
+    constructs and aggregates its own doubly robust pseudo-outcomes.
+    """
+
+    def __init__(self, n_groups: int, learner_policy: str) -> None:
+        self.n_groups = n_groups
+        self.learner_policy = learner_policy
+
+    def _codes(self, design: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        values = np.asarray(design, dtype=float)
+        treatment_columns = self.n_groups - 1
+        if values.ndim != 2 or values.shape[1] < treatment_columns:
+            raise ValueError("EconML outcome design has incompatible treatment columns")
+        features = values[:, : values.shape[1] - treatment_columns]
+        encoded = values[:, values.shape[1] - treatment_columns :]
+        codes = np.where(np.any(encoded != 0.0, axis=1), np.argmax(encoded, axis=1) + 1, 0)
+        return features, codes.astype(int)
+
+    def fit(self, x: np.ndarray, y: np.ndarray) -> TreatmentSpecificOutcomeRegressor:
+        features, codes = self._codes(x)
+        outcome = np.asarray(y, dtype=float)
+        self.models_ = []
+        for code in range(self.n_groups):
+            mask = codes == code
+            if not np.any(mask):
+                raise ValueError(f"No observations for treatment level {code}")
+            self.models_.append(
+                SelectedOutcomeRegressor(self.learner_policy).fit(features[mask], outcome[mask])
+            )
+        return self
+
+    def predict(self, x: np.ndarray) -> np.ndarray:
+        features, codes = self._codes(x)
+        predicted = np.empty(len(features), dtype=float)
+        for code, model in enumerate(self.models_):
+            mask = codes == code
+            if np.any(mask):
+                predicted[mask] = model.predict(features[mask])
+        return predicted
 
 
 def fixed_nuisance_score(
@@ -189,11 +293,11 @@ def doubleml_apos(
     except ImportError:
         return ExternalAgreement("DoubleMLAPOS", "not-installed", "blocked/missing-dependency")
     try:
-        propensity_model, outcome_model = _learners(learner_policy)
+        propensity_model, _ = _learners(learner_policy)
         levels = tuple(int(value) for value in np.unique(treatment))
         model = dml.DoubleMLAPOS(
             dml.DoubleMLData.from_arrays(x, outcome, treatment),
-            ml_g=outcome_model,
+            ml_g=SelectedOutcomeRegressor(learner_policy),
             ml_m=propensity_model,
             treatment_levels=levels,
             n_folds=len(np.unique(folds)),
@@ -242,11 +346,12 @@ def econml_drlearner(
     except ImportError:
         return ExternalAgreement("EconML.DRLearner", "not-installed", "blocked/missing-dependency")
     try:
-        _, outcome_model = _learners(learner_policy)
         levels = tuple(int(value) for value in np.unique(treatment))
         model = DRLearner(
             model_propensity=KnownRandomizationClassifier(known_probabilities),
-            model_regression=outcome_model,
+            model_regression=TreatmentSpecificOutcomeRegressor(
+                n_groups=len(levels), learner_policy=learner_policy
+            ),
             categories=levels,
             cv=_splits(folds),
             min_propensity=1e-12,

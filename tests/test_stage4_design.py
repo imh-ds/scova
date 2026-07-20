@@ -2,6 +2,7 @@ import json
 
 import numpy as np
 import pytest
+from sklearn.ensemble import RandomForestRegressor
 
 from scova import (
     DesignDeclaration,
@@ -56,6 +57,12 @@ def prepared() -> tuple[SCOVADesign, SCOVADesignResult, np.ndarray]:
     )
     engine = SCOVADesign(thresholds=thresholds())
     return engine, engine.prepare_design(data, declaration), frame["outcome"].to_numpy()
+
+
+def test_design_accepts_an_unfitted_sklearn_outcome_model() -> None:
+    model = RandomForestRegressor(n_estimators=2, random_state=1)
+    engine = SCOVADesign(outcome_model=model)
+    assert engine.outcome_model is model
 
 
 def test_outer_split_analysis_round_trip_and_reports(tmp_path) -> None:

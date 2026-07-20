@@ -1,10 +1,19 @@
+import gzip
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
+from sklearn.linear_model import Ridge
 
-from benchmarks.cf_external_validation import KnownRandomizationClassifier, fixed_nuisance_score
+from benchmarks import cf_inference_campaign
+from benchmarks.cf_external_validation import (
+    KnownRandomizationClassifier,
+    SelectedOutcomeRegressor,
+    TreatmentSpecificOutcomeRegressor,
+    fixed_nuisance_score,
+)
 from benchmarks.cf_reference_campaign import (
     plasmode_source_checksum,
     run_campaign,
@@ -26,7 +35,7 @@ from scripts.check_cf_campaign_prerequisites import prerequisite_reasons
 
 SPEC = Path("benchmarks/specs/cf_reference_v3.json")
 V4_SPEC = Path("benchmarks/specs/cf_reference_v4.json")
-V5_SPEC = Path("benchmarks/specs/cf_reference_v5.json")
+V6_SPEC = Path("benchmarks/specs/cf_reference_v6.json")
 BLOCKED_V2 = Path("benchmarks/specs/cf_reference_v2_blocked.json")
 
 
@@ -96,17 +105,53 @@ def test_one_sided_calibration_screening_allows_conservative_inference() -> None
     assert audit["type_i_ok"] is True
 
 
-def test_v5_amendment_binds_only_the_archived_v4_calibration_source() -> None:
-    protocol = CFValidationProtocol.load(V5_SPEC)
-    assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v5"
+def test_v6_inference_amendment_binds_archived_upstream_evidence() -> None:
+    protocol = CFValidationProtocol.load(V6_SPEC)
+    assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v6"
     assert protocol.calibration_source == {
         "protocol_id": "cf-randomized-continuous-aipw-unnormalized-v4",
         "protocol_checksum": "002d1b3e06f2d54bbc4f391f2e855892418275d44ae8a6cf69fee72fbdbd3cff",
         "evidence_checksum": "bbfa9374c3fe3af99c73f695a163f71110ff990531fe245d6108bd3b64978bf3",
         "git_commit": "2abca2746530ba033a0e857b32f7d34edba5711c",
     }
+    assert protocol.candidate_source == {
+        "protocol_id": "cf-randomized-continuous-aipw-unnormalized-v5",
+        "protocol_checksum": "7521cf977c51e97498ef7623c6facadfb8423a22e0740c2145d3ee7bbe68431b",
+        "profile_checksum": "ea2614448b9c62b4db8c302aa56d2d8d8df4f8d6417dbc1ea65e5400c9639904",
+    }
+    assert protocol.external_source is not None
+    assert protocol.failed_inference_source is not None
     assert protocol.reference_profile["minimum_group_count"] == 50
     assert protocol.reference_profile["maximum_group_count"] == 3
+    assert protocol.inference is not None and protocol.inference.start == 3_900_000_000
+    assert all("cell" in reference for reference in protocol.inference_cells)
+    for reference in protocol.inference_cells:
+        cell = reference["cell"]
+        assert cell["support"] == "strong"
+        assert cell["n_groups"] <= 3
+        assert cell["n_per_group"] >= 80
+    assert CFValidationProtocol.from_dict(protocol.to_dict()).checksum == protocol.checksum
+
+
+@pytest.mark.parametrize(
+    ("source", "field", "message"),
+    (
+        ("candidate_source", "profile_checksum", "candidate source is missing fields"),
+        ("external_source", "evidence_checksum", "external source is missing fields"),
+        (
+            "failed_inference_source",
+            "git_commit",
+            "failed inference source is missing fields",
+        ),
+    ),
+)
+def test_v6_protocol_rejects_incomplete_reused_evidence_sources(
+    source: str, field: str, message: str
+) -> None:
+    values = json.loads(V6_SPEC.read_text(encoding="utf-8"))
+    del values[source][field]
+    with pytest.raises(ValueError, match=message):
+        CFValidationProtocol.from_dict(values)
 
 
 def test_known_randomization_adapter_never_estimates_fixture_propensities() -> None:
@@ -117,6 +162,64 @@ def test_known_randomization_adapter_never_estimates_fixture_propensities() -> N
         adapter.predict_proba(np.ones((3, 2))),
         np.array([[0.2, 0.3, 0.5], [0.2, 0.3, 0.5], [0.2, 0.3, 0.5]]),
     )
+    assert np.array_equal(adapter.predict(np.ones((2, 2))), np.array([2, 2]))
+
+
+def test_external_outcome_adapters_preserve_treatment_specific_linear_policy() -> None:
+    features = np.array([[0.0], [1.0], [2.0], [3.0], [0.0], [1.0], [2.0], [3.0]])
+    treatment = np.array([0, 0, 0, 0, 1, 1, 1, 1])
+    outcome = np.where(treatment == 0, 1.0 + 2.0 * features[:, 0], -3.0 + 5.0 * features[:, 0])
+    design = np.column_stack([features, treatment])
+    fitted = TreatmentSpecificOutcomeRegressor(n_groups=2, learner_policy="linear").fit(
+        design, outcome
+    )
+    counterfactual_design = np.array([[4.0, 0.0], [4.0, 1.0]])
+    expected = np.array(
+        [
+            Ridge(alpha=1.0).fit(features[:4], outcome[:4]).predict([[4.0]])[0],
+            Ridge(alpha=1.0).fit(features[4:], outcome[4:]).predict([[4.0]])[0],
+        ]
+    )
+    assert np.allclose(fitted.predict(counterfactual_design), expected)
+    selected = SelectedOutcomeRegressor("linear").fit(features[:4], outcome[:4])
+    assert selected.selected_name_ == "Ridge"
+
+
+def test_inference_aggregate_main_creates_requested_output_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    output = tmp_path / "nested" / "evidence" / "inference.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "cf_inference_campaign",
+            "--spec",
+            str(V6_SPEC),
+            "--aggregate",
+            "unused-shard.ndjson.gz",
+            "--output",
+            str(output),
+        ],
+    )
+    monkeypatch.setattr(cf_inference_campaign, "aggregate", lambda *_args, **_kwargs: {"ok": True})
+    cf_inference_campaign.main()
+    assert json.loads(output.read_text(encoding="utf-8")) == {"ok": True}
+
+
+def test_v6_inference_shard_accepts_checksum_bound_inline_cells(tmp_path: Path) -> None:
+    output = tmp_path / "inference-0.ndjson.gz"
+    cf_inference_campaign.run_shard(
+        CFValidationProtocol.load(V6_SPEC),
+        output=output,
+        shard_index=0,
+        shard_count=1,
+        replications=1,
+    )
+    with gzip.open(output, "rt", encoding="utf-8") as stream:
+        record = json.loads(stream.readline())
+    assert record["simulation_cell_index"] is None
+    assert record["cell"]["support"] == "strong"
 
 
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:
