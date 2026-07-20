@@ -24,6 +24,17 @@ from scova.cf import CFValidationProtocol, canonical_checksum
 
 N_BOOTSTRAP = 999
 
+# GitHub-hosted runners can differ in their Linux kernel patch level.  That is
+# retained in the artifact for audit, but it is not a numerical dependency and
+# must not split an otherwise identical frozen campaign.
+_NUMERICAL_ENVIRONMENT_FIELDS = (
+    "python",
+    "scova",
+    "numpy",
+    "scipy",
+    "scikit-learn",
+)
+
 _CF_NUMERICAL_PATHS = (
     "src/scova/_aipw.py",
     "src/scova/cf/__init__.py",
@@ -53,6 +64,14 @@ def _commit() -> str:
         ).strip()
     except (OSError, subprocess.SubprocessError):
         return "unavailable"
+
+
+def _numerical_environment_identity(environment: dict[str, Any]) -> dict[str, str]:
+    """Return the portable, version-pinned identity of a shard environment."""
+    missing = [field for field in _NUMERICAL_ENVIRONMENT_FIELDS if field not in environment]
+    if missing:
+        raise ValueError(f"Inference shard environment is missing fields: {missing}")
+    return {field: str(environment[field]) for field in _NUMERICAL_ENVIRONMENT_FIELDS}
 
 
 def _cf_numerical_fingerprint(commit: str) -> str:
@@ -223,8 +242,12 @@ def aggregate(
     if len(metadata) != 64:
         raise ValueError("Frozen simultaneous-inference evidence requires 64 shards")
     commits = {value["git_commit"] for value in metadata}
-    environments = {json.dumps(value["environment"], sort_keys=True) for value in metadata}
-    if len(commits) != 1 or len(environments) != 1:
+    environments = [value["environment"] for value in metadata]
+    numerical_environments = {
+        json.dumps(_numerical_environment_identity(environment), sort_keys=True)
+        for environment in environments
+    }
+    if len(commits) != 1 or len(numerical_environments) != 1:
         raise ValueError("Inference shards mix commits or environments")
     source_commits = sorted(commits)
     execution_commit = _commit()
@@ -233,7 +256,7 @@ def aggregate(
     source_fingerprints = {_cf_numerical_fingerprint(commit) for commit in source_commits}
     if source_fingerprints != {_cf_numerical_fingerprint(execution_commit)}:
         raise ValueError("Inference shards use a different SCOVA-CF numerical implementation")
-    environment = json.loads(next(iter(environments)))
+    environment = json.loads(next(iter(numerical_environments)))
     for package, expected_version in protocol.software.items():
         if package in environment and environment[package] != expected_version:
             raise ValueError(f"Inference shard has wrong {package} version")
@@ -301,7 +324,10 @@ def aggregate(
         "git_commit": execution_commit,
         "source_git_commits": source_commits,
         "numerical_implementation_checksum": source_fingerprints.pop(),
-        "environment": json.loads(environments.pop()),
+        "environment": environment,
+        "host_platforms": sorted(
+            {str(values.get("platform", "unavailable")) for values in environments}
+        ),
         "bootstrap_replications": N_BOOTSTRAP,
         "all_inference_gates_passed": all_passed,
         "audit": audits,
