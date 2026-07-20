@@ -1,13 +1,14 @@
 import gzip
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
 import pytest
 from sklearn.linear_model import Ridge
 
-from benchmarks import cf_inference_campaign
+from benchmarks import aggregate_cf_campaign, cf_inference_campaign
 from benchmarks.cf_external_validation import (
     KnownRandomizationClassifier,
     SelectedOutcomeRegressor,
@@ -265,6 +266,64 @@ def test_inference_fwer_gate_requires_control_only_when_a_true_null_exists() -> 
     assert cf_inference_campaign._familywise_error_gate(
         inflated, alpha=0.05, multiplier=2.0
     ) == (0.2, False)
+
+
+def test_validation_accepts_the_checksum_bound_source_candidate(tmp_path: Path) -> None:
+    protocol = CFValidationProtocol.load(V6_SPEC)
+    candidate = CFSupportProfile(
+        profile_id="source-candidate",
+        protocol_checksum="source-protocol-checksum",
+        calibration_evidence_checksum="a" * 64,
+        validation_evidence_checksum=None,
+        thresholds={"minimum_ess_ratio": 0.25},
+        compatibility=protocol.reference_profile,
+    )
+    sourced_protocol = replace(
+        protocol,
+        candidate_source={
+            "protocol_id": "source-protocol",
+            "protocol_checksum": candidate.protocol_checksum,
+            "profile_checksum": candidate.checksum,
+        },
+    )
+    output = tmp_path / "sourced-validation.ndjson.gz"
+    run_shard(
+        sourced_protocol,
+        lane="validation",
+        output=output,
+        shard_index=0,
+        shard_count=128,
+        resume=False,
+        replications_override=1,
+        max_cells=1,
+        include_stability=False,
+        candidate_profile=candidate,
+    )
+    metadata = json.loads(
+        output.with_suffix(output.suffix + ".metadata.json").read_text(encoding="utf-8")
+    )
+    assert metadata["candidate_profile_checksum"] == candidate.checksum
+
+
+def test_campaign_environment_identity_ignores_only_host_platform() -> None:
+    base = {
+        "python": "3.12.13",
+        "scova": "0.3.0.dev0",
+        "numpy": "2.2.6",
+        "pandas": "2.2.3",
+        "scipy": "1.15.3",
+        "scikit-learn": "1.6.1",
+        "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+    }
+    other_host = {**base, "platform": "Linux-6.17.0-1018-azure-x86_64-with-glibc2.39"}
+    assert (
+        aggregate_cf_campaign._numerical_environment_identity(base)
+        == aggregate_cf_campaign._numerical_environment_identity(other_host)
+    )
+    assert (
+        aggregate_cf_campaign._numerical_environment_identity({**base, "pandas": "2.3.0"})
+        != aggregate_cf_campaign._numerical_environment_identity(base)
+    )
 
 
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:

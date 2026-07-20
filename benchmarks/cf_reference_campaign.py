@@ -475,10 +475,20 @@ def run_shard(
 ) -> None:
     partition = getattr(protocol, lane)
     if lane == "validation":
+        candidate_source = protocol.candidate_source
+        sourced_candidate = bool(
+            candidate_profile is not None
+            and candidate_source
+            and candidate_profile.protocol_checksum == candidate_source.get("protocol_checksum")
+            and candidate_profile.checksum == candidate_source.get("profile_checksum")
+        )
         if (
             candidate_profile is None
             or candidate_profile.state != "candidate"
-            or candidate_profile.protocol_checksum != protocol.checksum
+            or (
+                candidate_profile.protocol_checksum != protocol.checksum
+                and not sourced_candidate
+            )
         ):
             raise ValueError("Held-out shards require the frozen candidate profile")
     elif candidate_profile is not None:
