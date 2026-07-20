@@ -24,6 +24,17 @@ from scova.cf import CFValidationProtocol, canonical_checksum
 
 N_BOOTSTRAP = 999
 
+# GitHub-hosted runners can differ in their Linux kernel patch level.  That is
+# retained in the artifact for audit, but it is not a numerical dependency and
+# must not split an otherwise identical frozen campaign.
+_NUMERICAL_ENVIRONMENT_FIELDS = (
+    "python",
+    "scova",
+    "numpy",
+    "scipy",
+    "scikit-learn",
+)
+
 _CF_NUMERICAL_PATHS = (
     "src/scova/_aipw.py",
     "src/scova/cf/__init__.py",
@@ -53,6 +64,33 @@ def _commit() -> str:
         ).strip()
     except (OSError, subprocess.SubprocessError):
         return "unavailable"
+
+
+def _numerical_environment_identity(environment: dict[str, Any]) -> dict[str, str]:
+    """Return the portable, version-pinned identity of a shard environment."""
+    missing = [field for field in _NUMERICAL_ENVIRONMENT_FIELDS if field not in environment]
+    if missing:
+        raise ValueError(f"Inference shard environment is missing fields: {missing}")
+    return {field: str(environment[field]) for field in _NUMERICAL_ENVIRONMENT_FIELDS}
+
+
+def _familywise_error_gate(
+    records: list[dict[str, Any]], *, alpha: float, multiplier: float
+) -> tuple[float | None, bool]:
+    """Check FWER control only for a family containing a true null contrast.
+
+    A family with no true null has a structural FWER of zero; requiring it to
+    equal ``alpha`` would incorrectly reject valid non-null simulations.
+    Simultaneous procedures may also be conservative, so validity requires an
+    upper bound rather than equality to the nominal error rate.
+    """
+    if not any(any(contrast["null"] for contrast in record["contrasts"]) for record in records):
+        return None, True
+    familywise_error = float(
+        np.mean([record["simultaneous"]["any_null_rejected"] for record in records])
+    )
+    mcse = np.sqrt(alpha * (1.0 - alpha) / len(records))
+    return familywise_error, bool(familywise_error <= alpha + multiplier * mcse)
 
 
 def _cf_numerical_fingerprint(commit: str) -> str:
@@ -223,8 +261,12 @@ def aggregate(
     if len(metadata) != 64:
         raise ValueError("Frozen simultaneous-inference evidence requires 64 shards")
     commits = {value["git_commit"] for value in metadata}
-    environments = {json.dumps(value["environment"], sort_keys=True) for value in metadata}
-    if len(commits) != 1 or len(environments) != 1:
+    environments = [value["environment"] for value in metadata]
+    numerical_environments = {
+        json.dumps(_numerical_environment_identity(environment), sort_keys=True)
+        for environment in environments
+    }
+    if len(commits) != 1 or len(numerical_environments) != 1:
         raise ValueError("Inference shards mix commits or environments")
     source_commits = sorted(commits)
     execution_commit = _commit()
@@ -233,7 +275,7 @@ def aggregate(
     source_fingerprints = {_cf_numerical_fingerprint(commit) for commit in source_commits}
     if source_fingerprints != {_cf_numerical_fingerprint(execution_commit)}:
         raise ValueError("Inference shards use a different SCOVA-CF numerical implementation")
-    environment = json.loads(next(iter(environments)))
+    environment = json.loads(next(iter(numerical_environments)))
     for package, expected_version in protocol.software.items():
         if package in environment and environment[package] != expected_version:
             raise ValueError(f"Inference shard has wrong {package} version")
@@ -261,7 +303,11 @@ def aggregate(
         if any(r["refused"] for r in cell_records):
             audit = {"passed": False, "reason": "unexpected-refusal"}
         else:
-            fwer = float(np.mean([r["simultaneous"]["any_null_rejected"] for r in cell_records]))
+            fwer, fwer_passed = _familywise_error_gate(
+                cell_records,
+                alpha=float(protocol.metrics["type_i_error"]),
+                multiplier=multiplier,
+            )
             coverage = float(np.mean([r["simultaneous"]["covered_family"] for r in cell_records]))
             mcse = np.sqrt(0.05 * 0.95 / len(cell_records))
             effect = str(cell_records[0]["cell"]["effect"])
@@ -282,7 +328,7 @@ def aggregate(
                 or abs(omnibus_size - 0.05) <= multiplier * mcse
             )
             passed = bool(
-                abs(fwer - 0.05) <= multiplier * mcse
+                fwer_passed
                 and coverage >= 0.95 - multiplier * mcse
                 and omnibus_passed
             )
@@ -301,7 +347,10 @@ def aggregate(
         "git_commit": execution_commit,
         "source_git_commits": source_commits,
         "numerical_implementation_checksum": source_fingerprints.pop(),
-        "environment": json.loads(environments.pop()),
+        "environment": environment,
+        "host_platforms": sorted(
+            {str(values.get("platform", "unavailable")) for values in environments}
+        ),
         "bootstrap_replications": N_BOOTSTRAP,
         "all_inference_gates_passed": all_passed,
         "audit": audits,

@@ -222,6 +222,51 @@ def test_v6_inference_shard_accepts_checksum_bound_inline_cells(tmp_path: Path) 
     assert record["cell"]["support"] == "strong"
 
 
+def test_inference_environment_identity_ignores_only_host_platform() -> None:
+    base = {
+        "python": "3.12.13",
+        "scova": "0.3.0.dev0",
+        "numpy": "2.2.6",
+        "scipy": "1.15.3",
+        "scikit-learn": "1.6.1",
+        "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+    }
+    alternate_host = {**base, "platform": "Linux-6.17.0-1018-azure-x86_64-with-glibc2.39"}
+    assert (
+        cf_inference_campaign._numerical_environment_identity(base)
+        == cf_inference_campaign._numerical_environment_identity(alternate_host)
+    )
+    assert (
+        cf_inference_campaign._numerical_environment_identity({**base, "numpy": "2.3.0"})
+        != cf_inference_campaign._numerical_environment_identity(base)
+    )
+    incomplete = dict(base)
+    del incomplete["scipy"]
+    with pytest.raises(ValueError, match="missing fields"):
+        cf_inference_campaign._numerical_environment_identity(incomplete)
+
+
+def test_inference_fwer_gate_requires_control_only_when_a_true_null_exists() -> None:
+    no_null = [{"contrasts": [{"null": False}], "simultaneous": {"any_null_rejected": False}}]
+    assert cf_inference_campaign._familywise_error_gate(
+        no_null, alpha=0.05, multiplier=2.0
+    ) == (None, True)
+    conservative = [
+        {"contrasts": [{"null": True}], "simultaneous": {"any_null_rejected": False}}
+        for _ in range(100)
+    ]
+    assert cf_inference_campaign._familywise_error_gate(
+        conservative, alpha=0.05, multiplier=2.0
+    ) == (0.0, True)
+    inflated = [
+        {"contrasts": [{"null": True}], "simultaneous": {"any_null_rejected": index < 20}}
+        for index in range(100)
+    ]
+    assert cf_inference_campaign._familywise_error_gate(
+        inflated, alpha=0.05, multiplier=2.0
+    ) == (0.2, False)
+
+
 def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None:
     blocked = json.loads(BLOCKED_V2.read_text(encoding="utf-8"))
     assert blocked["status"] == "blocked"

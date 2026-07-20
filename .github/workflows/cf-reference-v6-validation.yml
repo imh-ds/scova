@@ -10,6 +10,7 @@ on:
         options:
           - freeze_check
           - simultaneous_inference
+          - inference_reaggregate
           - validation
           - aggregate
           - promotion_patch
@@ -43,7 +44,7 @@ permissions:
 
 env:
   SPEC: benchmarks/specs/cf_reference_v6.json
-  FREEZE_TAG: scova-cf-reference-v6-freeze-r2
+  FREEZE_TAG: scova-cf-reference-v6-freeze-r4
   PYTHONHASHSEED: "0"
 
 jobs:
@@ -68,7 +69,7 @@ jobs:
   campaign_freeze:
     if: >-
       inputs.tier == 'freeze_check' || inputs.tier == 'aggregate' ||
-      inputs.tier == 'simultaneous_inference' ||
+      inputs.tier == 'simultaneous_inference' || inputs.tier == 'inference_reaggregate' ||
       inputs.tier == 'validation'
     runs-on: ubuntu-latest
     steps:
@@ -88,10 +89,10 @@ jobs:
           python -m benchmarks.cf_inference_campaign --help
       - run: >-
           python -m scripts.write_cf_freeze_manifest --spec "$SPEC"
-          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v6-freeze-r2.json
+          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v6-freeze-r4.json
       - uses: actions/upload-artifact@v6
         with:
-          name: cf-reference-v6-freeze-r2
+          name: cf-reference-v6-freeze-r4
           path: freeze/
           retention-days: 90
 
