@@ -1,0 +1,991 @@
+{
+  "schema_version": 3,
+  "frozen": true,
+  "protocol_id": "cf-randomized-continuous-aipw-unnormalized-v7",
+  "reference_profile": {
+    "mode": "randomized",
+    "outcome_type": "continuous",
+    "estimator": "aipw-unnormalized",
+    "estimand_id": "study-population-standardized-means",
+    "assignment": "known-constant",
+    "independent_unit": "row",
+    "minimum_group_count": 50,
+    "maximum_group_count": 3
+  },
+  "factors": {
+    "n_per_group": [
+      20,
+      30,
+      50,
+      80,
+      150,
+      250
+    ],
+    "n_groups": [
+      2,
+      3,
+      5
+    ],
+    "n_covariates": [
+      5,
+      20,
+      50
+    ],
+    "allocation": [
+      "balanced",
+      "moderate",
+      "rare"
+    ],
+    "surface": [
+      "linear",
+      "smooth-nonlinear",
+      "threshold",
+      "interaction",
+      "weak"
+    ],
+    "effect": [
+      "null",
+      "partial-null",
+      "constant",
+      "heterogeneous"
+    ],
+    "noise": [
+      "normal",
+      "heteroskedastic",
+      "heavy-tailed"
+    ],
+    "support": [
+      "strong",
+      "weak",
+      "structural-failure"
+    ],
+    "learner": [
+      "linear",
+      "adaptive"
+    ]
+  },
+  "retained_cells": [
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 3,
+      "n_covariates": 20,
+      "allocation": "moderate",
+      "surface": "smooth-nonlinear",
+      "effect": "partial-null",
+      "noise": "heteroskedastic",
+      "support": "weak",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 30,
+      "n_groups": 2,
+      "n_covariates": 50,
+      "allocation": "rare",
+      "surface": "threshold",
+      "effect": "constant",
+      "noise": "heavy-tailed",
+      "support": "structural-failure",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 50,
+      "n_groups": 5,
+      "n_covariates": 5,
+      "allocation": "moderate",
+      "surface": "interaction",
+      "effect": "heterogeneous",
+      "noise": "heteroskedastic",
+      "support": "structural-failure",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 80,
+      "n_groups": 3,
+      "n_covariates": 20,
+      "allocation": "rare",
+      "surface": "weak",
+      "effect": "heterogeneous",
+      "noise": "heavy-tailed",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 150,
+      "n_groups": 5,
+      "n_covariates": 50,
+      "allocation": "balanced",
+      "surface": "weak",
+      "effect": "null",
+      "noise": "normal",
+      "support": "weak",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 250,
+      "n_groups": 3,
+      "n_covariates": 20,
+      "allocation": "balanced",
+      "surface": "smooth-nonlinear",
+      "effect": "constant",
+      "noise": "normal",
+      "support": "structural-failure",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 250,
+      "n_groups": 5,
+      "n_covariates": 5,
+      "allocation": "rare",
+      "surface": "linear",
+      "effect": "partial-null",
+      "noise": "heavy-tailed",
+      "support": "weak",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 150,
+      "n_groups": 2,
+      "n_covariates": 50,
+      "allocation": "moderate",
+      "surface": "threshold",
+      "effect": "partial-null",
+      "noise": "heteroskedastic",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 80,
+      "n_groups": 2,
+      "n_covariates": 50,
+      "allocation": "balanced",
+      "surface": "interaction",
+      "effect": "heterogeneous",
+      "noise": "normal",
+      "support": "weak",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 50,
+      "n_groups": 2,
+      "n_covariates": 20,
+      "allocation": "rare",
+      "surface": "smooth-nonlinear",
+      "effect": "null",
+      "noise": "heavy-tailed",
+      "support": "strong",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 30,
+      "n_groups": 3,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "threshold",
+      "effect": "null",
+      "noise": "heteroskedastic",
+      "support": "weak",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 30,
+      "n_groups": 5,
+      "n_covariates": 20,
+      "allocation": "moderate",
+      "surface": "linear",
+      "effect": "constant",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 50,
+      "n_groups": 3,
+      "n_covariates": 50,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "partial-null",
+      "noise": "normal",
+      "support": "structural-failure",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 80,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "moderate",
+      "surface": "weak",
+      "effect": "constant",
+      "noise": "heteroskedastic",
+      "support": "structural-failure",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 150,
+      "n_groups": 3,
+      "n_covariates": 20,
+      "allocation": "moderate",
+      "surface": "interaction",
+      "effect": "null",
+      "noise": "heavy-tailed",
+      "support": "structural-failure",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 5,
+      "n_covariates": 20,
+      "allocation": "rare",
+      "surface": "threshold",
+      "effect": "heterogeneous",
+      "noise": "normal",
+      "support": "structural-failure",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 250,
+      "n_groups": 2,
+      "n_covariates": 50,
+      "allocation": "rare",
+      "surface": "interaction",
+      "effect": "null",
+      "noise": "heteroskedastic",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 50,
+      "allocation": "balanced",
+      "surface": "interaction",
+      "effect": "constant",
+      "noise": "heavy-tailed",
+      "support": "weak",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 150,
+      "n_groups": 5,
+      "n_covariates": 5,
+      "allocation": "rare",
+      "surface": "smooth-nonlinear",
+      "effect": "heterogeneous",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 80,
+      "n_groups": 5,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "heteroskedastic",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 30,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "interaction",
+      "effect": "partial-null",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 30,
+      "n_groups": 2,
+      "n_covariates": 50,
+      "allocation": "balanced",
+      "surface": "smooth-nonlinear",
+      "effect": "heterogeneous",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 50,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "threshold",
+      "effect": "constant",
+      "noise": "normal",
+      "support": "weak",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 250,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "moderate",
+      "surface": "linear",
+      "effect": "heterogeneous",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "weak",
+      "effect": "partial-null",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 80,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "smooth-nonlinear",
+      "effect": "partial-null",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 150,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "constant",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 30,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "weak",
+      "effect": "null",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 50,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "weak",
+      "effect": "null",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 80,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "threshold",
+      "effect": "null",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 250,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "threshold",
+      "effect": "null",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 250,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "weak",
+      "effect": "null",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "normal",
+      "support": "weak",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "normal",
+      "support": "weak",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "normal",
+      "support": "structural-failure",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "normal",
+      "support": "structural-failure",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "heteroskedastic",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "heteroskedastic",
+      "support": "strong",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "heteroskedastic",
+      "support": "weak",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "heteroskedastic",
+      "support": "weak",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "heteroskedastic",
+      "support": "structural-failure",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "heteroskedastic",
+      "support": "structural-failure",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "heavy-tailed",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "heavy-tailed",
+      "support": "strong",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "heavy-tailed",
+      "support": "weak",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 20,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "heavy-tailed",
+      "support": "weak",
+      "learner": "adaptive"
+    }
+  ],
+  "plasmode_cells": [
+    {
+      "dataset": "diabetes",
+      "n_groups": 2,
+      "n_per_group": 100,
+      "allocation": "balanced",
+      "effect": "null",
+      "noise": "normal",
+      "learner": "linear"
+    },
+    {
+      "dataset": "diabetes",
+      "n_groups": 2,
+      "n_per_group": 200,
+      "allocation": "moderate",
+      "effect": "heterogeneous",
+      "noise": "heteroskedastic",
+      "learner": "adaptive"
+    },
+    {
+      "dataset": "diabetes",
+      "n_groups": 3,
+      "n_per_group": 100,
+      "allocation": "balanced",
+      "effect": "constant",
+      "noise": "normal",
+      "learner": "adaptive"
+    },
+    {
+      "dataset": "diabetes",
+      "n_groups": 3,
+      "n_per_group": 100,
+      "allocation": "moderate",
+      "effect": "null",
+      "noise": "heteroskedastic",
+      "learner": "linear"
+    },
+    {
+      "dataset": "diabetes",
+      "n_groups": 5,
+      "n_per_group": 50,
+      "allocation": "balanced",
+      "effect": "heterogeneous",
+      "noise": "normal",
+      "learner": "adaptive"
+    },
+    {
+      "dataset": "diabetes",
+      "n_groups": 5,
+      "n_per_group": 50,
+      "allocation": "moderate",
+      "effect": "constant",
+      "noise": "heteroskedastic",
+      "learner": "linear"
+    },
+    {
+      "dataset": "breast-cancer",
+      "n_groups": 2,
+      "n_per_group": 100,
+      "allocation": "balanced",
+      "effect": "null",
+      "noise": "normal",
+      "learner": "linear"
+    },
+    {
+      "dataset": "breast-cancer",
+      "n_groups": 2,
+      "n_per_group": 200,
+      "allocation": "moderate",
+      "effect": "heterogeneous",
+      "noise": "heteroskedastic",
+      "learner": "adaptive"
+    },
+    {
+      "dataset": "breast-cancer",
+      "n_groups": 3,
+      "n_per_group": 100,
+      "allocation": "balanced",
+      "effect": "constant",
+      "noise": "normal",
+      "learner": "adaptive"
+    },
+    {
+      "dataset": "breast-cancer",
+      "n_groups": 3,
+      "n_per_group": 100,
+      "allocation": "moderate",
+      "effect": "null",
+      "noise": "heteroskedastic",
+      "learner": "linear"
+    },
+    {
+      "dataset": "breast-cancer",
+      "n_groups": 5,
+      "n_per_group": 50,
+      "allocation": "balanced",
+      "effect": "heterogeneous",
+      "noise": "normal",
+      "learner": "adaptive"
+    },
+    {
+      "dataset": "breast-cancer",
+      "n_groups": 5,
+      "n_per_group": 50,
+      "allocation": "moderate",
+      "effect": "constant",
+      "noise": "heteroskedastic",
+      "learner": "linear"
+    }
+  ],
+  "inference_cells": [
+    {
+      "cell": {
+        "n_per_group": 80,
+        "n_groups": 2,
+        "n_covariates": 5,
+        "allocation": "balanced",
+        "surface": "linear",
+        "effect": "null",
+        "noise": "normal",
+        "support": "strong",
+        "learner": "linear"
+      }
+    },
+    {
+      "cell": {
+        "n_per_group": 80,
+        "n_groups": 2,
+        "n_covariates": 5,
+        "allocation": "balanced",
+        "surface": "threshold",
+        "effect": "null",
+        "noise": "heteroskedastic",
+        "support": "strong",
+        "learner": "linear"
+      }
+    },
+    {
+      "cell": {
+        "n_per_group": 150,
+        "n_groups": 2,
+        "n_covariates": 20,
+        "allocation": "moderate",
+        "surface": "smooth-nonlinear",
+        "effect": "partial-null",
+        "noise": "normal",
+        "support": "strong",
+        "learner": "adaptive"
+      }
+    },
+    {
+      "cell": {
+        "n_per_group": 250,
+        "n_groups": 2,
+        "n_covariates": 20,
+        "allocation": "moderate",
+        "surface": "interaction",
+        "effect": "heterogeneous",
+        "noise": "heteroskedastic",
+        "support": "strong",
+        "learner": "adaptive"
+      }
+    },
+    {
+      "cell": {
+        "n_per_group": 150,
+        "n_groups": 3,
+        "n_covariates": 5,
+        "allocation": "balanced",
+        "surface": "linear",
+        "effect": "null",
+        "noise": "normal",
+        "support": "strong",
+        "learner": "linear"
+      }
+    },
+    {
+      "cell": {
+        "n_per_group": 250,
+        "n_groups": 3,
+        "n_covariates": 20,
+        "allocation": "moderate",
+        "surface": "smooth-nonlinear",
+        "effect": "partial-null",
+        "noise": "heteroskedastic",
+        "support": "strong",
+        "learner": "adaptive"
+      }
+    }
+  ],
+  "external_cells": [
+    {
+      "n_per_group": 250,
+      "n_groups": 2,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "null",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 250,
+      "n_groups": 2,
+      "n_covariates": 20,
+      "allocation": "moderate",
+      "surface": "smooth-nonlinear",
+      "effect": "heterogeneous",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 250,
+      "n_groups": 3,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "linear",
+      "effect": "constant",
+      "noise": "heteroskedastic",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 250,
+      "n_groups": 3,
+      "n_covariates": 20,
+      "allocation": "moderate",
+      "surface": "threshold",
+      "effect": "partial-null",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 150,
+      "n_groups": 5,
+      "n_covariates": 5,
+      "allocation": "balanced",
+      "surface": "interaction",
+      "effect": "null",
+      "noise": "normal",
+      "support": "strong",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 250,
+      "n_groups": 5,
+      "n_covariates": 20,
+      "allocation": "moderate",
+      "surface": "smooth-nonlinear",
+      "effect": "heterogeneous",
+      "noise": "heteroskedastic",
+      "support": "strong",
+      "learner": "adaptive"
+    },
+    {
+      "n_per_group": 250,
+      "n_groups": 2,
+      "n_covariates": 50,
+      "allocation": "moderate",
+      "surface": "weak",
+      "effect": "constant",
+      "noise": "heavy-tailed",
+      "support": "strong",
+      "learner": "linear"
+    },
+    {
+      "n_per_group": 250,
+      "n_groups": 3,
+      "n_covariates": 50,
+      "allocation": "balanced",
+      "surface": "interaction",
+      "effect": "partial-null",
+      "noise": "heavy-tailed",
+      "support": "strong",
+      "learner": "adaptive"
+    }
+  ],
+  "seed_partitions": {
+      "pilot": {
+        "start": 4000000000,
+        "count": 20
+      },
+      "calibration": {
+        "start": 3300000000,
+        "count": 2000
+      },
+      "validation": {
+        "start": 4100000000,
+        "count": 2000
+      },
+      "external": {
+        "start": 4200000000,
+        "count": 50
+      },
+      "inference": {
+        "start": 4250000000,
+        "count": 2000
+    }
+  },
+  "calibration_fit_fraction": 0.6,
+  "calibration_candidate_retention_fraction": 0.85,
+  "calibration_source": {
+    "protocol_id": "cf-randomized-continuous-aipw-unnormalized-v6",
+    "protocol_checksum": "8ec41d170f1433ef8d1289b0cb0a05f9c53b6ae8d811ff1d52887f0f7c6e7964",
+    "evidence_checksum": "4a6a4515456df1dd1e9943a82971d918d41db716598482d005628c7721daf7ea",
+    "git_commit": "76a852d13bad5f7d4688479aead18519eedf1ad9",
+    "lane": "validation"
+  },
+  "external_source": {
+    "protocol_id": "cf-randomized-continuous-aipw-unnormalized-v5",
+    "protocol_checksum": "7521cf977c51e97498ef7623c6facadfb8423a22e0740c2145d3ee7bbe68431b",
+    "evidence_checksum": "6abca0f9b1dc690096a8dacea5ac14e702cc06333ac1588f30e9f2717910aaa3",
+    "git_commit": "d84afcdb9fd6ea78d78119d483c3bd0cbe2e53aa"
+  },
+  "inference_source": {
+    "protocol_id": "cf-randomized-continuous-aipw-unnormalized-v6",
+    "protocol_checksum": "8ec41d170f1433ef8d1289b0cb0a05f9c53b6ae8d811ff1d52887f0f7c6e7964",
+    "evidence_checksum": "395945647c6129806a0b61c1a94a452a78c5c322c4f8f9c9392511e380fe27ea",
+    "git_commit": "841050494e058eb3547df78cffb5bac8c933f635"
+  },
+  "calibration_screening": {
+    "confidence_level": 0.95,
+    "type_i_error": 0.05,
+    "monte_carlo_standard_error_multiplier": 2,
+    "maximum_standardized_bias": 0.15,
+    "minimum_se_ratio": 0.8,
+    "maximum_se_ratio": 1.25,
+    "strong_support_minimum_expected_arm_count": 30.0
+  },
+  "calibration_enrichment_screening": true,
+  "learners": [
+    "linear",
+    "adaptive"
+  ],
+  "metrics": {
+    "confidence_level": 0.95,
+    "type_i_error": 0.05,
+    "monte_carlo_standard_error_multiplier": 2,
+    "maximum_standardized_bias": 0.1,
+    "minimum_se_ratio": 0.9,
+    "maximum_se_ratio": 1.1,
+    "minimum_strong_cell_pass_fraction": 0.8,
+    "minimum_strong_replication_pass_fraction": 0.8,
+    "strong_support_minimum_expected_arm_count": 30.0,
+    "minimum_unstable_risk_ratio": 2,
+    "minimum_unstable_absolute_enrichment": 0.05,
+    "shared_score_tolerance": 1e-12,
+    "doubleml_shared_tolerance": 1e-10,
+    "end_to_end_mean_se_difference": 0.25,
+    "end_to_end_max_se_difference": 1,
+    "end_to_end_signed_se_difference": 0.05
+  },
+  "threshold_quantiles": {
+    "minimum_ess_ratio": [
+      0,
+      0.01,
+      0.025,
+      0.05,
+      0.1,
+      0.2
+    ],
+    "upper_metrics": [
+      0.8,
+      0.9,
+      0.95,
+      0.975,
+      0.99,
+      1
+    ]
+  },
+  "software": {
+    "python": "3.12.13",
+    "numpy": "2.2.6",
+    "pandas": "2.2.3",
+    "scipy": "1.15.3",
+    "scikit-learn": "1.6.1",
+    "doubleml": "0.11.3",
+    "econml": "0.16.0"
+  },
+  "dataset_checksums": {
+    "diabetes": "28128d0ec207a1c0ac5e23a5fdbad720215a35b5f18741fef26c4ecd254dc278",
+    "breast-cancer": "ba4d19cf8137014a7cbcc9f1d625891c176da5a3dbf2af07333081d81f57e90f"
+  },
+  "dependency_lock_checksum": "2131bd968e061c12847a100a896903ee1748baa4d5dcdd66d8bcd18a20559f09",
+  "design_selection": {
+    "method": "v6-rejection-informed-threshold-recalibration-with-fresh-v7-validation",
+    "candidate_order": "lexicographic-factor-level-index",
+    "tie_break": "first-candidate-in-order",
+    "selection_seed": 0,
+    "retained_cells": 48
+  }
+}

@@ -69,7 +69,7 @@ def blocking_reasons(
     for name in checksummed:
         if not _checksum_valid(values[name], "evidence_checksum"):
             reasons.append(f"{name} evidence checksum mismatch")
-    current_protocol_evidence = ("validation campaign", "validation", "inference")
+    current_protocol_evidence = ("validation campaign", "validation")
     for name in current_protocol_evidence:
         if values[name].get("protocol_checksum") != protocol.checksum:
             reasons.append(f"{name} protocol checksum mismatch")
@@ -85,6 +85,11 @@ def blocking_reasons(
         or _matches_declared_source(values["external"], protocol.external_source)
     ):
         reasons.append("external evidence does not match the frozen source")
+    if not (
+        values["inference"].get("protocol_checksum") == protocol.checksum
+        or _matches_declared_source(values["inference"], protocol.inference_source)
+    ):
+        reasons.append("inference evidence does not match the frozen source")
     if not _checksum_valid(values["calibration"], "calibration_artifact_checksum"):
         reasons.append("calibration artifact checksum mismatch")
     calibration_campaign = values["calibration campaign"]
@@ -94,6 +99,11 @@ def blocking_reasons(
     inference = values["inference"]
     external = values["external"]
     profile = CFSupportProfile.from_dict(values["profile"])
+    candidate: CFSupportProfile | None = None
+    try:
+        candidate = CFSupportProfile.from_dict(calibration["candidate_profile"])
+    except (KeyError, TypeError, ValueError) as error:
+        reasons.append(f"calibration does not contain a valid candidate profile: {error}")
     if any(
         not values[name].get("git_commit")
         for name in ("calibration campaign", "validation campaign", "inference", "external")
@@ -118,6 +128,18 @@ def blocking_reasons(
         "candidate_profile_checksum"
     ) != candidate_source.get("profile_checksum"):
         reasons.append("held-out campaign is not bound to the frozen candidate source")
+    if candidate is not None:
+        if validation_campaign.get("candidate_profile_checksum") != candidate.checksum:
+            reasons.append("held-out campaign is not bound to the calibrated candidate")
+        if validation.get("candidate_profile_checksum") != candidate.checksum:
+            reasons.append("validation audit is not bound to the calibrated candidate")
+        if (
+            profile.thresholds != candidate.thresholds
+            or profile.compatibility != candidate.compatibility
+            or profile.calibration_evidence_checksum
+            != candidate.calibration_evidence_checksum
+        ):
+            reasons.append("promoted profile does not preserve the calibrated candidate")
     if validation.get("inference_evidence_checksum") != inference.get("evidence_checksum"):
         reasons.append("validation is not bound to simultaneous-inference evidence")
     if validation.get("external_evidence_checksum") != external.get("evidence_checksum"):

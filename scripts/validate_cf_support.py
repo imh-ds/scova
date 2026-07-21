@@ -13,6 +13,7 @@ from calibrate_cf_support import (
     _passes,
     _profile_eligible,
     _structural,
+    _unstable_enrichment,
     _verify_evidence,
     read_json,
 )
@@ -41,6 +42,20 @@ def _external_matches_protocol(
     if evidence.get("protocol_checksum") == protocol.checksum:
         return True
     source = protocol.external_source
+    return bool(
+        source
+        and evidence.get("protocol_checksum") == source.get("protocol_checksum")
+        and evidence.get("evidence_checksum") == source.get("evidence_checksum")
+        and evidence.get("git_commit") == source.get("git_commit")
+    )
+
+
+def _inference_matches_protocol(
+    protocol: CFValidationProtocol, evidence: dict[str, Any]
+) -> bool:
+    if evidence.get("protocol_checksum") == protocol.checksum:
+        return True
+    source = protocol.inference_source
     return bool(
         source
         and evidence.get("protocol_checksum") == source.get("protocol_checksum")
@@ -123,44 +138,13 @@ def validate(
         >= float(protocol.metrics["minimum_strong_cell_pass_fraction"])
     )
     all_passed &= usefulness_passed
-    supported = [record for record in usable if _passes(record, thresholds)]
-    unstable = [record for record in usable if not _passes(record, thresholds)]
-
-    def bad_rate(values: list[dict[str, Any]]) -> float:
-        contrasts = [contrast for record in values for contrast in record["contrasts"]]
-        if not contrasts:
-            return 0.0
-        return float(
-            np.mean(
-                [
-                    (not value["covered"])
-                    or abs(value["estimate"] - value["truth"])
-                    > 2 * value["standard_error"]
-                    for value in contrasts
-                ]
-            )
-        )
-
-    supported_bad = bad_rate(supported)
-    unstable_bad = bad_rate(unstable)
-    risk_ratio = (
-        np.inf
-        if supported_bad == 0 and unstable_bad > 0
-        else unstable_bad / supported_bad
-        if supported_bad > 0
-        else 0.0
-    )
-    enrichment_passed = bool(
-        unstable
-        and unstable_bad - supported_bad
-        >= float(protocol.metrics["minimum_unstable_absolute_enrichment"])
-        and risk_ratio >= float(protocol.metrics["minimum_unstable_risk_ratio"])
-    )
+    enrichment = _unstable_enrichment(usable, thresholds, protocol.metrics)
+    enrichment_passed = bool(enrichment["passed"])
     all_passed &= enrichment_passed
     inference_passed = bool(
         inference_evidence
         and inference_evidence.get("all_inference_gates_passed", False)
-        and inference_evidence.get("protocol_checksum") == protocol.checksum
+        and _inference_matches_protocol(protocol, inference_evidence)
     )
     external_passed = bool(
         external_evidence
@@ -187,14 +171,7 @@ def validate(
             "strong_cell_count": len(strong_cells),
             "useful_strong_cell_count": len(useful_cells),
         },
-        "unstable_enrichment": {
-            "passed": enrichment_passed,
-            "supported_count": len(supported),
-            "unstable_count": len(unstable),
-            "supported_bad_rate": supported_bad,
-            "unstable_bad_rate": unstable_bad,
-            "risk_ratio": None if not np.isfinite(risk_ratio) else risk_ratio,
-        },
+        "unstable_enrichment": enrichment,
         "inference_gate_passed": inference_passed,
         "external_gate_passed": external_passed,
         "audit": audits,
