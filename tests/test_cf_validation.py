@@ -37,7 +37,9 @@ sys.path.insert(0, str(Path("scripts").resolve()))
 from scripts.audit_cf_pilot import audit_pilot
 from scripts.calibrate_cf_support import (
     _candidate_enrichments,
+    _risk_ratio_lower_bound,
     _screening_cell_gate,
+    _selection_z,
     _unstable_enrichment,
 )
 from scripts.check_cf_campaign_prerequisites import prerequisite_reasons
@@ -51,6 +53,7 @@ SPEC = Path("benchmarks/specs/cf_reference_v3.json")
 V4_SPEC = Path("benchmarks/specs/cf_reference_v4.json")
 V6_SPEC = Path("benchmarks/specs/cf_reference_v6.json")
 V7_SPEC = Path("benchmarks/specs/cf_reference_v7.json")
+V8_SPEC = Path("benchmarks/specs/cf_reference_v8.json")
 BLOCKED_V2 = Path("benchmarks/specs/cf_reference_v2_blocked.json")
 
 
@@ -265,6 +268,95 @@ def test_v7_calibration_enrichment_gate_rejects_weak_risk_separation() -> None:
             "minimum_unstable_absolute_enrichment": 0.05,
         },
     ) == [result]
+
+
+def test_v8_spec_adds_robust_enrichment_margin_selection() -> None:
+    protocol = CFValidationProtocol.load(V8_SPEC)
+    assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v8"
+    assert protocol.checksum == (
+        "9afacfbe9fb7be9968b18b47ad5a57ad2522c6baee35035d28e4dcdad56370dc"
+    )
+    # The v8 change is held-out-blind: it reuses the v7 frozen development,
+    # external, and inference sources unchanged, and keeps the preregistered
+    # acceptance thresholds.
+    assert protocol.calibration_source == CFValidationProtocol.load(V7_SPEC).calibration_source
+    assert protocol.external_source == CFValidationProtocol.load(V7_SPEC).external_source
+    assert protocol.inference_source == CFValidationProtocol.load(V7_SPEC).inference_source
+    assert protocol.metrics["minimum_unstable_risk_ratio"] == 2
+    assert protocol.metrics["unstable_risk_ratio_selection_confidence"] == 0.95
+    assert CFValidationProtocol.from_dict(protocol.to_dict()).checksum == protocol.checksum
+
+
+def test_risk_ratio_lower_bound_is_conservative_and_tightens_with_evidence() -> None:
+    z = _selection_z({"unstable_risk_ratio_selection_confidence": 0.95})
+    assert z is not None
+    # Same 2x point risk ratio, but ten times the evidence -> a tighter (higher)
+    # lower bound, so selection prefers the better-supported rule.
+    sparse = _risk_ratio_lower_bound(20.0, 100.0, 10.0, 100.0, z)
+    dense = _risk_ratio_lower_bound(200.0, 1000.0, 100.0, 1000.0, z)
+    assert 0.0 < sparse < 2.0  # the point estimate (2.0) is not trusted on thin evidence
+    assert sparse < dense < 2.0
+    # Degenerate arms never raise and never spuriously pass.
+    assert _risk_ratio_lower_bound(0.0, 0.0, 0.0, 0.0, z) == 0.0
+
+
+def test_candidate_enrichment_margin_ranks_robust_rule_above_a_boundary_rule() -> None:
+    def record(*, supported: bool, bad: bool) -> dict:
+        feature = 0.25 if supported else 0.75
+        return {
+            "support_features": {
+                "minimum_ess_ratio": 0.75,
+                "maximum_normalized_weight": feature,
+                "maximum_top_one_percent_weight_share": feature,
+                "maximum_absolute_weighted_balance_difference": feature,
+                "maximum_influence_top_one_percent_share": feature,
+                "maximum_seed_standardized_departure": feature,
+            },
+            "contrasts": [
+                {
+                    "covered": not bad,
+                    "estimate": 3.0 if bad else 0.0,
+                    "truth": 0.0,
+                    "standard_error": 1.0,
+                }
+            ],
+        }
+
+    # Both rules share the same feature split; the difference is how much unstable
+    # evidence backs the enrichment.  Both clear the 2x point gate identically.
+    thresholds = {
+        "minimum_ess_ratio": 0.5,
+        "maximum_normalized_weight": 0.5,
+        "maximum_top_one_percent_weight_share": 0.5,
+        "maximum_absolute_weighted_balance_difference": 0.5,
+        "maximum_influence_top_one_percent_share": 0.5,
+        "maximum_seed_standardized_departure": 0.5,
+    }
+    def make(n_sup: int, n_sup_bad: int, n_uns: int, n_uns_bad: int) -> list[dict]:
+        return [record(supported=True, bad=i < n_sup_bad) for i in range(n_sup)] + [
+            record(supported=False, bad=i < n_uns_bad) for i in range(n_uns)
+        ]
+
+    # Both rules have supported bad-rate 0.05 and unstable bad-rate 0.12 (point
+    # risk ratio 2.4); "thick" is backed by ten times the evidence.
+    thin = make(200, 10, 25, 3)
+    thick = make(2000, 100, 250, 30)
+    metrics = {
+        "minimum_unstable_risk_ratio": 2.0,
+        "minimum_unstable_absolute_enrichment": 0.05,
+        "unstable_risk_ratio_selection_confidence": 0.95,
+    }
+    (thin_enrichment,) = _candidate_enrichments(thin, [thresholds], metrics)
+    (thick_enrichment,) = _candidate_enrichments(thick, [thresholds], metrics)
+    assert thin_enrichment["passed"] and thick_enrichment["passed"]
+    assert thin_enrichment["selection_confidence"] == 0.95
+    # Both report a lower bound below their point estimate; the better-supported
+    # rule earns the higher bound, which is the key that v8 selection ranks on.
+    assert thin_enrichment["risk_ratio_lower_bound"] < thin_enrichment["risk_ratio"]
+    assert (
+        thin_enrichment["risk_ratio_lower_bound"]
+        < thick_enrichment["risk_ratio_lower_bound"]
+    )
 
 
 def test_validation_accepts_only_the_exact_frozen_inference_source() -> None:
