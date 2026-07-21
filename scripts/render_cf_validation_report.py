@@ -71,6 +71,31 @@ def render(root: Path, protocol: CFValidationProtocol) -> str:
         }[label]
         status = "missing" if source is None else "pass" if source.get(field) else "fail"
         lines.append(f"- {label}: **{status}**")
+    if validation:
+        failed_cells = [item for item in validation.get("audit", []) if not item["passed"]]
+        enrichment = validation.get("unstable_enrichment", {})
+        lines.extend(
+            [
+                "",
+                "## Held-out diagnostics",
+                "",
+                f"- Execution failures: {validation.get('execution_failure_count', 0)}",
+                f"- Failed design cells: {len(failed_cells)}",
+                "- Usefulness gate: "
+                + ("pass" if validation.get("usefulness", {}).get("passed") else "fail"),
+                "- Instability-enrichment gate: "
+                + ("pass" if enrichment.get("passed") else "fail"),
+                f"- Instability risk ratio: {enrichment.get('risk_ratio')}",
+            ]
+        )
+        for item in failed_cells:
+            lines.append(
+                "- Failed cell "
+                f"{item['cell_index']} ({item['cell_kind']}): "
+                f"coverage={item.get('coverage')}, "
+                f"SE ratio={item.get('standard_error_ratio')}, "
+                f"type-I error={item.get('type_i_error')}"
+            )
     lines.extend(
         [
             "",

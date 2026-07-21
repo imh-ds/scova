@@ -24,6 +24,17 @@ def _checksum_valid(values: dict[str, Any], field: str) -> bool:
     return supplied == canonical_checksum(payload)
 
 
+def _matches_declared_source(
+    values: dict[str, Any], source: dict[str, Any] | None
+) -> bool:
+    return bool(
+        source
+        and values.get("protocol_checksum") == source.get("protocol_checksum")
+        and values.get("evidence_checksum") == source.get("evidence_checksum")
+        and values.get("git_commit") == source.get("git_commit")
+    )
+
+
 def blocking_reasons(
     root: Path,
     spec: Path,
@@ -58,8 +69,22 @@ def blocking_reasons(
     for name in checksummed:
         if not _checksum_valid(values[name], "evidence_checksum"):
             reasons.append(f"{name} evidence checksum mismatch")
+    current_protocol_evidence = ("validation campaign", "validation", "inference")
+    for name in current_protocol_evidence:
         if values[name].get("protocol_checksum") != protocol.checksum:
             reasons.append(f"{name} protocol checksum mismatch")
+    if not (
+        values["calibration campaign"].get("protocol_checksum") == protocol.checksum
+        or _matches_declared_source(
+            values["calibration campaign"], protocol.calibration_source
+        )
+    ):
+        reasons.append("calibration campaign does not match the frozen source")
+    if not (
+        values["external"].get("protocol_checksum") == protocol.checksum
+        or _matches_declared_source(values["external"], protocol.external_source)
+    ):
+        reasons.append("external evidence does not match the frozen source")
     if not _checksum_valid(values["calibration"], "calibration_artifact_checksum"):
         reasons.append("calibration artifact checksum mismatch")
     calibration_campaign = values["calibration campaign"]
@@ -69,14 +94,11 @@ def blocking_reasons(
     inference = values["inference"]
     external = values["external"]
     profile = CFSupportProfile.from_dict(values["profile"])
-    campaign_commits = {
-        calibration_campaign.get("git_commit"),
-        validation_campaign.get("git_commit"),
-        inference.get("git_commit"),
-        external.get("git_commit"),
-    }
-    if None in campaign_commits or len(campaign_commits) != 1:
-        reasons.append("campaign evidence does not share one frozen commit")
+    if any(
+        not values[name].get("git_commit")
+        for name in ("calibration campaign", "validation campaign", "inference", "external")
+    ):
+        reasons.append("campaign evidence is missing a source commit")
     if profile.state != "promoted":
         reasons.append("support profile is not promoted")
     if profile.protocol_checksum != protocol.checksum:
@@ -91,6 +113,11 @@ def blocking_reasons(
         "evidence_checksum"
     ):
         reasons.append("validation is not bound to its held-out campaign")
+    candidate_source = protocol.candidate_source
+    if candidate_source and validation_campaign.get(
+        "candidate_profile_checksum"
+    ) != candidate_source.get("profile_checksum"):
+        reasons.append("held-out campaign is not bound to the frozen candidate source")
     if validation.get("inference_evidence_checksum") != inference.get("evidence_checksum"):
         reasons.append("validation is not bound to simultaneous-inference evidence")
     if validation.get("external_evidence_checksum") != external.get("evidence_checksum"):

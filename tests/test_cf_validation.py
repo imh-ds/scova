@@ -31,9 +31,16 @@ from scova.cf import (
     canonical_checksum,
 )
 from scova.simulate import generate_data
+
+sys.path.insert(0, str(Path("scripts").resolve()))
+
 from scripts.audit_cf_pilot import audit_pilot
 from scripts.calibrate_cf_support import _screening_cell_gate
 from scripts.check_cf_campaign_prerequisites import prerequisite_reasons
+from scripts.validate_cf_support import (
+    _candidate_matches_protocol,
+    _external_matches_protocol,
+)
 
 SPEC = Path("benchmarks/specs/cf_reference_v3.json")
 V4_SPEC = Path("benchmarks/specs/cf_reference_v4.json")
@@ -133,6 +140,45 @@ def test_v6_inference_amendment_binds_archived_upstream_evidence() -> None:
         assert cell["n_groups"] <= 3
         assert cell["n_per_group"] >= 80
     assert CFValidationProtocol.from_dict(protocol.to_dict()).checksum == protocol.checksum
+
+
+def test_validation_accepts_only_the_exact_frozen_candidate_and_external_sources() -> None:
+    protocol = CFValidationProtocol.load(V6_SPEC)
+    candidate = CFSupportProfile(
+        profile_id="source-candidate",
+        protocol_checksum="source-protocol",
+        calibration_evidence_checksum="calibration",
+        validation_evidence_checksum=None,
+        thresholds={"minimum_group_count": 50},
+        compatibility={"estimand": "continuous-treatment-contrast"},
+        state="candidate",
+    )
+    protocol = replace(
+        protocol,
+        candidate_source={
+            "protocol_id": "source-protocol-id",
+            "protocol_checksum": candidate.protocol_checksum,
+            "profile_checksum": candidate.checksum,
+        },
+        external_source={
+            "protocol_id": "external-protocol-id",
+            "protocol_checksum": "external-protocol",
+            "evidence_checksum": "external-evidence",
+            "git_commit": "external-commit",
+        },
+    )
+    external = {
+        "protocol_checksum": "external-protocol",
+        "evidence_checksum": "external-evidence",
+        "git_commit": "external-commit",
+    }
+
+    assert _candidate_matches_protocol(protocol, candidate)
+    assert _external_matches_protocol(protocol, external)
+    assert not _candidate_matches_protocol(
+        protocol, replace(candidate, calibration_evidence_checksum="tampered")
+    )
+    assert not _external_matches_protocol(protocol, {**external, "git_commit": "tampered"})
 
 
 @pytest.mark.parametrize(
