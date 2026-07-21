@@ -76,6 +76,10 @@ def prerequisite_reasons(
         reasons.append("calibration campaign commit mismatch")
     if not _valid_checksum(calibration_campaign, "evidence_checksum"):
         reasons.append("calibration campaign checksum mismatch")
+    if not _valid_checksum(calibration_audit, "calibration_artifact_checksum"):
+        reasons.append("calibration audit checksum mismatch")
+    if calibration_audit.get("protocol_checksum") != protocol.checksum:
+        reasons.append("calibration audit protocol mismatch")
     if not calibration_audit.get("all_calibration_gates_passed", False):
         reasons.append("calibration gates did not pass")
     if calibration_audit.get("calibration_evidence_checksum") != calibration_campaign.get(
@@ -87,6 +91,12 @@ def prerequisite_reasons(
         and profile.calibration_evidence_checksum != calibration_campaign.get("evidence_checksum")
     ):
         reasons.append("candidate is not bound to the calibration campaign")
+    audited_candidate = calibration_audit.get("candidate_profile")
+    if profile is not None and (
+        not isinstance(audited_candidate, dict)
+        or audited_candidate.get("profile_checksum") != profile.checksum
+    ):
+        reasons.append("candidate is not identical to the calibrated profile")
 
     if stage in {"inference", "validation"}:
         if external is None:
@@ -116,12 +126,25 @@ def prerequisite_reasons(
         else:
             if not _valid_checksum(inference, "evidence_checksum"):
                 reasons.append("inference evidence checksum mismatch")
-            if inference.get("protocol_checksum") != protocol.checksum:
+            inference_source = protocol.inference_source
+            sourced_inference = bool(
+                inference_source
+                and inference.get("protocol_checksum")
+                == inference_source.get("protocol_checksum")
+                and inference.get("evidence_checksum")
+                == inference_source.get("evidence_checksum")
+                and inference.get("git_commit") == inference_source.get("git_commit")
+            )
+            if inference.get("protocol_checksum") != protocol.checksum and not sourced_inference:
                 reasons.append("inference evidence protocol mismatch")
             inference_matches = same_cf_numerical_implementation(
                 str(inference.get("git_commit")), expected_commit, "inference"
             )
-            if inference.get("git_commit") != expected_commit and not inference_matches:
+            if (
+                inference.get("git_commit") != expected_commit
+                and not inference_matches
+                and not sourced_inference
+            ):
                 reasons.append("inference evidence numerical implementation mismatch")
             if not inference.get("all_inference_gates_passed", False):
                 reasons.append("simultaneous-inference gates did not pass")

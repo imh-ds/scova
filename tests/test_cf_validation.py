@@ -35,16 +35,22 @@ from scova.simulate import generate_data
 sys.path.insert(0, str(Path("scripts").resolve()))
 
 from scripts.audit_cf_pilot import audit_pilot
-from scripts.calibrate_cf_support import _screening_cell_gate
+from scripts.calibrate_cf_support import (
+    _candidate_enrichments,
+    _screening_cell_gate,
+    _unstable_enrichment,
+)
 from scripts.check_cf_campaign_prerequisites import prerequisite_reasons
 from scripts.validate_cf_support import (
     _candidate_matches_protocol,
     _external_matches_protocol,
+    _inference_matches_protocol,
 )
 
 SPEC = Path("benchmarks/specs/cf_reference_v3.json")
 V4_SPEC = Path("benchmarks/specs/cf_reference_v4.json")
 V6_SPEC = Path("benchmarks/specs/cf_reference_v6.json")
+V7_SPEC = Path("benchmarks/specs/cf_reference_v7.json")
 BLOCKED_V2 = Path("benchmarks/specs/cf_reference_v2_blocked.json")
 
 
@@ -181,6 +187,94 @@ def test_validation_accepts_only_the_exact_frozen_candidate_and_external_sources
     assert not _external_matches_protocol(protocol, {**external, "git_commit": "tampered"})
 
 
+def test_v7_recalibrates_on_rejected_v6_evidence_and_reserves_fresh_validation() -> None:
+    protocol = CFValidationProtocol.load(V7_SPEC)
+    assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v7"
+    assert protocol.checksum == "f393f13e40331cbf7a3de0fb336379258d1832768b4a01a25f169b61b62888c7"
+    assert protocol.calibration.start == 3_300_000_000
+    assert protocol.calibration.count == 2000
+    assert protocol.validation.start == 4_100_000_000
+    assert protocol.validation.count == 2000
+    assert protocol.calibration_source is not None
+    assert protocol.calibration_source["lane"] == "validation"
+    assert protocol.calibration_source["evidence_checksum"] == (
+        "4a6a4515456df1dd1e9943a82971d918d41db716598482d005628c7721daf7ea"
+    )
+    assert protocol.candidate_source is None
+    assert protocol.inference_source is not None
+    assert protocol.calibration_enrichment_screening is True
+    assert protocol.metrics["minimum_unstable_risk_ratio"] == 2
+    assert protocol.metrics["minimum_unstable_absolute_enrichment"] == 0.05
+    assert CFValidationProtocol.from_dict(protocol.to_dict()).checksum == protocol.checksum
+
+
+def test_v7_calibration_enrichment_gate_rejects_weak_risk_separation() -> None:
+    thresholds = {
+        "minimum_ess_ratio": 0.5,
+        "maximum_normalized_weight": 0.5,
+        "maximum_top_one_percent_weight_share": 0.5,
+        "maximum_absolute_weighted_balance_difference": 0.5,
+        "maximum_influence_top_one_percent_share": 0.5,
+        "maximum_seed_standardized_departure": 0.5,
+    }
+
+    def record(*, supported: bool, bad: bool) -> dict:
+        feature = 0.25 if supported else 0.75
+        return {
+            "support_features": {
+                "minimum_ess_ratio": 0.75,
+                **{
+                    name: feature
+                    for name in (
+                        "maximum_normalized_weight",
+                        "maximum_top_one_percent_weight_share",
+                        "maximum_absolute_weighted_balance_difference",
+                        "maximum_influence_top_one_percent_share",
+                        "maximum_seed_standardized_departure",
+                    )
+                },
+            },
+            "contrasts": [
+                {
+                    "covered": not bad,
+                    "estimate": 3.0 if bad else 0.0,
+                    "truth": 0.0,
+                    "standard_error": 1.0,
+                }
+            ],
+        }
+
+    records = [record(supported=True, bad=False) for _ in range(20)] + [
+        record(supported=False, bad=index < 4) for index in range(20)
+    ]
+    result = _unstable_enrichment(
+        records,
+        thresholds,
+        {
+            "minimum_unstable_risk_ratio": 2.0,
+            "minimum_unstable_absolute_enrichment": 0.05,
+        },
+    )
+    assert result["passed"] is True
+    assert result["absolute_enrichment"] == 0.2
+    assert _candidate_enrichments(
+        records,
+        [thresholds],
+        {
+            "minimum_unstable_risk_ratio": 2.0,
+            "minimum_unstable_absolute_enrichment": 0.05,
+        },
+    ) == [result]
+
+
+def test_validation_accepts_only_the_exact_frozen_inference_source() -> None:
+    protocol = CFValidationProtocol.load(V7_SPEC)
+    assert protocol.inference_source is not None
+    evidence = dict(protocol.inference_source)
+    assert _inference_matches_protocol(protocol, evidence)
+    assert not _inference_matches_protocol(protocol, {**evidence, "git_commit": "tampered"})
+
+
 @pytest.mark.parametrize(
     ("source", "field", "message"),
     (
@@ -199,6 +293,13 @@ def test_v6_protocol_rejects_incomplete_reused_evidence_sources(
     values = json.loads(V6_SPEC.read_text(encoding="utf-8"))
     del values[source][field]
     with pytest.raises(ValueError, match=message):
+        CFValidationProtocol.from_dict(values)
+
+
+def test_v7_protocol_rejects_an_incomplete_inference_source() -> None:
+    values = json.loads(V7_SPEC.read_text(encoding="utf-8"))
+    del values["inference_source"]["evidence_checksum"]
+    with pytest.raises(ValueError, match="inference source is missing fields"):
         CFValidationProtocol.from_dict(values)
 
 
@@ -467,6 +568,10 @@ def test_protocol_rejects_overlapping_or_undersized_lanes() -> None:
     }
     with pytest.raises(ValueError, match="disjoint"):
         CFValidationProtocol.from_dict(values)
+    values = json.loads(V7_SPEC.read_text(encoding="utf-8"))
+    values["seed_partitions"]["pilot"]["start"] = 4_294_960_000
+    with pytest.raises(ValueError, match="scikit-learn random_state"):
+        CFValidationProtocol.from_dict(values)
 
 
 def test_v3_protocol_rejects_incomplete_frozen_contract() -> None:
@@ -725,10 +830,6 @@ def test_campaign_prerequisites_lock_order_commit_and_evidence() -> None:
         "git_commit": commit,
     }
     campaign["evidence_checksum"] = canonical_checksum(campaign)
-    audit = {
-        "all_calibration_gates_passed": True,
-        "calibration_evidence_checksum": campaign["evidence_checksum"],
-    }
     candidate = CFSupportProfile(
         profile_id="frozen-candidate",
         protocol_checksum=protocol.checksum,
@@ -737,6 +838,13 @@ def test_campaign_prerequisites_lock_order_commit_and_evidence() -> None:
         thresholds={"minimum_ess_ratio": 0.25},
         compatibility=protocol.reference_profile,
     ).to_dict()
+    audit = {
+        "protocol_checksum": protocol.checksum,
+        "all_calibration_gates_passed": True,
+        "calibration_evidence_checksum": campaign["evidence_checksum"],
+        "candidate_profile": candidate,
+    }
+    audit["calibration_artifact_checksum"] = canonical_checksum(audit)
     external = {
         "protocol_checksum": protocol.checksum,
         "git_commit": commit,

@@ -45,6 +45,135 @@ def _passes(record: dict[str, Any], thresholds: dict[str, float]) -> bool:
     )
 
 
+def _unstable_enrichment(
+    records: list[dict[str, Any]],
+    thresholds: dict[str, float],
+    metrics: MappingLike,
+) -> dict[str, Any]:
+    supported = [record for record in records if _passes(record, thresholds)]
+    unstable = [record for record in records if not _passes(record, thresholds)]
+
+    def bad_rate(values: list[dict[str, Any]]) -> float:
+        contrasts = [contrast for record in values for contrast in record["contrasts"]]
+        if not contrasts:
+            return 0.0
+        return float(
+            np.mean(
+                [
+                    (not value["covered"])
+                    or abs(value["estimate"] - value["truth"])
+                    > 2 * value["standard_error"]
+                    for value in contrasts
+                ]
+            )
+        )
+
+    supported_bad = bad_rate(supported)
+    unstable_bad = bad_rate(unstable)
+    risk_ratio = (
+        np.inf
+        if supported_bad == 0 and unstable_bad > 0
+        else unstable_bad / supported_bad
+        if supported_bad > 0
+        else 0.0
+    )
+    passed = bool(
+        unstable
+        and unstable_bad - supported_bad
+        >= float(metrics["minimum_unstable_absolute_enrichment"])
+        and risk_ratio >= float(metrics["minimum_unstable_risk_ratio"])
+    )
+    return {
+        "passed": passed,
+        "supported_count": len(supported),
+        "unstable_count": len(unstable),
+        "supported_bad_rate": supported_bad,
+        "unstable_bad_rate": unstable_bad,
+        "absolute_enrichment": unstable_bad - supported_bad,
+        "risk_ratio": None if not np.isfinite(risk_ratio) else risk_ratio,
+    }
+
+
+def _candidate_enrichments(
+    records: list[dict[str, Any]],
+    candidates: list[dict[str, float]],
+    metrics: MappingLike,
+) -> list[dict[str, Any]]:
+    """Vectorize the preregistered enrichment screen across candidate rules."""
+    if not candidates:
+        return []
+    feature_names = (LOWER_FEATURE, *UPPER_FEATURES)
+    features = np.asarray(
+        [[record["support_features"][name] for name in feature_names] for record in records],
+        dtype=float,
+    )
+    limits = np.asarray(
+        [[candidate[name] for name in feature_names] for candidate in candidates],
+        dtype=float,
+    )
+    supported = features[:, 0, None] >= limits[None, :, 0]
+    for index in range(1, len(feature_names)):
+        supported &= features[:, index, None] <= limits[None, :, index]
+    contrast_counts = np.asarray([len(record["contrasts"]) for record in records], dtype=float)
+    bad_counts = np.asarray(
+        [
+            sum(
+                (not value["covered"])
+                or abs(value["estimate"] - value["truth"])
+                > 2 * value["standard_error"]
+                for value in record["contrasts"]
+            )
+            for record in records
+        ],
+        dtype=float,
+    )
+    supported_contrasts = supported.T @ contrast_counts
+    supported_bad_counts = supported.T @ bad_counts
+    unstable_contrasts = contrast_counts.sum() - supported_contrasts
+    unstable_bad_counts = bad_counts.sum() - supported_bad_counts
+    supported_bad_rates = np.divide(
+        supported_bad_counts,
+        supported_contrasts,
+        out=np.zeros_like(supported_bad_counts),
+        where=supported_contrasts > 0,
+    )
+    unstable_bad_rates = np.divide(
+        unstable_bad_counts,
+        unstable_contrasts,
+        out=np.zeros_like(unstable_bad_counts),
+        where=unstable_contrasts > 0,
+    )
+    risk_ratios = np.divide(
+        unstable_bad_rates,
+        supported_bad_rates,
+        out=np.zeros_like(unstable_bad_rates),
+        where=supported_bad_rates > 0,
+    )
+    risk_ratios[(supported_bad_rates == 0) & (unstable_bad_rates > 0)] = np.inf
+    enrichments = unstable_bad_rates - supported_bad_rates
+    supported_counts = supported.sum(axis=0)
+    unstable_counts = len(records) - supported_counts
+    return [
+        {
+            "passed": bool(
+                unstable_counts[index] > 0
+                and enrichments[index]
+                >= float(metrics["minimum_unstable_absolute_enrichment"])
+                and risk_ratios[index] >= float(metrics["minimum_unstable_risk_ratio"])
+            ),
+            "supported_count": int(supported_counts[index]),
+            "unstable_count": int(unstable_counts[index]),
+            "supported_bad_rate": float(supported_bad_rates[index]),
+            "unstable_bad_rate": float(unstable_bad_rates[index]),
+            "absolute_enrichment": float(enrichments[index]),
+            "risk_ratio": (
+                None if not np.isfinite(risk_ratios[index]) else float(risk_ratios[index])
+            ),
+        }
+        for index in range(len(candidates))
+    ]
+
+
 def _cell_gate(
     records: list[dict[str, Any]], metrics: MappingLike
 ) -> tuple[bool, dict[str, Any]]:
@@ -220,13 +349,60 @@ def _usefulness(
     return useful, float(supported_total)
 
 
+def _candidate_usefulness(
+    records: list[dict[str, Any]],
+    candidates: list[dict[str, float]],
+    protocol: CFValidationProtocol,
+) -> list[tuple[bool, float]]:
+    if not candidates:
+        return []
+    feature_names = (LOWER_FEATURE, *UPPER_FEATURES)
+    features = np.asarray(
+        [[record["support_features"][name] for name in feature_names] for record in records],
+        dtype=float,
+    )
+    limits = np.asarray(
+        [[candidate[name] for name in feature_names] for candidate in candidates],
+        dtype=float,
+    )
+    supported = features[:, 0, None] >= limits[None, :, 0]
+    for index in range(1, len(feature_names)):
+        supported &= features[:, index, None] <= limits[None, :, index]
+    cell_indices = np.asarray([int(record["cell_index"]) for record in records])
+    strong_cells = sorted(
+        {
+            int(record["cell_index"])
+            for record in records
+            if _profile_eligible(protocol, record["cell"], record["cell_kind"])
+        }
+    )
+    passing = np.zeros(len(candidates), dtype=int)
+    supported_totals = np.zeros(len(candidates), dtype=int)
+    for cell_index in strong_cells:
+        cell_supported = supported[cell_indices == cell_index]
+        supported_counts = cell_supported.sum(axis=0)
+        supported_totals += supported_counts
+        passing += supported_counts / len(cell_supported) >= float(
+            protocol.metrics["minimum_strong_replication_pass_fraction"]
+        )
+    useful = (
+        passing / len(strong_cells)
+        >= float(protocol.metrics["minimum_strong_cell_pass_fraction"])
+    )
+    return [
+        (bool(useful[index]), float(supported_totals[index]))
+        for index in range(len(candidates))
+    ]
+
+
 def calibrate(
     protocol: CFValidationProtocol, evidence: dict[str, Any]
 ) -> dict[str, Any]:
     _verify_evidence(evidence)
-    if evidence["lane"] != "calibration" or not evidence["complete_frozen_lane"]:
-        raise ValueError("Only a complete frozen calibration lane can create a profile")
     source = protocol.calibration_source
+    source_lane = "calibration" if source is None else source.get("lane", "calibration")
+    if evidence["lane"] != source_lane or not evidence["complete_frozen_lane"]:
+        raise ValueError("Only the complete frozen development source can create a profile")
     matches_protocol = evidence["protocol_checksum"] == protocol.checksum
     matches_declared_source = bool(
         source
@@ -299,9 +475,12 @@ def calibrate(
                     changed_name: grids[changed_name][changed_index],
                 }
                 candidates[tuple(changed[name] for name in feature_names)] = changed
+    candidate_values = list(candidates.values())
+    usefulness = _candidate_usefulness(fit_records, candidate_values, protocol)
     ranked: list[tuple[float, tuple[float, ...], dict[str, float]]] = []
-    for thresholds in candidates.values():
-        useful, objective = _usefulness(fit_records, thresholds, protocol)
+    for thresholds, (useful, objective) in zip(
+        candidate_values, usefulness, strict=True
+    ):
         if useful:
             # Smaller upper limits and larger ESS floors win exact objective ties.
             conservative = (
@@ -312,7 +491,15 @@ def calibrate(
     ranked.sort(key=lambda item: (item[0], item[1]))
     selected: dict[str, float] | None = None
     selected_audit: list[dict[str, Any]] = []
-    attempts: list[tuple[float, tuple[float, ...], dict[str, float], list[dict[str, Any]]]] = []
+    attempts: list[
+        tuple[
+            float,
+            tuple[float, ...],
+            dict[str, float],
+            list[dict[str, Any]],
+            dict[str, Any],
+        ]
+    ] = []
     candidate_limit = len(ranked) if protocol.calibration_screening is not None else 256
     records_by_cell = {
         cell_index: [
@@ -326,7 +513,20 @@ def calibrate(
         ]
         for cell_index in records_by_cell
     }
-    for negative_objective, conservative, thresholds in ranked[:candidate_limit]:
+    ranked_candidates = ranked[:candidate_limit]
+    enrichments = _candidate_enrichments(
+        audit_records,
+        [thresholds for _, _, thresholds in ranked_candidates],
+        protocol.metrics,
+    )
+    for (negative_objective, conservative, thresholds), enrichment in zip(
+        ranked_candidates, enrichments, strict=True
+    ):
+        if protocol.calibration_enrichment_screening and not enrichment["passed"]:
+            attempts.append(
+                (-negative_objective, conservative, thresholds, [], enrichment)
+            )
+            continue
         audits = []
         passed = True
         for cell_index, all_cell in records_by_cell.items():
@@ -365,7 +565,7 @@ def calibrate(
                 audit["passed"] = audit_passed
             passed &= bool(audit["passed"])
             audits.append({"cell_index": cell_index, "cell": cell, **audit})
-        attempts.append((-negative_objective, conservative, thresholds, audits))
+        attempts.append((-negative_objective, conservative, thresholds, audits, enrichment))
         if protocol.calibration_screening is None and passed:
             selected = thresholds
             selected_audit = audits
@@ -373,12 +573,19 @@ def calibrate(
     screening_diagnostics: dict[str, Any] | None = None
     if protocol.calibration_screening is not None and attempts:
         fully_screened = [
-            attempt for attempt in attempts if all(audit["passed"] for audit in attempt[3])
+            attempt
+            for attempt in attempts
+            if all(audit["passed"] for audit in attempt[3])
+            and (
+                not protocol.calibration_enrichment_screening or attempt[4]["passed"]
+            )
         ]
         closest = max(
             attempts,
             key=lambda attempt: (
                 sum(audit["passed"] for audit in attempt[3]),
+                attempt[4]["passed"],
+                attempt[4]["absolute_enrichment"],
                 attempt[0],
             ),
         )
@@ -391,6 +598,7 @@ def calibrate(
                 "supported_replications": closest[0],
                 "thresholds": closest[2],
                 "audit": closest[3],
+                "unstable_enrichment": closest[4],
             },
         }
         if fully_screened:
@@ -411,8 +619,9 @@ def calibrate(
             )
             if retained:
                 retained.sort(key=lambda attempt: (attempt[1], -attempt[0]))
-                _, _, selected, selected_audit = retained[0]
+                _, _, selected, selected_audit, selected_enrichment = retained[0]
                 screening_diagnostics["selected_supported_replications"] = retained[0][0]
+                screening_diagnostics["selected_unstable_enrichment"] = selected_enrichment
             else:
                 screening_diagnostics["selection_refusal_reason"] = (
                     "no-fully-screened-candidate-met-retention-floor"
@@ -428,7 +637,9 @@ def calibrate(
         "candidate_count": len(ranked),
         "evaluated_top_candidates": candidate_limit,
         "threshold_selection": (
-            "screened-conservative-within-retention-v4"
+            "screened-enriched-conservative-within-retention-v7"
+            if protocol.calibration_enrichment_screening
+            else "screened-conservative-within-retention-v4"
             if protocol.calibration_screening is not None
             else "preregistered-grid-usefulness-and-operating-gates-v2"
         ),

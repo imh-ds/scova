@@ -67,10 +67,12 @@ class CFValidationProtocol:
     calibration_fit_fraction: float = 0.60
     threshold_quantiles: Mapping[str, tuple[float, ...]] | None = None
     calibration_screening: Mapping[str, float] | None = None
+    calibration_enrichment_screening: bool = False
     calibration_candidate_retention_fraction: float = 1.0
     calibration_source: Mapping[str, str] | None = None
     candidate_source: Mapping[str, str] | None = None
     external_source: Mapping[str, str] | None = None
+    inference_source: Mapping[str, str] | None = None
     failed_inference_source: Mapping[str, str] | None = None
     frozen: bool = False
     schema_version: int = 1
@@ -144,6 +146,12 @@ class CFValidationProtocol:
             for left, right in pairwise(intervals)
         ):
             raise ValueError("Pilot, calibration, and validation seed partitions must be disjoint")
+        maximum_sklearn_seed = max(
+            part.start + maximum_cells * part.count - 1 + 7919
+            for part in partitions
+        )
+        if maximum_sklearn_seed > 2**32 - 1:
+            raise ValueError("Campaign seeds must remain valid scikit-learn random_state values")
         if self.calibration.count < 1000:
             raise ValueError("The frozen calibration lane requires at least 1,000 replications")
         if self.validation.count < 2000:
@@ -193,6 +201,11 @@ class CFValidationProtocol:
             (
                 "external source",
                 self.external_source,
+                {"protocol_id", "protocol_checksum", "evidence_checksum", "git_commit"},
+            ),
+            (
+                "inference source",
+                self.inference_source,
                 {"protocol_id", "protocol_checksum", "evidence_checksum", "git_commit"},
             ),
             (
@@ -249,6 +262,11 @@ class CFValidationProtocol:
             ),
             **(
                 {}
+                if not self.calibration_enrichment_screening
+                else {"calibration_enrichment_screening": True}
+            ),
+            **(
+                {}
                 if self.calibration_source is None
                 else {"calibration_source": dict(self.calibration_source)}
             ),
@@ -261,6 +279,11 @@ class CFValidationProtocol:
                 {}
                 if self.external_source is None
                 else {"external_source": dict(self.external_source)}
+            ),
+            **(
+                {}
+                if self.inference_source is None
+                else {"inference_source": dict(self.inference_source)}
             ),
             **(
                 {}
@@ -349,6 +372,14 @@ class CFValidationProtocol:
                 None
                 if values.get("external_source") is None
                 else {str(name): str(value) for name, value in values["external_source"].items()}
+            ),
+            calibration_enrichment_screening=bool(
+                values.get("calibration_enrichment_screening", False)
+            ),
+            inference_source=(
+                None
+                if values.get("inference_source") is None
+                else {str(name): str(value) for name, value in values["inference_source"].items()}
             ),
             failed_inference_source=(
                 None

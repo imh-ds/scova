@@ -306,6 +306,19 @@ def test_cf_v6_workflow_limits_execution_to_the_inference_amendment() -> None:
     assert "- validation_preflight" in workflow
 
 
+def test_cf_v7_workflow_uses_rejected_v6_only_for_development() -> None:
+    workflow = Path(".github/workflows/cf-reference-v7-validation.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "SCOVA-CF v7 support-profile recalibration" in workflow
+    assert "benchmarks/specs/cf_reference_v7.json" in workflow
+    assert "scova-cf-reference-v7-freeze-r1" in workflow
+    assert "development_run_id" in workflow
+    assert "source/cf-reference-validation-campaign.json.gz" in workflow
+    assert "- calibrate_support" in workflow
+    assert "- simultaneous_inference" not in workflow
+
+
 def test_cf_promotion_applies_only_exact_evidence_and_release_text(
     tmp_path: Path, monkeypatch
 ) -> None:
