@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scova"
-version = "0.3.0.dev0"
+version = "0.5.0"
 description = "Support-aware Covariate Overlap and Variance Analysis"
 readme = "README.md"
 requires-python = ">=3.10"

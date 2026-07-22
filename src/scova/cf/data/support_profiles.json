@@ -1,4 +1,32 @@
 {
-  "schema_version": 1,
-  "profiles": []
+  "profiles": [
+    {
+      "calibration_evidence_checksum": "4a6a4515456df1dd1e9943a82971d918d41db716598482d005628c7721daf7ea",
+      "compatibility": {
+        "assignment": "known-constant",
+        "estimand_id": "study-population-standardized-means",
+        "estimator": "aipw-unnormalized",
+        "independent_unit": "row",
+        "maximum_group_count": 3,
+        "minimum_group_count": 50,
+        "mode": "randomized",
+        "outcome_type": "continuous"
+      },
+      "profile_checksum": "cc52d5e0fe3b8470d101e6572bbeafeb2ec6752f4545961f505c3d53351b1991",
+      "profile_id": "cf-randomized-continuous-aipw-unnormalized-v9-promoted",
+      "protocol_checksum": "c60b3780680bbbfa08c2d31ed3ff51c4a28aec0d14f013c08daeaec243d7330b",
+      "schema_version": 1,
+      "state": "promoted",
+      "thresholds": {
+        "maximum_absolute_weighted_balance_difference": 1.3233347416888628,
+        "maximum_influence_top_one_percent_share": 0.9999817064961821,
+        "maximum_normalized_weight": 0.33333333333333337,
+        "maximum_seed_standardized_departure": 6.055869767485041,
+        "maximum_top_one_percent_weight_share": 1.0,
+        "minimum_ess_ratio": 0.9999999999999991
+      },
+      "validation_evidence_checksum": "f6ec7c490399f6317a6e226432b909b9c414184b42fea828ab45b755c029e5e5"
+    }
+  ],
+  "schema_version": 1
 }
