@@ -64,6 +64,34 @@ def _risk_ratio_lower_bound(
     rr = (a / (a + b)) / (c / (c + d))
     se_log = float(np.sqrt(1.0 / a - 1.0 / (a + b) + 1.0 / c - 1.0 / (c + d)))
     return float(np.exp(np.log(rr) - z * se_log))
+
+
+# Family-wise error control for the per-cell coverage/type-I gate.  The gate
+# applies a two-sided Monte-Carlo test to every supported cell independently; at
+# the plain 2-sigma level (~4.5% per cell) a *perfectly* calibrated campaign of
+# ~16 cells trips the gate ~53% of the time by chance alone.  When a spec sets
+# ``coverage_family_wise_error`` the multiplier is instead derived from a Sidak
+# correction so the whole family of cells shares that error budget.
+COVERAGE_FAMILY_WISE_ERROR_METRIC = "coverage_family_wise_error"
+
+
+def _family_wise_multiplier(
+    family_wise_error: float | None, family_size: int, base_multiplier: float
+) -> float:
+    """Two-sided normal multiplier that holds family-wise error across cells.
+
+    Falls back to ``base_multiplier`` (the raw Monte-Carlo multiplier) when no
+    family-wise budget is configured, so existing protocols are unchanged.
+    """
+    if family_wise_error is None:
+        return base_multiplier
+    error = float(family_wise_error)
+    if not 0.0 < error < 1.0:
+        raise ValueError(f"{COVERAGE_FAMILY_WISE_ERROR_METRIC} must lie in (0, 1); got {error}")
+    per_cell = 1.0 - (1.0 - error) ** (1.0 / max(family_size, 1))
+    return float(statistics.NormalDist().inv_cdf(1.0 - per_cell / 2.0))
+
+
 UPPER_FEATURES = (
     "maximum_normalized_weight",
     "maximum_top_one_percent_weight_share",
@@ -261,7 +289,7 @@ def _candidate_enrichments(
 
 
 def _cell_gate(
-    records: list[dict[str, Any]], metrics: MappingLike
+    records: list[dict[str, Any]], metrics: MappingLike, *, multiplier: float | None = None
 ) -> tuple[bool, dict[str, Any]]:
     contrasts = [contrast for record in records for contrast in record["contrasts"]]
     if len(contrasts) < 2:
@@ -275,7 +303,12 @@ def _cell_gate(
     se_ratio = mean_se / empirical_sd if empirical_sd > 0 else np.inf
     nulls = [value for value in contrasts if value["null"]]
     type_i_error = None if not nulls else float(np.mean([value["rejected"] for value in nulls]))
-    multiplier = float(metrics["monte_carlo_standard_error_multiplier"])
+    # ``multiplier`` lets the caller inject a family-wise-corrected value across
+    # the cells being adjudicated; without it the raw per-cell Monte-Carlo
+    # multiplier is used (unchanged legacy behaviour).
+    if multiplier is None:
+        multiplier = float(metrics["monte_carlo_standard_error_multiplier"])
+    multiplier = float(multiplier)
     type_i_ok = True
     if type_i_error is not None:
         type_i_mcse = np.sqrt(0.05 * 0.95 / len(nulls))
@@ -293,6 +326,7 @@ def _cell_gate(
         "supported_replications": len(records),
         "contrast_count": len(contrasts),
         "coverage": coverage,
+        "coverage_multiplier": multiplier,
         "bias": bias,
         "empirical_standard_deviation": empirical_sd,
         "standard_error_ratio": se_ratio,

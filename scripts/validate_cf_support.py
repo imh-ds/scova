@@ -9,7 +9,9 @@ from typing import Any
 
 import numpy as np
 from calibrate_cf_support import (
+    COVERAGE_FAMILY_WISE_ERROR_METRIC,
     _cell_gate,
+    _family_wise_multiplier,
     _passes,
     _profile_eligible,
     _structural,
@@ -87,9 +89,39 @@ def validate(
         record.get("status_code") == "execution-error" for record in records
     )
     usable = [record for record in records if not record["refused"]]
+    cell_indices = sorted({int(record["cell_index"]) for record in records})
+    cell_meta = {
+        cell_index: next(r for r in records if r["cell_index"] == cell_index)
+        for cell_index in cell_indices
+    }
+    supported_by_cell = {
+        cell_index: [
+            record
+            for record in usable
+            if record["cell_index"] == cell_index and _passes(record, thresholds)
+        ]
+        for cell_index in cell_indices
+    }
+    # Cells that actually receive the two-sided coverage/type-I test form the
+    # family whose error budget is shared, so the multiplier is derived once from
+    # that count.  Legacy protocols (no family-wise budget) keep the raw multiplier.
+    gated_family_size = sum(
+        1
+        for cell_index in cell_indices
+        if not _structural(cell_meta[cell_index]["cell"])
+        and _profile_eligible(
+            protocol, cell_meta[cell_index]["cell"], cell_meta[cell_index]["cell_kind"]
+        )
+        and sum(len(record["contrasts"]) for record in supported_by_cell[cell_index]) >= 2
+    )
+    coverage_multiplier = _family_wise_multiplier(
+        protocol.metrics.get(COVERAGE_FAMILY_WISE_ERROR_METRIC),
+        gated_family_size,
+        float(protocol.metrics["monte_carlo_standard_error_multiplier"]),
+    )
     audits: list[dict[str, Any]] = []
     all_passed = execution_failure_count == 0
-    for cell_index in sorted({int(record["cell_index"]) for record in records}):
+    for cell_index in cell_indices:
         all_cell = [record for record in records if record["cell_index"] == cell_index]
         cell = all_cell[0]["cell"]
         kind = all_cell[0]["cell_kind"]
@@ -107,12 +139,8 @@ def validate(
                 "supported_replications": 0,
             }
         else:
-            supported = [
-                record
-                for record in usable
-                if record["cell_index"] == cell_index and _passes(record, thresholds)
-            ]
-            passed, audit = _cell_gate(supported, protocol.metrics)
+            supported = supported_by_cell[cell_index]
+            passed, audit = _cell_gate(supported, protocol.metrics, multiplier=coverage_multiplier)
             if not supported:
                 passed = True
                 audit = {"passed": True, "reason": "unstable-cell-no-supported-results"}
@@ -166,6 +194,11 @@ def validate(
         ),
         "all_validation_gates_passed": all_passed,
         "execution_failure_count": execution_failure_count,
+        "coverage_gate": {
+            "family_wise_error": protocol.metrics.get(COVERAGE_FAMILY_WISE_ERROR_METRIC),
+            "gated_cell_count": gated_family_size,
+            "coverage_multiplier": coverage_multiplier,
+        },
         "usefulness": {
             "passed": usefulness_passed,
             "strong_cell_count": len(strong_cells),
