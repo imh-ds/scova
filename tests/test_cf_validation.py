@@ -56,6 +56,7 @@ V4_SPEC = Path("benchmarks/specs/cf_reference_v4.json")
 V6_SPEC = Path("benchmarks/specs/cf_reference_v6.json")
 V7_SPEC = Path("benchmarks/specs/cf_reference_v7.json")
 V8_SPEC = Path("benchmarks/specs/cf_reference_v8.json")
+V9_SPEC = Path("benchmarks/specs/cf_reference_v9.json")
 BLOCKED_V2 = Path("benchmarks/specs/cf_reference_v2_blocked.json")
 
 
@@ -1074,3 +1075,19 @@ def test_family_wise_correction_controls_spurious_cell_failures() -> None:
     # power: a broken 0.90 cell (n=4000) is still detected essentially always
     broken = rng.binomial(4000, 0.90, size=trials) / 4000
     assert np.mean(np.abs(broken - 0.95) > corrected * np.sqrt(0.95 * 0.05 / 4000)) > 0.99
+
+
+def test_v9_consolidates_robust_margin_and_family_wise_coverage_gate() -> None:
+    protocol = CFValidationProtocol.load(V9_SPEC)
+    assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v9"
+    assert protocol.checksum == (
+        "c60b3780680bbbfa08c2d31ed3ff51c4a28aec0d14f013c08daeaec243d7330b"
+    )
+    # both improvements are active, and both reused-evidence sources are unchanged
+    assert protocol.metrics["unstable_risk_ratio_selection_confidence"] == 0.95
+    assert protocol.metrics["coverage_family_wise_error"] == 0.05
+    v8 = CFValidationProtocol.load(V8_SPEC)
+    assert protocol.calibration_source == v8.calibration_source
+    assert protocol.external_source == v8.external_source
+    assert protocol.inference_source == v8.inference_source
+    assert CFValidationProtocol.from_dict(protocol.to_dict()).checksum == protocol.checksum
