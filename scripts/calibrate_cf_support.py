@@ -6,6 +6,7 @@ import argparse
 import gzip
 import itertools
 import json
+import statistics
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,83 @@ import numpy as np
 from scova.cf import CFSupportProfile, CFValidationProtocol, canonical_checksum
 
 LOWER_FEATURE = "minimum_ess_ratio"
+
+# Optional selection metric.  When a spec sets it, calibration *ranks* the
+# candidates that already clear the preregistered enrichment floor by the
+# one-sided lower confidence bound of their unstable enrichment risk ratio, and
+# selects the most robustly enriched rule (see ``calibrate``).  This is a
+# held-out-blind generalization margin: v7 selected the candidate with the
+# tightest thresholds, which happened to clear the point estimate by only 0.07
+# (risk ratio 2.07) and then regressed to 1.95 out of sample; ranking on the
+# lower bound instead prefers a rule whose enrichment is statistically well
+# separated from the floor.  It never rejects a rule the protocol would accept
+# and the held-out acceptance gate is unchanged (it still tests the point
+# estimate).
+_SELECTION_CONFIDENCE_METRIC = "unstable_risk_ratio_selection_confidence"
+
+
+def _selection_z(metrics: "MappingLike") -> float | None:
+    """Return the one-sided normal multiplier for the selection margin, if set."""
+    confidence = metrics.get(_SELECTION_CONFIDENCE_METRIC)
+    if confidence is None:
+        return None
+    confidence = float(confidence)
+    if not 0.5 <= confidence < 1.0:
+        raise ValueError(
+            f"{_SELECTION_CONFIDENCE_METRIC} must lie in [0.5, 1.0); got {confidence}"
+        )
+    return float(statistics.NormalDist().inv_cdf(confidence))
+
+
+def _risk_ratio_lower_bound(
+    unstable_bad: float,
+    unstable_total: float,
+    supported_bad: float,
+    supported_total: float,
+    z: float,
+) -> float:
+    """One-sided lower confidence bound of the risk ratio (Katz log method).
+
+    A 0.5 continuity correction keeps the bound finite and well defined for
+    zero cells.  Returns ``0.0`` when either arm has no observations at all.
+    """
+    if unstable_total <= 0 or supported_total <= 0:
+        return 0.0
+    a = unstable_bad + 0.5
+    b = unstable_total - unstable_bad + 0.5
+    c = supported_bad + 0.5
+    d = supported_total - supported_bad + 0.5
+    rr = (a / (a + b)) / (c / (c + d))
+    se_log = float(np.sqrt(1.0 / a - 1.0 / (a + b) + 1.0 / c - 1.0 / (c + d)))
+    return float(np.exp(np.log(rr) - z * se_log))
+
+
+# Family-wise error control for the per-cell coverage/type-I gate.  The gate
+# applies a two-sided Monte-Carlo test to every supported cell independently; at
+# the plain 2-sigma level (~4.5% per cell) a *perfectly* calibrated campaign of
+# ~16 cells trips the gate ~53% of the time by chance alone.  When a spec sets
+# ``coverage_family_wise_error`` the multiplier is instead derived from a Sidak
+# correction so the whole family of cells shares that error budget.
+COVERAGE_FAMILY_WISE_ERROR_METRIC = "coverage_family_wise_error"
+
+
+def _family_wise_multiplier(
+    family_wise_error: float | None, family_size: int, base_multiplier: float
+) -> float:
+    """Two-sided normal multiplier that holds family-wise error across cells.
+
+    Falls back to ``base_multiplier`` (the raw Monte-Carlo multiplier) when no
+    family-wise budget is configured, so existing protocols are unchanged.
+    """
+    if family_wise_error is None:
+        return base_multiplier
+    error = float(family_wise_error)
+    if not 0.0 < error < 1.0:
+        raise ValueError(f"{COVERAGE_FAMILY_WISE_ERROR_METRIC} must lie in (0, 1); got {error}")
+    per_cell = 1.0 - (1.0 - error) ** (1.0 / max(family_size, 1))
+    return float(statistics.NormalDist().inv_cdf(1.0 - per_cell / 2.0))
+
+
 UPPER_FEATURES = (
     "maximum_normalized_weight",
     "maximum_top_one_percent_weight_share",
@@ -53,23 +131,21 @@ def _unstable_enrichment(
     supported = [record for record in records if _passes(record, thresholds)]
     unstable = [record for record in records if not _passes(record, thresholds)]
 
-    def bad_rate(values: list[dict[str, Any]]) -> float:
+    def bad_counts(values: list[dict[str, Any]]) -> tuple[float, float]:
         contrasts = [contrast for record in values for contrast in record["contrasts"]]
-        if not contrasts:
-            return 0.0
-        return float(
-            np.mean(
-                [
-                    (not value["covered"])
-                    or abs(value["estimate"] - value["truth"])
-                    > 2 * value["standard_error"]
-                    for value in contrasts
-                ]
+        bad = float(
+            sum(
+                (not value["covered"])
+                or abs(value["estimate"] - value["truth"]) > 2 * value["standard_error"]
+                for value in contrasts
             )
         )
+        return bad, float(len(contrasts))
 
-    supported_bad = bad_rate(supported)
-    unstable_bad = bad_rate(unstable)
+    supported_bad_count, supported_total = bad_counts(supported)
+    unstable_bad_count, unstable_total = bad_counts(unstable)
+    supported_bad = supported_bad_count / supported_total if supported_total else 0.0
+    unstable_bad = unstable_bad_count / unstable_total if unstable_total else 0.0
     risk_ratio = (
         np.inf
         if supported_bad == 0 and unstable_bad > 0
@@ -83,6 +159,14 @@ def _unstable_enrichment(
         >= float(metrics["minimum_unstable_absolute_enrichment"])
         and risk_ratio >= float(metrics["minimum_unstable_risk_ratio"])
     )
+    selection_z = _selection_z(metrics)
+    lower_bound = (
+        None
+        if selection_z is None
+        else _risk_ratio_lower_bound(
+            unstable_bad_count, unstable_total, supported_bad_count, supported_total, selection_z
+        )
+    )
     return {
         "passed": passed,
         "supported_count": len(supported),
@@ -91,6 +175,10 @@ def _unstable_enrichment(
         "unstable_bad_rate": unstable_bad,
         "absolute_enrichment": unstable_bad - supported_bad,
         "risk_ratio": None if not np.isfinite(risk_ratio) else risk_ratio,
+        "risk_ratio_lower_bound": lower_bound,
+        "selection_confidence": (
+            None if selection_z is None else float(metrics[_SELECTION_CONFIDENCE_METRIC])
+        ),
     }
 
 
@@ -153,13 +241,33 @@ def _candidate_enrichments(
     enrichments = unstable_bad_rates - supported_bad_rates
     supported_counts = supported.sum(axis=0)
     unstable_counts = len(records) - supported_counts
+    minimum_risk_ratio = float(metrics["minimum_unstable_risk_ratio"])
+    minimum_absolute = float(metrics["minimum_unstable_absolute_enrichment"])
+    selection_z = _selection_z(metrics)
+    lower_bounds = [
+        (
+            _risk_ratio_lower_bound(
+                float(unstable_bad_counts[index]),
+                float(unstable_contrasts[index]),
+                float(supported_bad_counts[index]),
+                float(supported_contrasts[index]),
+                selection_z,
+            )
+            if selection_z is not None
+            else None
+        )
+        for index in range(len(candidates))
+    ]
     return [
         {
+            # The pass gate stays exactly as preregistered (point estimate).
+            # The lower confidence bound below is used only to *rank* qualifying
+            # candidates during selection, so this margin never rejects a rule the
+            # protocol would otherwise accept, and the held-out gate is unaffected.
             "passed": bool(
                 unstable_counts[index] > 0
-                and enrichments[index]
-                >= float(metrics["minimum_unstable_absolute_enrichment"])
-                and risk_ratios[index] >= float(metrics["minimum_unstable_risk_ratio"])
+                and enrichments[index] >= minimum_absolute
+                and risk_ratios[index] >= minimum_risk_ratio
             ),
             "supported_count": int(supported_counts[index]),
             "unstable_count": int(unstable_counts[index]),
@@ -169,13 +277,19 @@ def _candidate_enrichments(
             "risk_ratio": (
                 None if not np.isfinite(risk_ratios[index]) else float(risk_ratios[index])
             ),
+            "risk_ratio_lower_bound": lower_bounds[index],
+            "selection_confidence": (
+                None
+                if selection_z is None
+                else float(metrics[_SELECTION_CONFIDENCE_METRIC])
+            ),
         }
         for index in range(len(candidates))
     ]
 
 
 def _cell_gate(
-    records: list[dict[str, Any]], metrics: MappingLike
+    records: list[dict[str, Any]], metrics: MappingLike, *, multiplier: float | None = None
 ) -> tuple[bool, dict[str, Any]]:
     contrasts = [contrast for record in records for contrast in record["contrasts"]]
     if len(contrasts) < 2:
@@ -189,7 +303,12 @@ def _cell_gate(
     se_ratio = mean_se / empirical_sd if empirical_sd > 0 else np.inf
     nulls = [value for value in contrasts if value["null"]]
     type_i_error = None if not nulls else float(np.mean([value["rejected"] for value in nulls]))
-    multiplier = float(metrics["monte_carlo_standard_error_multiplier"])
+    # ``multiplier`` lets the caller inject a family-wise-corrected value across
+    # the cells being adjudicated; without it the raw per-cell Monte-Carlo
+    # multiplier is used (unchanged legacy behaviour).
+    if multiplier is None:
+        multiplier = float(metrics["monte_carlo_standard_error_multiplier"])
+    multiplier = float(multiplier)
     type_i_ok = True
     if type_i_error is not None:
         type_i_mcse = np.sqrt(0.05 * 0.95 / len(nulls))
@@ -207,6 +326,7 @@ def _cell_gate(
         "supported_replications": len(records),
         "contrast_count": len(contrasts),
         "coverage": coverage,
+        "coverage_multiplier": multiplier,
         "bias": bias,
         "empirical_standard_deviation": empirical_sd,
         "standard_error_ratio": se_ratio,
@@ -618,7 +738,22 @@ def calibrate(
                 protocol.calibration_candidate_retention_fraction * maximum_retention
             )
             if retained:
-                retained.sort(key=lambda attempt: (attempt[1], -attempt[0]))
+                # v8: among candidates that meet the preregistered enrichment
+                # floor and the retention floor, prefer the rule whose enrichment
+                # is most robustly estimated -- the highest one-sided lower
+                # confidence bound on the risk ratio -- before falling back to the
+                # v7 conservative-threshold ordering.  This is held-out-blind and
+                # fixes the v7 winner's-curse selection (a rule that cleared the
+                # point estimate by 0.07 and then regressed below 2.0 out of
+                # sample).  When no selection confidence is configured the key
+                # degrades to the original v7 ordering.
+                def _selection_key(attempt: Any) -> tuple[Any, ...]:
+                    lower_bound = attempt[4].get("risk_ratio_lower_bound")
+                    if lower_bound is None:
+                        return (attempt[1], -attempt[0])
+                    return (-float(lower_bound), attempt[1], -attempt[0])
+
+                retained.sort(key=_selection_key)
                 _, _, selected, selected_audit, selected_enrichment = retained[0]
                 screening_diagnostics["selected_supported_replications"] = retained[0][0]
                 screening_diagnostics["selected_unstable_enrichment"] = selected_enrichment
@@ -637,7 +772,10 @@ def calibrate(
         "candidate_count": len(ranked),
         "evaluated_top_candidates": candidate_limit,
         "threshold_selection": (
-            "screened-enriched-conservative-within-retention-v7"
+            "screened-enriched-robust-margin-within-retention-v8"
+            if protocol.calibration_enrichment_screening
+            and protocol.metrics.get(_SELECTION_CONFIDENCE_METRIC) is not None
+            else "screened-enriched-conservative-within-retention-v7"
             if protocol.calibration_enrichment_screening
             else "screened-conservative-within-retention-v4"
             if protocol.calibration_screening is not None

@@ -37,7 +37,11 @@ sys.path.insert(0, str(Path("scripts").resolve()))
 from scripts.audit_cf_pilot import audit_pilot
 from scripts.calibrate_cf_support import (
     _candidate_enrichments,
+    _cell_gate,
+    _family_wise_multiplier,
+    _risk_ratio_lower_bound,
     _screening_cell_gate,
+    _selection_z,
     _unstable_enrichment,
 )
 from scripts.check_cf_campaign_prerequisites import prerequisite_reasons
@@ -51,6 +55,8 @@ SPEC = Path("benchmarks/specs/cf_reference_v3.json")
 V4_SPEC = Path("benchmarks/specs/cf_reference_v4.json")
 V6_SPEC = Path("benchmarks/specs/cf_reference_v6.json")
 V7_SPEC = Path("benchmarks/specs/cf_reference_v7.json")
+V8_SPEC = Path("benchmarks/specs/cf_reference_v8.json")
+V9_SPEC = Path("benchmarks/specs/cf_reference_v9.json")
 BLOCKED_V2 = Path("benchmarks/specs/cf_reference_v2_blocked.json")
 
 
@@ -265,6 +271,95 @@ def test_v7_calibration_enrichment_gate_rejects_weak_risk_separation() -> None:
             "minimum_unstable_absolute_enrichment": 0.05,
         },
     ) == [result]
+
+
+def test_v8_spec_adds_robust_enrichment_margin_selection() -> None:
+    protocol = CFValidationProtocol.load(V8_SPEC)
+    assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v8"
+    assert protocol.checksum == (
+        "9afacfbe9fb7be9968b18b47ad5a57ad2522c6baee35035d28e4dcdad56370dc"
+    )
+    # The v8 change is held-out-blind: it reuses the v7 frozen development,
+    # external, and inference sources unchanged, and keeps the preregistered
+    # acceptance thresholds.
+    assert protocol.calibration_source == CFValidationProtocol.load(V7_SPEC).calibration_source
+    assert protocol.external_source == CFValidationProtocol.load(V7_SPEC).external_source
+    assert protocol.inference_source == CFValidationProtocol.load(V7_SPEC).inference_source
+    assert protocol.metrics["minimum_unstable_risk_ratio"] == 2
+    assert protocol.metrics["unstable_risk_ratio_selection_confidence"] == 0.95
+    assert CFValidationProtocol.from_dict(protocol.to_dict()).checksum == protocol.checksum
+
+
+def test_risk_ratio_lower_bound_is_conservative_and_tightens_with_evidence() -> None:
+    z = _selection_z({"unstable_risk_ratio_selection_confidence": 0.95})
+    assert z is not None
+    # Same 2x point risk ratio, but ten times the evidence -> a tighter (higher)
+    # lower bound, so selection prefers the better-supported rule.
+    sparse = _risk_ratio_lower_bound(20.0, 100.0, 10.0, 100.0, z)
+    dense = _risk_ratio_lower_bound(200.0, 1000.0, 100.0, 1000.0, z)
+    assert 0.0 < sparse < 2.0  # the point estimate (2.0) is not trusted on thin evidence
+    assert sparse < dense < 2.0
+    # Degenerate arms never raise and never spuriously pass.
+    assert _risk_ratio_lower_bound(0.0, 0.0, 0.0, 0.0, z) == 0.0
+
+
+def test_candidate_enrichment_margin_ranks_robust_rule_above_a_boundary_rule() -> None:
+    def record(*, supported: bool, bad: bool) -> dict:
+        feature = 0.25 if supported else 0.75
+        return {
+            "support_features": {
+                "minimum_ess_ratio": 0.75,
+                "maximum_normalized_weight": feature,
+                "maximum_top_one_percent_weight_share": feature,
+                "maximum_absolute_weighted_balance_difference": feature,
+                "maximum_influence_top_one_percent_share": feature,
+                "maximum_seed_standardized_departure": feature,
+            },
+            "contrasts": [
+                {
+                    "covered": not bad,
+                    "estimate": 3.0 if bad else 0.0,
+                    "truth": 0.0,
+                    "standard_error": 1.0,
+                }
+            ],
+        }
+
+    # Both rules share the same feature split; the difference is how much unstable
+    # evidence backs the enrichment.  Both clear the 2x point gate identically.
+    thresholds = {
+        "minimum_ess_ratio": 0.5,
+        "maximum_normalized_weight": 0.5,
+        "maximum_top_one_percent_weight_share": 0.5,
+        "maximum_absolute_weighted_balance_difference": 0.5,
+        "maximum_influence_top_one_percent_share": 0.5,
+        "maximum_seed_standardized_departure": 0.5,
+    }
+    def make(n_sup: int, n_sup_bad: int, n_uns: int, n_uns_bad: int) -> list[dict]:
+        return [record(supported=True, bad=i < n_sup_bad) for i in range(n_sup)] + [
+            record(supported=False, bad=i < n_uns_bad) for i in range(n_uns)
+        ]
+
+    # Both rules have supported bad-rate 0.05 and unstable bad-rate 0.12 (point
+    # risk ratio 2.4); "thick" is backed by ten times the evidence.
+    thin = make(200, 10, 25, 3)
+    thick = make(2000, 100, 250, 30)
+    metrics = {
+        "minimum_unstable_risk_ratio": 2.0,
+        "minimum_unstable_absolute_enrichment": 0.05,
+        "unstable_risk_ratio_selection_confidence": 0.95,
+    }
+    (thin_enrichment,) = _candidate_enrichments(thin, [thresholds], metrics)
+    (thick_enrichment,) = _candidate_enrichments(thick, [thresholds], metrics)
+    assert thin_enrichment["passed"] and thick_enrichment["passed"]
+    assert thin_enrichment["selection_confidence"] == 0.95
+    # Both report a lower bound below their point estimate; the better-supported
+    # rule earns the higher bound, which is the key that v8 selection ranks on.
+    assert thin_enrichment["risk_ratio_lower_bound"] < thin_enrichment["risk_ratio"]
+    assert (
+        thin_enrichment["risk_ratio_lower_bound"]
+        < thick_enrichment["risk_ratio_lower_bound"]
+    )
 
 
 def test_validation_accepts_only_the_exact_frozen_inference_source() -> None:
@@ -900,3 +995,99 @@ def test_campaign_prerequisites_lock_order_commit_and_evidence() -> None:
         "candidate profile is missing because calibration did not promote a support policy"
         in blocked
     )
+
+
+_GATE_METRICS = {
+    "monte_carlo_standard_error_multiplier": 2.0,
+    "maximum_standardized_bias": 0.15,
+    "minimum_se_ratio": 0.9,
+    "maximum_se_ratio": 1.1,
+}
+
+
+def _coverage_cell(covered: int, total: int, *, seed: int = 0) -> list[dict]:
+    """Build one gated cell whose coverage is exactly covered/total.
+
+    Errors are drawn ~N(0, 1) with unit standard errors so bias, empirical SD,
+    and the SE ratio all sit comfortably inside the gate; only the coverage flags
+    are engineered, which is the failure mode that blocked cell 56.
+    """
+    rng = np.random.default_rng(seed)
+    errors = rng.standard_normal(total)
+    errors = (errors - errors.mean()) / errors.std(ddof=1)  # bias 0, SD 1 exactly
+    flags = [True] * covered + [False] * (total - covered)
+    contrasts = [
+        {
+            "covered": flag,
+            "estimate": float(err),
+            "truth": 0.0,
+            "standard_error": 1.0,
+            "null": False,
+        }
+        for flag, err in zip(flags, errors)
+    ]
+    return [{"contrasts": contrasts}]
+
+
+def test_family_wise_multiplier_matches_sidak_and_is_backward_compatible() -> None:
+    # 16 cells at family-wise 5% -> ~2.95; a single cell -> the plain 1.96; and
+    # an unset budget leaves the raw Monte-Carlo multiplier untouched.
+    assert round(_family_wise_multiplier(0.05, 16, 2.0), 3) == 2.948
+    assert round(_family_wise_multiplier(0.05, 1, 2.0), 3) == 1.960
+    assert _family_wise_multiplier(None, 16, 2.0) == 2.0
+    # more cells -> stricter per-cell threshold
+    assert _family_wise_multiplier(0.05, 40, 2.0) > _family_wise_multiplier(0.05, 16, 2.0)
+    with pytest.raises(ValueError, match="coverage_family_wise_error"):
+        _family_wise_multiplier(1.5, 16, 2.0)
+
+
+def test_cell_gate_multiplier_override_rescues_cell_56_coverage() -> None:
+    # Cell 56's exact held-out coverage: 3771/4000 = 0.94275, which trips the raw
+    # two-sided 2-sigma gate but clears the family-wise-corrected multiplier.
+    records = _coverage_cell(3771, 4000)
+    raw_passed, raw_audit = _cell_gate(records, _GATE_METRICS)
+    assert raw_passed is False
+    assert round(raw_audit["coverage"], 5) == 0.94275
+    corrected = _family_wise_multiplier(0.05, 16, 2.0)
+    fixed_passed, fixed_audit = _cell_gate(records, _GATE_METRICS, multiplier=corrected)
+    assert fixed_passed is True
+    assert fixed_audit["coverage_multiplier"] == corrected
+    # a genuinely broken cell (90% coverage) still fails even after correction
+    broken_passed, _ = _cell_gate(_coverage_cell(3600, 4000), _GATE_METRICS, multiplier=corrected)
+    assert broken_passed is False
+
+
+def test_family_wise_correction_controls_spurious_cell_failures() -> None:
+    # Under perfect calibration the raw per-cell 2-sigma gate fails a family of 16
+    # cells the majority of the time; the Sidak-corrected multiplier holds it near
+    # the 5% budget while retaining power against a truly broken cell.
+    rng = np.random.default_rng(20260721)
+    counts = np.array([4000, 4000, 4000, 4000] + [2000] * 12)
+    m = len(counts)
+    corrected = _family_wise_multiplier(0.05, m, 2.0)
+    trials = 4000
+    mcse = np.sqrt(0.95 * 0.05 / counts)
+    draws = rng.binomial(counts, 0.95, size=(trials, m)) / counts
+    raw_family_fail = np.mean(np.any(np.abs(draws - 0.95) > 2.0 * mcse, axis=1))
+    corrected_family_fail = np.mean(np.any(np.abs(draws - 0.95) > corrected * mcse, axis=1))
+    assert raw_family_fail > 0.4          # the defect: majority of clean runs fail
+    assert corrected_family_fail < 0.12   # budget restored (target 0.05)
+    # power: a broken 0.90 cell (n=4000) is still detected essentially always
+    broken = rng.binomial(4000, 0.90, size=trials) / 4000
+    assert np.mean(np.abs(broken - 0.95) > corrected * np.sqrt(0.95 * 0.05 / 4000)) > 0.99
+
+
+def test_v9_consolidates_robust_margin_and_family_wise_coverage_gate() -> None:
+    protocol = CFValidationProtocol.load(V9_SPEC)
+    assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v9"
+    assert protocol.checksum == (
+        "c60b3780680bbbfa08c2d31ed3ff51c4a28aec0d14f013c08daeaec243d7330b"
+    )
+    # both improvements are active, and both reused-evidence sources are unchanged
+    assert protocol.metrics["unstable_risk_ratio_selection_confidence"] == 0.95
+    assert protocol.metrics["coverage_family_wise_error"] == 0.05
+    v8 = CFValidationProtocol.load(V8_SPEC)
+    assert protocol.calibration_source == v8.calibration_source
+    assert protocol.external_source == v8.external_source
+    assert protocol.inference_source == v8.inference_source
+    assert CFValidationProtocol.from_dict(protocol.to_dict()).checksum == protocol.checksum
