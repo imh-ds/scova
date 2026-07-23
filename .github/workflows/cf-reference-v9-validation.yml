@@ -48,6 +48,8 @@ permissions:
 env:
   SPEC: benchmarks/specs/cf_reference_v9.json
   FREEZE_TAG: scova-cf-reference-v9-freeze-r1
+  # Single source of truth for the release this promotion/release targets.
+  RELEASE_VERSION: "0.5.0"
   PYTHONHASHSEED: "0"
 
 jobs:
@@ -587,16 +589,20 @@ jobs:
           path: evidence
           run-id: ${{ inputs.aggregate_run_id }}
           github-token: ${{ github.token }}
-      - run: python scripts/promote_cf_reference.py --spec "$SPEC" --evidence-root evidence
+      - run: >-
+          python scripts/promote_cf_reference.py --spec "$SPEC" --evidence-root evidence
+          --version "$RELEASE_VERSION"
       - run: >-
           python scripts/check_cf_reference_release.py --spec "$SPEC"
           --evidence-root evidence
           --packaged-manifest src/scova/cf/data/support_profiles.json
-      - run: git diff --binary --output=evidence/scova-cf-v0.5.0-promotion.patch
+      - run: >-
+          git diff --binary
+          --output="evidence/scova-cf-v${RELEASE_VERSION}-promotion.patch"
       - uses: actions/upload-artifact@v6
         with:
           name: cf-promotion-patch
-          path: evidence/scova-cf-v0.5.0-promotion.patch
+          path: evidence/scova-cf-v${{ env.RELEASE_VERSION }}-promotion.patch
           retention-days: 90
 
   release_audit:
@@ -633,16 +639,17 @@ jobs:
       - shell: bash
         run: |
           python -m zipfile -l audit/dist/*.whl
-          tar -czf audit/cf-release-evidence-v0.5.0.tar.gz -C audit evidence coverage.json
+          tar -czf "audit/cf-release-evidence-v${RELEASE_VERSION}.tar.gz" -C audit evidence coverage.json
           python - <<'PY'
-          import hashlib, json, subprocess
+          import hashlib, json, os, subprocess
           from pathlib import Path
           from scova.cf import canonical_checksum
-          bundle = Path("audit/cf-release-evidence-v0.5.0.tar.gz")
+          version = os.environ["RELEASE_VERSION"]
+          bundle = Path(f"audit/cf-release-evidence-v{version}.tar.gz")
           values = {
               "artifact_type": "scova-cf-release-audit",
               "schema_version": 1,
-              "version": "0.5.0",
+              "version": version,
               "git_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
               "evidence_bundle_sha256": hashlib.sha256(bundle.read_bytes()).hexdigest(),
               "passed": True,
@@ -653,7 +660,7 @@ jobs:
       - uses: actions/attest-build-provenance@v3
         with:
           subject-path: |
-            audit/cf-release-evidence-v0.5.0.tar.gz
+            audit/cf-release-evidence-v${{ env.RELEASE_VERSION }}.tar.gz
             audit/dist/*
       - uses: actions/upload-artifact@v6
         with:
@@ -690,13 +697,13 @@ jobs:
           test -n "$SIGNING_KEY"
           test -n "$SIGNING_PASSPHRASE"
           python - <<'PY'
-          import json, subprocess
+          import json, os, subprocess
           from pathlib import Path
           from scova.cf import canonical_checksum
           values = json.loads(Path("audit/cf-release-audit.json").read_text())
           supplied = values.pop("audit_checksum")
           assert supplied == canonical_checksum(values)
-          assert values["passed"] is True and values["version"] == "0.5.0"
+          assert values["passed"] is True and values["version"] == os.environ["RELEASE_VERSION"]
           assert values["git_commit"] == subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
           PY
       - name: Create and push signed release tag
@@ -715,12 +722,13 @@ jobs:
           printf '#!/usr/bin/env bash\nexec gpg --batch --pinentry-mode loopback --passphrase-file "%s" "$@"\n' \
             "$RUNNER_TEMP/gpg-passphrase" > "$RUNNER_TEMP/gpg-loopback"
           chmod 700 "$RUNNER_TEMP/gpg-loopback"
-          git -c gpg.program="$RUNNER_TEMP/gpg-loopback" tag -s v0.5.0 -m "SCOVA 0.5.0" HEAD
-          git push origin v0.5.0
+          git -c gpg.program="$RUNNER_TEMP/gpg-loopback" tag -s "v${RELEASE_VERSION}" -m "SCOVA ${RELEASE_VERSION}" HEAD
+          git push origin "v${RELEASE_VERSION}"
       - name: Attach permanent attested evidence to GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          gh release create v0.5.0 audit/cf-release-evidence-v0.5.0.tar.gz
-          audit/dist/* --verify-tag --title "SCOVA 0.5.0"
+          gh release create "v${RELEASE_VERSION}"
+          "audit/cf-release-evidence-v${RELEASE_VERSION}.tar.gz"
+          audit/dist/* --verify-tag --title "SCOVA ${RELEASE_VERSION}"
           --notes "Promotes only the validated randomized continuous unnormalized-AIPW SCOVA-CF profile."

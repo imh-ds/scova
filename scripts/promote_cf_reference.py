@@ -15,6 +15,11 @@ except ModuleNotFoundError:  # direct ``python scripts/promote_cf_reference.py``
 STATUS_START = "<!-- CF_REFERENCE_PROFILE_STATUS_START -->"
 STATUS_END = "<!-- CF_REFERENCE_PROFILE_STATUS_END -->"
 
+# Release version accepted for a promotion, e.g. ``1.2.3``, ``0.6.0.dev0`` or
+# ``1.0.0-rc1``.  The version is an explicit input rather than a constant so a
+# promotion can target whatever release it belongs to.
+VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+(?:[.\-+][0-9A-Za-z.\-+]+)?$")
+
 
 def _replace_once(text: str, pattern: str, replacement: str, label: str) -> str:
     updated, count = re.subn(
@@ -29,11 +34,14 @@ def promote(
     *,
     evidence_root: Path,
     spec: Path,
+    version: str,
     packaged_manifest: Path,
     pyproject: Path,
     readme: Path,
     documentation: Path,
 ) -> None:
+    if not VERSION_PATTERN.match(version):
+        raise ValueError(f"Release version is not a valid version string: {version!r}")
     reasons = blocking_reasons(evidence_root, spec)
     if reasons:
         raise ValueError("Promotion evidence failed:\n- " + "\n- ".join(reasons))
@@ -53,7 +61,7 @@ def promote(
         _replace_once(
             pyproject.read_text(encoding="utf-8"),
             r'^version = "[^"]+"$',
-            'version = "0.5.0"',
+            f'version = "{version}"',
             "project version",
         ),
         encoding="utf-8",
@@ -62,7 +70,7 @@ def promote(
         _replace_once(
             readme.read_text(encoding="utf-8"),
             r"The `[^`]+` source tree",
-            "The `0.5.0` source tree",
+            f"The `{version}` source tree",
             "README version",
         ),
         encoding="utf-8",
@@ -90,6 +98,11 @@ def main() -> None:
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument("--spec", type=Path, required=True)
     parser.add_argument(
+        "--version",
+        required=True,
+        help="Release version this promotion targets, e.g. 0.5.0",
+    )
+    parser.add_argument(
         "--packaged-manifest",
         type=Path,
         default=Path("src/scova/cf/data/support_profiles.json"),
@@ -101,6 +114,7 @@ def main() -> None:
     promote(
         evidence_root=args.evidence_root,
         spec=args.spec,
+        version=args.version,
         packaged_manifest=args.packaged_manifest,
         pyproject=args.pyproject,
         readme=args.readme,
