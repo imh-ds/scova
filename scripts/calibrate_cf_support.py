@@ -30,7 +30,7 @@ LOWER_FEATURE = "minimum_ess_ratio"
 _SELECTION_CONFIDENCE_METRIC = "unstable_risk_ratio_selection_confidence"
 
 
-def _selection_z(metrics: "MappingLike") -> float | None:
+def _selection_z(metrics: MappingLike) -> float | None:
     """Return the one-sided normal multiplier for the selection margin, if set."""
     confidence = metrics.get(_SELECTION_CONFIDENCE_METRIC)
     if confidence is None:

@@ -2,6 +2,8 @@ import json
 from hashlib import sha256
 from pathlib import Path
 
+import pytest
+
 from benchmarks.stage3_campaign import _failed_fit
 from scripts import check_cf_reference_release, promote_cf_reference
 from scripts.check_critical_coverage import CRITICAL_SUFFIXES, coverage_failures
@@ -351,6 +353,7 @@ def test_cf_promotion_applies_only_exact_evidence_and_release_text(
     promote_cf_reference.promote(
         evidence_root=evidence,
         spec=tmp_path / "spec.json",
+        version="0.5.0",
         packaged_manifest=manifest,
         pyproject=pyproject,
         readme=readme,
@@ -360,3 +363,53 @@ def test_cf_promotion_applies_only_exact_evidence_and_release_text(
     assert 'version = "0.5.0"' in pyproject.read_text(encoding="utf-8")
     assert "The `0.5.0` source tree" in readme.read_text(encoding="utf-8")
     assert profile["profile_id"] in documentation.read_text(encoding="utf-8")
+
+
+def test_cf_promotion_version_is_caller_supplied_and_validated(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """The release version is an input, not a constant baked into the script."""
+    evidence = tmp_path / "evidence"
+    evidence.mkdir()
+    profile = {"profile_id": "cf-profile", "profile_checksum": "d" * 64}
+    (evidence / "cf-reference-support-profile.json").write_text(
+        json.dumps(profile), encoding="utf-8"
+    )
+    (evidence / "proposed-support-profiles.json").write_text(
+        json.dumps({"schema_version": 1, "profiles": [profile]}), encoding="utf-8"
+    )
+    manifest = tmp_path / "support_profiles.json"
+    pyproject = tmp_path / "pyproject.toml"
+    readme = tmp_path / "README.md"
+    documentation = tmp_path / "scova_cf.md"
+
+    def reset() -> None:
+        manifest.write_text('{"schema_version":1,"profiles":[]}', encoding="utf-8")
+        pyproject.write_text('[project]\nversion = "0.3.0.dev0"\n', encoding="utf-8")
+        readme.write_text("The `0.3.0.dev0` source tree is provisional.\n", encoding="utf-8")
+        documentation.write_text(
+            f"{promote_cf_reference.STATUS_START}\nx\n{promote_cf_reference.STATUS_END}\n",
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr(promote_cf_reference, "blocking_reasons", lambda *_: [])
+    kwargs = dict(
+        evidence_root=evidence,
+        spec=tmp_path / "spec.json",
+        packaged_manifest=manifest,
+        pyproject=pyproject,
+        readme=readme,
+        documentation=documentation,
+    )
+    # an arbitrary release version flows through to both files
+    for version in ("1.2.3", "0.6.0.dev0", "1.0.0-rc1"):
+        reset()
+        promote_cf_reference.promote(version=version, **kwargs)
+        assert f'version = "{version}"' in pyproject.read_text(encoding="utf-8")
+        assert f"The `{version}` source tree" in readme.read_text(encoding="utf-8")
+    # nonsense versions are refused before anything is written
+    for bad in ("", "latest", "1.2", "v1.2.3"):
+        reset()
+        with pytest.raises(ValueError, match="not a valid version"):
+            promote_cf_reference.promote(version=bad, **kwargs)
+        assert 'version = "0.3.0.dev0"' in pyproject.read_text(encoding="utf-8")
