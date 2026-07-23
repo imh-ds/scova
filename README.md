@@ -14,7 +14,7 @@ missing outcomes. The randomized continuous-outcome reference slice, its
 current limitations, and a full example are documented in
 [`docs/scova_cf.md`](docs/scova_cf.md).
 
-The `0.3.0.dev0` source tree also contains an experimental finite-grid smooth
+The `0.5.0` source tree also contains an experimental finite-grid smooth
 overlap path. It remains experimental pending the frozen directional calibration,
 held-out validation, and pinned-gradient runs. Its production-stabilization machinery and remaining
 release blockers are tracked in

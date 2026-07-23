@@ -1,8 +1,7 @@
 # SCOVA-CF
 
 <!-- CF_REFERENCE_PROFILE_STATUS_START -->
-The randomized continuous unnormalized-AIPW reference profile remains a candidate.
-No packaged policy can issue calibrated support until the frozen campaign passes.
+The randomized continuous unnormalized-AIPW profile `cf-randomized-continuous-aipw-unnormalized-v9-promoted` is promoted. Its packaged profile checksum is `cc52d5e0fe3b8470d101e6572bbeafeb2ec6752f4545961f505c3d53351b1991` and confirmatory support is available only when this profile is explicitly selected.
 <!-- CF_REFERENCE_PROFILE_STATUS_END -->
 
 SCOVA-CF is an opt-in feature of the SCOVA package for governed estimation of
