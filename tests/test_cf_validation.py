@@ -1024,7 +1024,7 @@ def _coverage_cell(covered: int, total: int, *, seed: int = 0) -> list[dict]:
             "standard_error": 1.0,
             "null": False,
         }
-        for flag, err in zip(flags, errors)
+        for flag, err in zip(flags, errors, strict=True)
     ]
     return [{"contrasts": contrasts}]
 
