@@ -1,0 +1,2418 @@
+{
+  "all_calibration_gates_passed": true,
+  "artifact_type": "scova-cf-support-calibration",
+  "audit": [
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "linear"
+      },
+      "cell_index": 0,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "moderate",
+        "effect": "partial-null",
+        "learner": "adaptive",
+        "n_covariates": 20,
+        "n_groups": 3,
+        "n_per_group": 20,
+        "noise": "heteroskedastic",
+        "support": "weak",
+        "surface": "smooth-nonlinear"
+      },
+      "cell_index": 1,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 115
+    },
+    {
+      "cell": {
+        "allocation": "rare",
+        "effect": "constant",
+        "learner": "adaptive",
+        "n_covariates": 50,
+        "n_groups": 2,
+        "n_per_group": 30,
+        "noise": "heavy-tailed",
+        "support": "structural-failure",
+        "surface": "threshold"
+      },
+      "cell_index": 2,
+      "passed": true,
+      "structural_refusal_rate": 1.0
+    },
+    {
+      "cell": {
+        "allocation": "moderate",
+        "effect": "heterogeneous",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 5,
+        "n_per_group": 50,
+        "noise": "heteroskedastic",
+        "support": "structural-failure",
+        "surface": "interaction"
+      },
+      "cell_index": 3,
+      "passed": true,
+      "structural_refusal_rate": 1.0
+    },
+    {
+      "cell": {
+        "allocation": "rare",
+        "effect": "heterogeneous",
+        "learner": "linear",
+        "n_covariates": 20,
+        "n_groups": 3,
+        "n_per_group": 80,
+        "noise": "heavy-tailed",
+        "support": "strong",
+        "surface": "weak"
+      },
+      "cell_index": 4,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 799
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "adaptive",
+        "n_covariates": 50,
+        "n_groups": 5,
+        "n_per_group": 150,
+        "noise": "normal",
+        "support": "weak",
+        "surface": "weak"
+      },
+      "cell_index": 5,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 796
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "constant",
+        "learner": "linear",
+        "n_covariates": 20,
+        "n_groups": 3,
+        "n_per_group": 250,
+        "noise": "normal",
+        "support": "structural-failure",
+        "surface": "smooth-nonlinear"
+      },
+      "cell_index": 6,
+      "passed": true,
+      "structural_refusal_rate": 1.0
+    },
+    {
+      "cell": {
+        "allocation": "rare",
+        "effect": "partial-null",
+        "learner": "adaptive",
+        "n_covariates": 5,
+        "n_groups": 5,
+        "n_per_group": 250,
+        "noise": "heavy-tailed",
+        "support": "weak",
+        "surface": "linear"
+      },
+      "cell_index": 7,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "bias": 0.002811615129742198,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "moderate",
+        "effect": "partial-null",
+        "learner": "linear",
+        "n_covariates": 50,
+        "n_groups": 2,
+        "n_per_group": 150,
+        "noise": "heteroskedastic",
+        "support": "strong",
+        "surface": "threshold"
+      },
+      "cell_index": 8,
+      "contrast_count": 799,
+      "coverage": 0.9486858573216521,
+      "coverage_floor": 0.9345793240563781,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.21965225180885414,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 1.0264317467030881,
+      "supported_replications": 799,
+      "type_i_error": null,
+      "type_i_ok": true
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "heterogeneous",
+        "learner": "adaptive",
+        "n_covariates": 50,
+        "n_groups": 2,
+        "n_per_group": 80,
+        "noise": "normal",
+        "support": "weak",
+        "surface": "interaction"
+      },
+      "cell_index": 9,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 544
+    },
+    {
+      "cell": {
+        "allocation": "rare",
+        "effect": "null",
+        "learner": "adaptive",
+        "n_covariates": 20,
+        "n_groups": 2,
+        "n_per_group": 50,
+        "noise": "heavy-tailed",
+        "support": "strong",
+        "surface": "smooth-nonlinear"
+      },
+      "cell_index": 10,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 767
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 3,
+        "n_per_group": 30,
+        "noise": "heteroskedastic",
+        "support": "weak",
+        "surface": "threshold"
+      },
+      "cell_index": 11,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 293
+    },
+    {
+      "cell": {
+        "allocation": "moderate",
+        "effect": "constant",
+        "learner": "linear",
+        "n_covariates": 20,
+        "n_groups": 5,
+        "n_per_group": 30,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "linear"
+      },
+      "cell_index": 12,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "partial-null",
+        "learner": "linear",
+        "n_covariates": 50,
+        "n_groups": 3,
+        "n_per_group": 50,
+        "noise": "normal",
+        "support": "structural-failure",
+        "surface": "linear"
+      },
+      "cell_index": 13,
+      "passed": true,
+      "structural_refusal_rate": 1.0
+    },
+    {
+      "cell": {
+        "allocation": "moderate",
+        "effect": "constant",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 80,
+        "noise": "heteroskedastic",
+        "support": "structural-failure",
+        "surface": "weak"
+      },
+      "cell_index": 14,
+      "passed": true,
+      "structural_refusal_rate": 1.0
+    },
+    {
+      "cell": {
+        "allocation": "moderate",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 20,
+        "n_groups": 3,
+        "n_per_group": 150,
+        "noise": "heavy-tailed",
+        "support": "structural-failure",
+        "surface": "interaction"
+      },
+      "cell_index": 15,
+      "passed": true,
+      "structural_refusal_rate": 1.0
+    },
+    {
+      "cell": {
+        "allocation": "rare",
+        "effect": "heterogeneous",
+        "learner": "linear",
+        "n_covariates": 20,
+        "n_groups": 5,
+        "n_per_group": 20,
+        "noise": "normal",
+        "support": "structural-failure",
+        "surface": "threshold"
+      },
+      "cell_index": 16,
+      "passed": true,
+      "structural_refusal_rate": 1.0
+    },
+    {
+      "cell": {
+        "allocation": "rare",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 50,
+        "n_groups": 2,
+        "n_per_group": 250,
+        "noise": "heteroskedastic",
+        "support": "strong",
+        "surface": "interaction"
+      },
+      "cell_index": 17,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "constant",
+        "learner": "linear",
+        "n_covariates": 50,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "heavy-tailed",
+        "support": "weak",
+        "surface": "interaction"
+      },
+      "cell_index": 18,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 51
+    },
+    {
+      "cell": {
+        "allocation": "rare",
+        "effect": "heterogeneous",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 5,
+        "n_per_group": 150,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "smooth-nonlinear"
+      },
+      "cell_index": 19,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 5,
+        "n_per_group": 80,
+        "noise": "heteroskedastic",
+        "support": "strong",
+        "surface": "linear"
+      },
+      "cell_index": 20,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "partial-null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 30,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "interaction"
+      },
+      "cell_index": 21,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "heterogeneous",
+        "learner": "linear",
+        "n_covariates": 50,
+        "n_groups": 2,
+        "n_per_group": 30,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "smooth-nonlinear"
+      },
+      "cell_index": 22,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "constant",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 50,
+        "noise": "normal",
+        "support": "weak",
+        "surface": "threshold"
+      },
+      "cell_index": 23,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 417
+    },
+    {
+      "bias": 0.0025184891859300882,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "moderate",
+        "effect": "heterogeneous",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 250,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "linear"
+      },
+      "cell_index": 24,
+      "contrast_count": 800,
+      "coverage": 0.95125,
+      "coverage_floor": 0.9345889649925775,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.10514177281835324,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 0.9933486842857976,
+      "supported_replications": 800,
+      "type_i_error": null,
+      "type_i_ok": true
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "partial-null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "weak"
+      },
+      "cell_index": 25,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "bias": -0.0025627670464424927,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "balanced",
+        "effect": "partial-null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 80,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "smooth-nonlinear"
+      },
+      "cell_index": 26,
+      "contrast_count": 800,
+      "coverage": 0.95,
+      "coverage_floor": 0.9345889649925775,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.18873916031046822,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 1.0141972572505342,
+      "supported_replications": 800,
+      "type_i_error": null,
+      "type_i_ok": true
+    },
+    {
+      "bias": 0.0019042478245643365,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "balanced",
+        "effect": "constant",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 150,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "linear"
+      },
+      "cell_index": 27,
+      "contrast_count": 800,
+      "coverage": 0.945,
+      "coverage_floor": 0.9345889649925775,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.1178721622761538,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 0.9951643811079555,
+      "supported_replications": 800,
+      "type_i_error": null,
+      "type_i_ok": true
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 30,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "weak"
+      },
+      "cell_index": 28,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "bias": 0.0010396981976522723,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 50,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "weak"
+      },
+      "cell_index": 29,
+      "contrast_count": 800,
+      "coverage": 0.95125,
+      "coverage_floor": 0.9345889649925775,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.20780750272255002,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 1.005425528633791,
+      "supported_replications": 800,
+      "type_i_error": 0.04875,
+      "type_i_ok": true
+    },
+    {
+      "bias": -0.0016460663864241243,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 80,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "threshold"
+      },
+      "cell_index": 30,
+      "contrast_count": 800,
+      "coverage": 0.94,
+      "coverage_floor": 0.9345889649925775,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.17534471002380067,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 0.9668627206986437,
+      "supported_replications": 800,
+      "type_i_error": 0.06,
+      "type_i_ok": true
+    },
+    {
+      "bias": -0.004234616200840785,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 250,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "threshold"
+      },
+      "cell_index": 31,
+      "contrast_count": 800,
+      "coverage": 0.9375,
+      "coverage_floor": 0.9345889649925775,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.09808137545231921,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 0.962314812194992,
+      "supported_replications": 800,
+      "type_i_error": 0.0625,
+      "type_i_ok": true
+    },
+    {
+      "bias": 0.001671898109501148,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 250,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "weak"
+      },
+      "cell_index": 32,
+      "contrast_count": 800,
+      "coverage": 0.95125,
+      "coverage_floor": 0.9345889649925775,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.08874998713956167,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 1.0181700492819346,
+      "supported_replications": 800,
+      "type_i_error": 0.04875,
+      "type_i_ok": true
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "adaptive",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "normal",
+        "support": "strong",
+        "surface": "linear"
+      },
+      "cell_index": 33,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "normal",
+        "support": "weak",
+        "surface": "linear"
+      },
+      "cell_index": 34,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 94
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "adaptive",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "normal",
+        "support": "weak",
+        "surface": "linear"
+      },
+      "cell_index": 35,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 78
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "normal",
+        "support": "structural-failure",
+        "surface": "linear"
+      },
+      "cell_index": 36,
+      "passed": true,
+      "structural_refusal_rate": 1.0
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "adaptive",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "normal",
+        "support": "structural-failure",
+        "surface": "linear"
+      },
+      "cell_index": 37,
+      "passed": true,
+      "structural_refusal_rate": 1.0
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "heteroskedastic",
+        "support": "strong",
+        "surface": "linear"
+      },
+      "cell_index": 38,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "adaptive",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "heteroskedastic",
+        "support": "strong",
+        "surface": "linear"
+      },
+      "cell_index": 39,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "heteroskedastic",
+        "support": "weak",
+        "surface": "linear"
+      },
+      "cell_index": 40,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 79
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "adaptive",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "heteroskedastic",
+        "support": "weak",
+        "surface": "linear"
+      },
+      "cell_index": 41,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 76
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "heteroskedastic",
+        "support": "structural-failure",
+        "surface": "linear"
+      },
+      "cell_index": 42,
+      "passed": true,
+      "structural_refusal_rate": 1.0
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "adaptive",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "heteroskedastic",
+        "support": "structural-failure",
+        "surface": "linear"
+      },
+      "cell_index": 43,
+      "passed": true,
+      "structural_refusal_rate": 1.0
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "heavy-tailed",
+        "support": "strong",
+        "surface": "linear"
+      },
+      "cell_index": 44,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "adaptive",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "heavy-tailed",
+        "support": "strong",
+        "surface": "linear"
+      },
+      "cell_index": 45,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "linear",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "heavy-tailed",
+        "support": "weak",
+        "surface": "linear"
+      },
+      "cell_index": 46,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 83
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "effect": "null",
+        "learner": "adaptive",
+        "n_covariates": 5,
+        "n_groups": 2,
+        "n_per_group": 20,
+        "noise": "heavy-tailed",
+        "support": "weak",
+        "surface": "linear"
+      },
+      "cell_index": 47,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 84
+    },
+    {
+      "bias": 0.0028273768697375727,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "balanced",
+        "dataset": "diabetes",
+        "effect": "null",
+        "learner": "linear",
+        "n_groups": 2,
+        "n_per_group": 100,
+        "noise": "normal"
+      },
+      "cell_index": 48,
+      "contrast_count": 800,
+      "coverage": 0.93625,
+      "coverage_floor": 0.9345889649925775,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.19632546835009215,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 0.9570700586277553,
+      "supported_replications": 800,
+      "type_i_error": 0.06375,
+      "type_i_ok": true
+    },
+    {
+      "bias": 0.0002775658373366807,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "moderate",
+        "dataset": "diabetes",
+        "effect": "heterogeneous",
+        "learner": "adaptive",
+        "n_groups": 2,
+        "n_per_group": 200,
+        "noise": "heteroskedastic"
+      },
+      "cell_index": 49,
+      "contrast_count": 800,
+      "coverage": 0.95,
+      "coverage_floor": 0.9345889649925775,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.11497426381102227,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 1.0072662974366324,
+      "supported_replications": 800,
+      "type_i_error": null,
+      "type_i_ok": true
+    },
+    {
+      "bias": 0.00664685227802075,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "balanced",
+        "dataset": "diabetes",
+        "effect": "constant",
+        "learner": "adaptive",
+        "n_groups": 3,
+        "n_per_group": 100,
+        "noise": "normal"
+      },
+      "cell_index": 50,
+      "contrast_count": 1600,
+      "coverage": 0.94625,
+      "coverage_floor": 0.9391027526411483,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.18654050435188085,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 0.9924460708377834,
+      "supported_replications": 800,
+      "type_i_error": null,
+      "type_i_ok": true
+    },
+    {
+      "bias": -0.007795532588652033,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "moderate",
+        "dataset": "diabetes",
+        "effect": "null",
+        "learner": "linear",
+        "n_groups": 3,
+        "n_per_group": 100,
+        "noise": "heteroskedastic"
+      },
+      "cell_index": 51,
+      "contrast_count": 1600,
+      "coverage": 0.944375,
+      "coverage_floor": 0.9391027526411483,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.15920073448362146,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 0.9879766470713487,
+      "supported_replications": 800,
+      "type_i_error": 0.055625,
+      "type_i_ok": true
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "dataset": "diabetes",
+        "effect": "heterogeneous",
+        "learner": "adaptive",
+        "n_groups": 5,
+        "n_per_group": 50,
+        "noise": "normal"
+      },
+      "cell_index": 52,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "moderate",
+        "dataset": "diabetes",
+        "effect": "constant",
+        "learner": "linear",
+        "n_groups": 5,
+        "n_per_group": 50,
+        "noise": "heteroskedastic"
+      },
+      "cell_index": 53,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "bias": 0.0070968325309082635,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "balanced",
+        "dataset": "breast-cancer",
+        "effect": "null",
+        "learner": "linear",
+        "n_groups": 2,
+        "n_per_group": 100,
+        "noise": "normal"
+      },
+      "cell_index": 54,
+      "contrast_count": 800,
+      "coverage": 0.95,
+      "coverage_floor": 0.9345889649925775,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.1758675731465435,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 0.986244249515602,
+      "supported_replications": 800,
+      "type_i_error": 0.05,
+      "type_i_ok": true
+    },
+    {
+      "bias": -0.09311747947594391,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "moderate",
+        "dataset": "breast-cancer",
+        "effect": "heterogeneous",
+        "learner": "adaptive",
+        "n_groups": 2,
+        "n_per_group": 200,
+        "noise": "heteroskedastic"
+      },
+      "cell_index": 55,
+      "contrast_count": 800,
+      "coverage": 0.95375,
+      "coverage_floor": 0.9345889649925775,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.9305088299462023,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 1.0181998808140562,
+      "supported_replications": 800,
+      "type_i_error": null,
+      "type_i_ok": true
+    },
+    {
+      "bias": -0.007173884777996013,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "balanced",
+        "dataset": "breast-cancer",
+        "effect": "constant",
+        "learner": "adaptive",
+        "n_groups": 3,
+        "n_per_group": 100,
+        "noise": "normal"
+      },
+      "cell_index": 56,
+      "contrast_count": 1600,
+      "coverage": 0.945,
+      "coverage_floor": 0.9391027526411483,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 0.16723875322276088,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 0.9902705339765612,
+      "supported_replications": 800,
+      "type_i_error": null,
+      "type_i_ok": true
+    },
+    {
+      "bias": 0.04626874324078487,
+      "bias_ok": true,
+      "cell": {
+        "allocation": "moderate",
+        "dataset": "breast-cancer",
+        "effect": "null",
+        "learner": "linear",
+        "n_groups": 3,
+        "n_per_group": 100,
+        "noise": "heteroskedastic"
+      },
+      "cell_index": 57,
+      "contrast_count": 1600,
+      "coverage": 0.94625,
+      "coverage_floor": 0.9391027526411483,
+      "coverage_ok": true,
+      "empirical_standard_deviation": 1.4215628664214495,
+      "gate_regime": "one-sided-calibration-screening",
+      "passed": true,
+      "standard_error_ok": true,
+      "standard_error_ratio": 0.9552981312123084,
+      "supported_replications": 800,
+      "type_i_error": 0.05375,
+      "type_i_ok": true
+    },
+    {
+      "cell": {
+        "allocation": "balanced",
+        "dataset": "breast-cancer",
+        "effect": "heterogeneous",
+        "learner": "adaptive",
+        "n_groups": 5,
+        "n_per_group": 50,
+        "noise": "normal"
+      },
+      "cell_index": 58,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    },
+    {
+      "cell": {
+        "allocation": "moderate",
+        "dataset": "breast-cancer",
+        "effect": "constant",
+        "learner": "linear",
+        "n_groups": 5,
+        "n_per_group": 50,
+        "noise": "heteroskedastic"
+      },
+      "cell_index": 59,
+      "passed": true,
+      "reason": "outside-calibration-screening-eligibility",
+      "supported_replications": 800
+    }
+  ],
+  "audit_replications_per_cell": 800,
+  "calibration_artifact_checksum": "ef228e56b0255528008fd167eddbac83fd51dbfecda12fd13f5783efa3035b53",
+  "calibration_evidence_checksum": "4a6a4515456df1dd1e9943a82971d918d41db716598482d005628c7721daf7ea",
+  "calibration_source_protocol_checksum": "8ec41d170f1433ef8d1289b0cb0a05f9c53b6ae8d811ff1d52887f0f7c6e7964",
+  "candidate_count": 408,
+  "candidate_profile": {
+    "calibration_evidence_checksum": "4a6a4515456df1dd1e9943a82971d918d41db716598482d005628c7721daf7ea",
+    "compatibility": {
+      "assignment": "known-constant",
+      "estimand_id": "study-population-standardized-means",
+      "estimator": "aipw-unnormalized",
+      "independent_unit": "row",
+      "maximum_group_count": 3,
+      "minimum_group_count": 50,
+      "mode": "randomized",
+      "outcome_type": "continuous"
+    },
+    "profile_checksum": "f40aef23622ca27af4dfefd77043ff0a5466ec8643bf6494da2d0f99ecc520d5",
+    "profile_id": "cf-randomized-continuous-aipw-unnormalized-v9-candidate",
+    "protocol_checksum": "c60b3780680bbbfa08c2d31ed3ff51c4a28aec0d14f013c08daeaec243d7330b",
+    "schema_version": 1,
+    "state": "candidate",
+    "thresholds": {
+      "maximum_absolute_weighted_balance_difference": 1.3233347416888628,
+      "maximum_influence_top_one_percent_share": 0.9999817064961821,
+      "maximum_normalized_weight": 0.33333333333333337,
+      "maximum_seed_standardized_departure": 6.055869767485041,
+      "maximum_top_one_percent_weight_share": 1.0,
+      "minimum_ess_ratio": 0.9999999999999991
+    },
+    "validation_evidence_checksum": null
+  },
+  "evaluated_top_candidates": 408,
+  "execution_failure_count": 0,
+  "fit_replications_per_cell": 1200,
+  "protocol_checksum": "c60b3780680bbbfa08c2d31ed3ff51c4a28aec0d14f013c08daeaec243d7330b",
+  "schema_version": 2,
+  "screening_diagnostics": {
+    "candidate_retention_fraction": 0.85,
+    "closest_candidate": {
+      "audit": [
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "linear"
+          },
+          "cell_index": 0,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "moderate",
+            "effect": "partial-null",
+            "learner": "adaptive",
+            "n_covariates": 20,
+            "n_groups": 3,
+            "n_per_group": 20,
+            "noise": "heteroskedastic",
+            "support": "weak",
+            "surface": "smooth-nonlinear"
+          },
+          "cell_index": 1,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 115
+        },
+        {
+          "cell": {
+            "allocation": "rare",
+            "effect": "constant",
+            "learner": "adaptive",
+            "n_covariates": 50,
+            "n_groups": 2,
+            "n_per_group": 30,
+            "noise": "heavy-tailed",
+            "support": "structural-failure",
+            "surface": "threshold"
+          },
+          "cell_index": 2,
+          "passed": true,
+          "structural_refusal_rate": 1.0
+        },
+        {
+          "cell": {
+            "allocation": "moderate",
+            "effect": "heterogeneous",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 5,
+            "n_per_group": 50,
+            "noise": "heteroskedastic",
+            "support": "structural-failure",
+            "surface": "interaction"
+          },
+          "cell_index": 3,
+          "passed": true,
+          "structural_refusal_rate": 1.0
+        },
+        {
+          "cell": {
+            "allocation": "rare",
+            "effect": "heterogeneous",
+            "learner": "linear",
+            "n_covariates": 20,
+            "n_groups": 3,
+            "n_per_group": 80,
+            "noise": "heavy-tailed",
+            "support": "strong",
+            "surface": "weak"
+          },
+          "cell_index": 4,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 799
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "adaptive",
+            "n_covariates": 50,
+            "n_groups": 5,
+            "n_per_group": 150,
+            "noise": "normal",
+            "support": "weak",
+            "surface": "weak"
+          },
+          "cell_index": 5,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 796
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "constant",
+            "learner": "linear",
+            "n_covariates": 20,
+            "n_groups": 3,
+            "n_per_group": 250,
+            "noise": "normal",
+            "support": "structural-failure",
+            "surface": "smooth-nonlinear"
+          },
+          "cell_index": 6,
+          "passed": true,
+          "structural_refusal_rate": 1.0
+        },
+        {
+          "cell": {
+            "allocation": "rare",
+            "effect": "partial-null",
+            "learner": "adaptive",
+            "n_covariates": 5,
+            "n_groups": 5,
+            "n_per_group": 250,
+            "noise": "heavy-tailed",
+            "support": "weak",
+            "surface": "linear"
+          },
+          "cell_index": 7,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "bias": 0.002811615129742198,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "moderate",
+            "effect": "partial-null",
+            "learner": "linear",
+            "n_covariates": 50,
+            "n_groups": 2,
+            "n_per_group": 150,
+            "noise": "heteroskedastic",
+            "support": "strong",
+            "surface": "threshold"
+          },
+          "cell_index": 8,
+          "contrast_count": 799,
+          "coverage": 0.9486858573216521,
+          "coverage_floor": 0.9345793240563781,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.21965225180885414,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 1.0264317467030881,
+          "supported_replications": 799,
+          "type_i_error": null,
+          "type_i_ok": true
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "heterogeneous",
+            "learner": "adaptive",
+            "n_covariates": 50,
+            "n_groups": 2,
+            "n_per_group": 80,
+            "noise": "normal",
+            "support": "weak",
+            "surface": "interaction"
+          },
+          "cell_index": 9,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 544
+        },
+        {
+          "cell": {
+            "allocation": "rare",
+            "effect": "null",
+            "learner": "adaptive",
+            "n_covariates": 20,
+            "n_groups": 2,
+            "n_per_group": 50,
+            "noise": "heavy-tailed",
+            "support": "strong",
+            "surface": "smooth-nonlinear"
+          },
+          "cell_index": 10,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 767
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 3,
+            "n_per_group": 30,
+            "noise": "heteroskedastic",
+            "support": "weak",
+            "surface": "threshold"
+          },
+          "cell_index": 11,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 293
+        },
+        {
+          "cell": {
+            "allocation": "moderate",
+            "effect": "constant",
+            "learner": "linear",
+            "n_covariates": 20,
+            "n_groups": 5,
+            "n_per_group": 30,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "linear"
+          },
+          "cell_index": 12,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "partial-null",
+            "learner": "linear",
+            "n_covariates": 50,
+            "n_groups": 3,
+            "n_per_group": 50,
+            "noise": "normal",
+            "support": "structural-failure",
+            "surface": "linear"
+          },
+          "cell_index": 13,
+          "passed": true,
+          "structural_refusal_rate": 1.0
+        },
+        {
+          "cell": {
+            "allocation": "moderate",
+            "effect": "constant",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 80,
+            "noise": "heteroskedastic",
+            "support": "structural-failure",
+            "surface": "weak"
+          },
+          "cell_index": 14,
+          "passed": true,
+          "structural_refusal_rate": 1.0
+        },
+        {
+          "cell": {
+            "allocation": "moderate",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 20,
+            "n_groups": 3,
+            "n_per_group": 150,
+            "noise": "heavy-tailed",
+            "support": "structural-failure",
+            "surface": "interaction"
+          },
+          "cell_index": 15,
+          "passed": true,
+          "structural_refusal_rate": 1.0
+        },
+        {
+          "cell": {
+            "allocation": "rare",
+            "effect": "heterogeneous",
+            "learner": "linear",
+            "n_covariates": 20,
+            "n_groups": 5,
+            "n_per_group": 20,
+            "noise": "normal",
+            "support": "structural-failure",
+            "surface": "threshold"
+          },
+          "cell_index": 16,
+          "passed": true,
+          "structural_refusal_rate": 1.0
+        },
+        {
+          "cell": {
+            "allocation": "rare",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 50,
+            "n_groups": 2,
+            "n_per_group": 250,
+            "noise": "heteroskedastic",
+            "support": "strong",
+            "surface": "interaction"
+          },
+          "cell_index": 17,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "constant",
+            "learner": "linear",
+            "n_covariates": 50,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "heavy-tailed",
+            "support": "weak",
+            "surface": "interaction"
+          },
+          "cell_index": 18,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 51
+        },
+        {
+          "cell": {
+            "allocation": "rare",
+            "effect": "heterogeneous",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 5,
+            "n_per_group": 150,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "smooth-nonlinear"
+          },
+          "cell_index": 19,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 5,
+            "n_per_group": 80,
+            "noise": "heteroskedastic",
+            "support": "strong",
+            "surface": "linear"
+          },
+          "cell_index": 20,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "partial-null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 30,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "interaction"
+          },
+          "cell_index": 21,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "heterogeneous",
+            "learner": "linear",
+            "n_covariates": 50,
+            "n_groups": 2,
+            "n_per_group": 30,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "smooth-nonlinear"
+          },
+          "cell_index": 22,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "constant",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 50,
+            "noise": "normal",
+            "support": "weak",
+            "surface": "threshold"
+          },
+          "cell_index": 23,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 417
+        },
+        {
+          "bias": 0.0025184891859300882,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "moderate",
+            "effect": "heterogeneous",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 250,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "linear"
+          },
+          "cell_index": 24,
+          "contrast_count": 800,
+          "coverage": 0.95125,
+          "coverage_floor": 0.9345889649925775,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.10514177281835324,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 0.9933486842857976,
+          "supported_replications": 800,
+          "type_i_error": null,
+          "type_i_ok": true
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "partial-null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "weak"
+          },
+          "cell_index": 25,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "bias": -0.0025627670464424927,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "balanced",
+            "effect": "partial-null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 80,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "smooth-nonlinear"
+          },
+          "cell_index": 26,
+          "contrast_count": 800,
+          "coverage": 0.95,
+          "coverage_floor": 0.9345889649925775,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.18873916031046822,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 1.0141972572505342,
+          "supported_replications": 800,
+          "type_i_error": null,
+          "type_i_ok": true
+        },
+        {
+          "bias": 0.0019042478245643365,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "balanced",
+            "effect": "constant",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 150,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "linear"
+          },
+          "cell_index": 27,
+          "contrast_count": 800,
+          "coverage": 0.945,
+          "coverage_floor": 0.9345889649925775,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.1178721622761538,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 0.9951643811079555,
+          "supported_replications": 800,
+          "type_i_error": null,
+          "type_i_ok": true
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 30,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "weak"
+          },
+          "cell_index": 28,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "bias": 0.0010396981976522723,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 50,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "weak"
+          },
+          "cell_index": 29,
+          "contrast_count": 800,
+          "coverage": 0.95125,
+          "coverage_floor": 0.9345889649925775,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.20780750272255002,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 1.005425528633791,
+          "supported_replications": 800,
+          "type_i_error": 0.04875,
+          "type_i_ok": true
+        },
+        {
+          "bias": -0.0016460663864241243,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 80,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "threshold"
+          },
+          "cell_index": 30,
+          "contrast_count": 800,
+          "coverage": 0.94,
+          "coverage_floor": 0.9345889649925775,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.17534471002380067,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 0.9668627206986437,
+          "supported_replications": 800,
+          "type_i_error": 0.06,
+          "type_i_ok": true
+        },
+        {
+          "bias": -0.004234616200840785,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 250,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "threshold"
+          },
+          "cell_index": 31,
+          "contrast_count": 800,
+          "coverage": 0.9375,
+          "coverage_floor": 0.9345889649925775,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.09808137545231921,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 0.962314812194992,
+          "supported_replications": 800,
+          "type_i_error": 0.0625,
+          "type_i_ok": true
+        },
+        {
+          "bias": 0.001671898109501148,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 250,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "weak"
+          },
+          "cell_index": 32,
+          "contrast_count": 800,
+          "coverage": 0.95125,
+          "coverage_floor": 0.9345889649925775,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.08874998713956167,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 1.0181700492819346,
+          "supported_replications": 800,
+          "type_i_error": 0.04875,
+          "type_i_ok": true
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "adaptive",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "normal",
+            "support": "strong",
+            "surface": "linear"
+          },
+          "cell_index": 33,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "normal",
+            "support": "weak",
+            "surface": "linear"
+          },
+          "cell_index": 34,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 94
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "adaptive",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "normal",
+            "support": "weak",
+            "surface": "linear"
+          },
+          "cell_index": 35,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 78
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "normal",
+            "support": "structural-failure",
+            "surface": "linear"
+          },
+          "cell_index": 36,
+          "passed": true,
+          "structural_refusal_rate": 1.0
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "adaptive",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "normal",
+            "support": "structural-failure",
+            "surface": "linear"
+          },
+          "cell_index": 37,
+          "passed": true,
+          "structural_refusal_rate": 1.0
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "heteroskedastic",
+            "support": "strong",
+            "surface": "linear"
+          },
+          "cell_index": 38,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "adaptive",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "heteroskedastic",
+            "support": "strong",
+            "surface": "linear"
+          },
+          "cell_index": 39,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "heteroskedastic",
+            "support": "weak",
+            "surface": "linear"
+          },
+          "cell_index": 40,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 79
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "adaptive",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "heteroskedastic",
+            "support": "weak",
+            "surface": "linear"
+          },
+          "cell_index": 41,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 76
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "heteroskedastic",
+            "support": "structural-failure",
+            "surface": "linear"
+          },
+          "cell_index": 42,
+          "passed": true,
+          "structural_refusal_rate": 1.0
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "adaptive",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "heteroskedastic",
+            "support": "structural-failure",
+            "surface": "linear"
+          },
+          "cell_index": 43,
+          "passed": true,
+          "structural_refusal_rate": 1.0
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "heavy-tailed",
+            "support": "strong",
+            "surface": "linear"
+          },
+          "cell_index": 44,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "adaptive",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "heavy-tailed",
+            "support": "strong",
+            "surface": "linear"
+          },
+          "cell_index": 45,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "linear",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "heavy-tailed",
+            "support": "weak",
+            "surface": "linear"
+          },
+          "cell_index": 46,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 83
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "effect": "null",
+            "learner": "adaptive",
+            "n_covariates": 5,
+            "n_groups": 2,
+            "n_per_group": 20,
+            "noise": "heavy-tailed",
+            "support": "weak",
+            "surface": "linear"
+          },
+          "cell_index": 47,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 84
+        },
+        {
+          "bias": 0.0028273768697375727,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "balanced",
+            "dataset": "diabetes",
+            "effect": "null",
+            "learner": "linear",
+            "n_groups": 2,
+            "n_per_group": 100,
+            "noise": "normal"
+          },
+          "cell_index": 48,
+          "contrast_count": 800,
+          "coverage": 0.93625,
+          "coverage_floor": 0.9345889649925775,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.19632546835009215,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 0.9570700586277553,
+          "supported_replications": 800,
+          "type_i_error": 0.06375,
+          "type_i_ok": true
+        },
+        {
+          "bias": 0.0002775658373366807,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "moderate",
+            "dataset": "diabetes",
+            "effect": "heterogeneous",
+            "learner": "adaptive",
+            "n_groups": 2,
+            "n_per_group": 200,
+            "noise": "heteroskedastic"
+          },
+          "cell_index": 49,
+          "contrast_count": 800,
+          "coverage": 0.95,
+          "coverage_floor": 0.9345889649925775,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.11497426381102227,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 1.0072662974366324,
+          "supported_replications": 800,
+          "type_i_error": null,
+          "type_i_ok": true
+        },
+        {
+          "bias": 0.00664685227802075,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "balanced",
+            "dataset": "diabetes",
+            "effect": "constant",
+            "learner": "adaptive",
+            "n_groups": 3,
+            "n_per_group": 100,
+            "noise": "normal"
+          },
+          "cell_index": 50,
+          "contrast_count": 1600,
+          "coverage": 0.94625,
+          "coverage_floor": 0.9391027526411483,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.18654050435188085,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 0.9924460708377834,
+          "supported_replications": 800,
+          "type_i_error": null,
+          "type_i_ok": true
+        },
+        {
+          "bias": -0.007795532588652033,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "moderate",
+            "dataset": "diabetes",
+            "effect": "null",
+            "learner": "linear",
+            "n_groups": 3,
+            "n_per_group": 100,
+            "noise": "heteroskedastic"
+          },
+          "cell_index": 51,
+          "contrast_count": 1600,
+          "coverage": 0.944375,
+          "coverage_floor": 0.9391027526411483,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.15920073448362146,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 0.9879766470713487,
+          "supported_replications": 800,
+          "type_i_error": 0.055625,
+          "type_i_ok": true
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "dataset": "diabetes",
+            "effect": "heterogeneous",
+            "learner": "adaptive",
+            "n_groups": 5,
+            "n_per_group": 50,
+            "noise": "normal"
+          },
+          "cell_index": 52,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "moderate",
+            "dataset": "diabetes",
+            "effect": "constant",
+            "learner": "linear",
+            "n_groups": 5,
+            "n_per_group": 50,
+            "noise": "heteroskedastic"
+          },
+          "cell_index": 53,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "bias": 0.0070968325309082635,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "balanced",
+            "dataset": "breast-cancer",
+            "effect": "null",
+            "learner": "linear",
+            "n_groups": 2,
+            "n_per_group": 100,
+            "noise": "normal"
+          },
+          "cell_index": 54,
+          "contrast_count": 800,
+          "coverage": 0.95,
+          "coverage_floor": 0.9345889649925775,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.1758675731465435,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 0.986244249515602,
+          "supported_replications": 800,
+          "type_i_error": 0.05,
+          "type_i_ok": true
+        },
+        {
+          "bias": -0.09311747947594391,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "moderate",
+            "dataset": "breast-cancer",
+            "effect": "heterogeneous",
+            "learner": "adaptive",
+            "n_groups": 2,
+            "n_per_group": 200,
+            "noise": "heteroskedastic"
+          },
+          "cell_index": 55,
+          "contrast_count": 800,
+          "coverage": 0.95375,
+          "coverage_floor": 0.9345889649925775,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.9305088299462023,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 1.0181998808140562,
+          "supported_replications": 800,
+          "type_i_error": null,
+          "type_i_ok": true
+        },
+        {
+          "bias": -0.007173884777996013,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "balanced",
+            "dataset": "breast-cancer",
+            "effect": "constant",
+            "learner": "adaptive",
+            "n_groups": 3,
+            "n_per_group": 100,
+            "noise": "normal"
+          },
+          "cell_index": 56,
+          "contrast_count": 1600,
+          "coverage": 0.945,
+          "coverage_floor": 0.9391027526411483,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 0.16723875322276088,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 0.9902705339765612,
+          "supported_replications": 800,
+          "type_i_error": null,
+          "type_i_ok": true
+        },
+        {
+          "bias": 0.04626874324078487,
+          "bias_ok": true,
+          "cell": {
+            "allocation": "moderate",
+            "dataset": "breast-cancer",
+            "effect": "null",
+            "learner": "linear",
+            "n_groups": 3,
+            "n_per_group": 100,
+            "noise": "heteroskedastic"
+          },
+          "cell_index": 57,
+          "contrast_count": 1600,
+          "coverage": 0.94625,
+          "coverage_floor": 0.9391027526411483,
+          "coverage_ok": true,
+          "empirical_standard_deviation": 1.4215628664214495,
+          "gate_regime": "one-sided-calibration-screening",
+          "passed": true,
+          "standard_error_ok": true,
+          "standard_error_ratio": 0.9552981312123084,
+          "supported_replications": 800,
+          "type_i_error": 0.05375,
+          "type_i_ok": true
+        },
+        {
+          "cell": {
+            "allocation": "balanced",
+            "dataset": "breast-cancer",
+            "effect": "heterogeneous",
+            "learner": "adaptive",
+            "n_groups": 5,
+            "n_per_group": 50,
+            "noise": "normal"
+          },
+          "cell_index": 58,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        },
+        {
+          "cell": {
+            "allocation": "moderate",
+            "dataset": "breast-cancer",
+            "effect": "constant",
+            "learner": "linear",
+            "n_groups": 5,
+            "n_per_group": 50,
+            "noise": "heteroskedastic"
+          },
+          "cell_index": 59,
+          "passed": true,
+          "reason": "outside-calibration-screening-eligibility",
+          "supported_replications": 800
+        }
+      ],
+      "supported_replications": 19200.0,
+      "thresholds": {
+        "maximum_absolute_weighted_balance_difference": 1.3233347416888628,
+        "maximum_influence_top_one_percent_share": 0.9999817064961821,
+        "maximum_normalized_weight": 0.33333333333333337,
+        "maximum_seed_standardized_departure": 6.055869767485041,
+        "maximum_top_one_percent_weight_share": 1.0,
+        "minimum_ess_ratio": 0.9999999999999991
+      },
+      "unstable_enrichment": {
+        "absolute_enrichment": 0.07378411807489428,
+        "passed": true,
+        "risk_ratio": 2.275029822130513,
+        "risk_ratio_lower_bound": 1.8325141103455584,
+        "selection_confidence": 0.95,
+        "supported_bad_rate": 0.05786854298953149,
+        "supported_count": 32275,
+        "unstable_bad_rate": 0.13165266106442577,
+        "unstable_count": 295
+      }
+    },
+    "evaluated_candidate_count": 408,
+    "fully_screened_candidate_count": 2,
+    "gate_regime": "one-sided-calibration-screening",
+    "maximum_supported_replications": 19200.0,
+    "minimum_required_supported_replications": 16320.0,
+    "selected_supported_replications": 19200.0,
+    "selected_unstable_enrichment": {
+      "absolute_enrichment": 0.07378411807489428,
+      "passed": true,
+      "risk_ratio": 2.275029822130513,
+      "risk_ratio_lower_bound": 1.8325141103455584,
+      "selection_confidence": 0.95,
+      "supported_bad_rate": 0.05786854298953149,
+      "supported_count": 32275,
+      "unstable_bad_rate": 0.13165266106442577,
+      "unstable_count": 295
+    }
+  },
+  "threshold_selection": "screened-enriched-robust-margin-within-retention-v8",
+  "thresholds": {
+    "maximum_absolute_weighted_balance_difference": 1.3233347416888628,
+    "maximum_influence_top_one_percent_share": 0.9999817064961821,
+    "maximum_normalized_weight": 0.33333333333333337,
+    "maximum_seed_standardized_departure": 6.055869767485041,
+    "maximum_top_one_percent_weight_share": 1.0,
+    "minimum_ess_ratio": 0.9999999999999991
+  }
+}

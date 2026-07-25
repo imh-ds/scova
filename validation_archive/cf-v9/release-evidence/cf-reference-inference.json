@@ -1,0 +1,68 @@
+{
+  "all_inference_gates_passed": true,
+  "artifact_type": "scova-cf-inference-validation",
+  "audit": [
+    {
+      "family_coverage": 0.9535,
+      "familywise_error": 0.046,
+      "focused_cell_index": 0,
+      "omnibus_size": 0.048,
+      "passed": true
+    },
+    {
+      "family_coverage": 0.947,
+      "familywise_error": 0.051,
+      "focused_cell_index": 1,
+      "omnibus_size": 0.052,
+      "passed": true
+    },
+    {
+      "family_coverage": 0.946,
+      "familywise_error": null,
+      "focused_cell_index": 2,
+      "omnibus_size": null,
+      "passed": true
+    },
+    {
+      "family_coverage": 0.949,
+      "familywise_error": null,
+      "focused_cell_index": 3,
+      "omnibus_size": null,
+      "passed": true
+    },
+    {
+      "family_coverage": 0.951,
+      "familywise_error": 0.0465,
+      "focused_cell_index": 4,
+      "omnibus_size": 0.056,
+      "passed": true
+    },
+    {
+      "family_coverage": 0.957,
+      "familywise_error": 0.021,
+      "focused_cell_index": 5,
+      "omnibus_size": null,
+      "passed": true
+    }
+  ],
+  "bootstrap_replications": 999,
+  "environment": {
+    "numpy": "2.2.6",
+    "python": "3.12.13",
+    "scikit-learn": "1.6.1",
+    "scipy": "1.15.3",
+    "scova": "0.3.0.dev0"
+  },
+  "evidence_checksum": "395945647c6129806a0b61c1a94a452a78c5c322c4f8f9c9392511e380fe27ea",
+  "git_commit": "841050494e058eb3547df78cffb5bac8c933f635",
+  "host_platforms": [
+    "Linux-6.17.0-1018-azure-x86_64-with-glibc2.39",
+    "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39"
+  ],
+  "numerical_implementation_checksum": "ee66433ac81deac28d399f8d4af391aab04ffb6bab6d88511ec751067032b249",
+  "protocol_checksum": "8ec41d170f1433ef8d1289b0cb0a05f9c53b6ae8d811ff1d52887f0f7c6e7964",
+  "schema_version": 2,
+  "source_git_commits": [
+    "7dea89f3cc983b292242ac8f0923ebece3fbc080"
+  ]
+}
