@@ -618,7 +618,13 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: 3.12.13
-      - run: python -m pip install -e ".[dev]"
+      # Pinned to the same numerical stack as ci.yml and the campaign tiers:
+      # the plasmode source checksums frozen in the spec are scikit-learn
+      # version dependent, so an unpinned resolve fails the audit test suite.
+      - run: >-
+          python -m pip install -e ".[dev]"
+          "numpy==2.2.6" "pandas==2.2.3" "scipy==1.15.3"
+          "scikit-learn==1.6.1"
       - uses: actions/download-artifact@v6
         with:
           name: cf-release-evidence
