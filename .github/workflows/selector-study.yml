@@ -1,0 +1,123 @@
+name: Propensity selector study
+
+# Methods study for the SCOVA-CF propensity-selection rule. Runs in the pinned
+# campaign environment so its numbers are comparable with the frozen CF
+# evidence; a local run on a different scikit-learn is not.
+on:
+  workflow_dispatch:
+    inputs:
+      reps:
+        description: Replications per design cell
+        required: true
+        default: "400"
+      n_per_group:
+        description: Comma-separated group sizes
+        required: true
+        default: "100,200,400,800"
+      gammas:
+        description: Comma-separated confounding strengths
+        required: true
+        default: "0.0,0.25,0.5,1.0"
+      k_values:
+        description: Comma-separated group counts
+        required: true
+        default: "2,3"
+      forms:
+        description: Comma-separated confounding forms
+        required: true
+        default: "linear,nonlinear"
+      shard_count:
+        description: Number of parallel shards
+        required: true
+        default: "16"
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  PYTHONHASHSEED: "0"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      shards: ${{ steps.matrix.outputs.shards }}
+    steps:
+      - id: matrix
+        env:
+          SHARD_COUNT: ${{ inputs.shard_count }}
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          print("shards=" + json.dumps(list(range(int(os.environ["SHARD_COUNT"])))))
+          PY
+
+  shard:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.prepare.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      # Same pinned numerical stack as the CF campaign tiers. The selector
+      # decision turns on a log-loss comparison between two learners, so the
+      # scikit-learn version is part of what is being measured.
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - run: |
+          python -m benchmarks.selector_study \
+            --reps "${{ inputs.reps }}" \
+            --n-per-group "${{ inputs.n_per_group }}" \
+            --gammas "${{ inputs.gammas }}" \
+            --k-values "${{ inputs.k_values }}" \
+            --forms "${{ inputs.forms }}" \
+            --shard-index "${{ matrix.shard }}" \
+            --shard-count "${{ inputs.shard_count }}" \
+            --results-dir cells \
+            --out "shard-${{ matrix.shard }}.json"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: selector-study-cells-${{ matrix.shard }}
+          path: cells/
+          retention-days: 90
+
+  merge:
+    needs: shard
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: selector-study-cells-*
+          merge-multiple: true
+          path: cells
+      # --merge reports any cell missing from the grid, so a shard that timed
+      # out or crashed is visible in the summary instead of silently absent.
+      - run: |
+          python -m benchmarks.selector_study --merge \
+            --n-per-group "${{ inputs.n_per_group }}" \
+            --gammas "${{ inputs.gammas }}" \
+            --k-values "${{ inputs.k_values }}" \
+            --forms "${{ inputs.forms }}" \
+            --results-dir cells \
+            --out selector-study-summary.json | tee selector-study-report.txt
+      - uses: actions/upload-artifact@v6
+        with:
+          name: selector-study-summary
+          path: |
+            selector-study-summary.json
+            selector-study-report.txt
+          retention-days: 90
