@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Archived evidence must round-trip byte for byte: provenance.json records a
+# SHA-256 per file, and EOL normalization would invalidate every one of them.
+validation_archive/cf-v9/release-evidence/** -text

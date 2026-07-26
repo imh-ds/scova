@@ -1,0 +1,100 @@
+{
+  "archive_schema_version": 1,
+  "created_utc": "2026-07-25T00:00:00Z",
+  "repository": "imh-ds/scova",
+  "protocol_id": "cf-randomized-continuous-aipw-unnormalized-v9",
+  "spec_file": "benchmarks/specs/cf_reference_v9.json",
+  "spec_sha256": "5f601543de60c62a065689af540587696913c89c8bf95c15365a229dce604b1a",
+  "freeze_tag": "scova-cf-reference-v9-freeze-r1",
+  "frozen_commit": "d094a0ff6fed7a7ce71e35b7ff4c189c55b051a2",
+  "archived_from_commit": "1e202d9cbbc68c4bd5772f75dcee895b6e3523cf",
+  "status": "promoted; all validation gates passed",
+  "numerical_fingerprints_at_frozen_commit": {
+    "external": "f39fa9194398698d6e52cf6d0ad58dbb947ec338e0337be0914562806391a6a8",
+    "inference": "86eaa6575dd6e05e2590fa3c2b4ceafcb2fe238d9d8c2c430ae537331b5d97df"
+  },
+  "retained_artifact": {
+    "role": "Complete v9 release evidence bundle (self-verifying)",
+    "run_id": 29963775591,
+    "run_url": "https://github.com/imh-ds/scova/actions/runs/29963775591",
+    "artifact_id": 8547071414,
+    "artifact_name": "cf-release-evidence",
+    "artifact_digest": "sha256:944f3c74868ca2e1e55f125af55211ecc15de2c7d23766cc469f8154a8168ad4",
+    "artifact_expires_utc": "2026-10-20T22:42:28Z",
+    "local_dir": "release-evidence/",
+    "files": {
+      "cf-reference-calibration-campaign.json.gz": {
+        "sha256": "0357bc58bab6644a154d788363a091e2a07adf5a45ab2dfa8cc0f66d300d8412",
+        "bytes": 37727733
+      },
+      "cf-reference-calibration.json": {
+        "sha256": "78d8bc6627ef0e72e00bbc7c9d46c3a0633eaa5f84c397e4fcbbe7c493fef6a8",
+        "bytes": 71246
+      },
+      "cf-reference-candidate-profile.json": {
+        "sha256": "6ab769189b3f6cfaea98e65deaa20328278894a266811838ad2151370adcaaf8",
+        "bytes": 1128
+      },
+      "cf-reference-external-agreement.json": {
+        "sha256": "c16ac6b0cf3f7f9c14893e04808ca91ff622cc3dfa37fe2d55508190e382669d",
+        "bytes": 402509
+      },
+      "cf-reference-inference.json": {
+        "sha256": "fd6a1f1f30a9d30ba4eda7914cf275301de73384b0ae2fe4d5d750c24c2de3df",
+        "bytes": 1824
+      },
+      "cf-reference-support-profile.json": {
+        "sha256": "01d80799e1fd88426edd83de0f1973f9f351df0ab905eb370ed38cccda802077",
+        "bytes": 1188
+      },
+      "cf-reference-validation-campaign.json.gz": {
+        "sha256": "02e1a60757915f16db59061a0978d5d34e92118b4b74cf3cc79469a1f0e6ef02",
+        "bytes": 37759081
+      },
+      "cf-reference-validation-campaign.json.gz.sha256": {
+        "sha256": "8daad22e2bb84e6ee4a5ba7fdbf4780e3a5fe28829fd6eb9935ad71d131132d6",
+        "bytes": 65
+      },
+      "cf-reference-validation-report.md": {
+        "sha256": "90a18f3f12a3e4d76f264258cfed823f8ba96488b55c307b6a69e9c15b482a00",
+        "bytes": 1429
+      },
+      "cf-reference-validation.json": {
+        "sha256": "5a81fed098093e7a6a3d0c3b347c08a6dc51fe196d8445ab151bbea195ccdeca",
+        "bytes": 31773
+      },
+      "proposed-support-profiles.json": {
+        "sha256": "1719d3f48fd8ed4ae21ae970614b5de93fdbf8f5a10ebda4bdc518beed6058a7",
+        "bytes": 1344
+      }
+    }
+  },
+  "source_campaign_runs": {
+    "calibrate_support": {
+      "run_id": 29948768597,
+      "role": "selected the robust 2.275 enrichment candidate"
+    },
+    "validation": {
+      "run_id": 29949493542,
+      "role": "held-out campaign, 128 shards, 0 failures"
+    },
+    "aggregate": {
+      "run_id": 29963775591,
+      "role": "adjudication; decision=promoted"
+    },
+    "development_source": {
+      "run_id": 29792674086,
+      "role": "frozen v6 development draw reused by v9"
+    },
+    "external_agreement": {
+      "run_id": 29676748117,
+      "role": "frozen v5 external evidence"
+    },
+    "simultaneous_inference": {
+      "run_id": 29720065229,
+      "role": "frozen v6 inference evidence"
+    }
+  },
+  "promoted_profile_id": "cf-randomized-continuous-aipw-unnormalized-v9-promoted",
+  "verification": "python scripts/check_cf_reference_release.py --spec benchmarks/specs/cf_reference_v9.json --evidence-root validation_archive/cf-v9/release-evidence --packaged-manifest src/scova/cf/data/support_profiles.json"
+}

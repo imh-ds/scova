@@ -47,7 +47,11 @@ nosetests.xml
 coverage.xml
 coverage.json
 local-artifacts/
-validation_archive/
+# Validation archives are local scratch by default. cf-v9 is the exception:
+# its evidence existed only as an Actions artifact expiring 2026-10-20, so it
+# is version-controlled instead.
+validation_archive/*
+!validation_archive/cf-v9/
 *.cover
 *.py,cover
 .hypothesis/
