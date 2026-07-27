@@ -129,6 +129,24 @@ class EstimatedAssignment:
 AssignmentSpecification: TypeAlias = KnownAssignment | EstimatedAssignment
 
 
+def assignment_lock(assignment: AssignmentSpecification) -> str:
+    """Vocabulary a support profile uses to name the assignment it validated."""
+    if isinstance(assignment, EstimatedAssignment):
+        return "estimated"
+    return "known-constant" if assignment.probabilities else "known-stratified"
+
+
+# Regimes this release has estimator support for governing with a calibrated
+# profile. A promoted profile outside this set is refused at load time rather
+# than silently governing an analysis its campaign never exercised.
+SUPPORTED_PROFILE_REGIMES: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("randomized", "known-constant"),
+        ("observational-causal", "estimated"),
+    }
+)
+
+
 @dataclass(frozen=True, slots=True)
 class SupportPolicy:
     """Versioned support thresholds; defaults are intentionally provisional."""
@@ -145,6 +163,11 @@ class SupportPolicy:
     version: str = "cf-provisional-1"
     profile_id: str | None = None
     profile_checksum: str | None = None
+    # The analysis lock the profile was validated under. Carried forward so the
+    # estimator can check it against the declaration it is actually governing
+    # rather than assuming a single supported regime.
+    profile_mode: str | None = None
+    profile_assignment: str | None = None
 
     def __post_init__(self) -> None:
         if self.min_group_count < 2:
@@ -192,17 +215,23 @@ class SupportPolicy:
         from .validation import CFSupportProfile
 
         profile = CFSupportProfile.from_dict(values)
-        expected = {
-            "mode": "randomized",
+        # These describe what the estimator computes and never vary by regime.
+        invariant = {
             "outcome_type": "continuous",
             "estimator": "aipw-unnormalized",
             "estimand_id": "study-population-standardized-means",
-            "assignment": "known-constant",
             "independent_unit": "row",
         }
         compatibility = dict(profile.compatibility or {})
-        if any(compatibility.get(name) != value for name, value in expected.items()):
+        if any(compatibility.get(name) != value for name, value in invariant.items()):
             raise ValueError("Packaged support profile has an incompatible analysis lock")
+        regime = (compatibility.get("mode"), compatibility.get("assignment"))
+        if regime not in SUPPORTED_PROFILE_REGIMES:
+            raise ValueError(
+                "Packaged support profile has an incompatible analysis lock: "
+                f"mode {regime[0]!r} with assignment {regime[1]!r} is not a "
+                "regime this release can govern"
+            )
         thresholds = profile.thresholds
         return cls(
             min_group_count=int(compatibility.get("minimum_group_count", 20)),
@@ -229,7 +258,34 @@ class SupportPolicy:
             version=profile.profile_id,
             profile_id=profile.profile_id,
             profile_checksum=profile.checksum,
+            profile_mode=regime[0],
+            profile_assignment=regime[1],
         )
+
+    def governs(
+        self, mode: AnalysisMode, assignment: AssignmentSpecification
+    ) -> str | None:
+        """Reason this policy cannot govern the analysis, or None if it can.
+
+        A calibrated profile is evidence about one regime.  Applying it to a
+        different one would let held-out validation from a randomized campaign
+        vouch for an observational analysis, so the declared lock has to match
+        what the declaration actually does.
+        """
+        if not self.calibrated:
+            return None
+        if self.profile_mode != mode.value:
+            return (
+                f"The packaged {self.profile_mode} reference profile cannot govern "
+                f"{mode.value} analyses"
+            )
+        actual = assignment_lock(assignment)
+        if self.profile_assignment != actual:
+            return (
+                f"The packaged reference profile validates {self.profile_assignment} "
+                f"assignment; this declaration uses {actual}"
+            )
+        return None
 
     def to_dict(self) -> dict[str, Any]:
         return {
