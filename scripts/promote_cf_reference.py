@@ -21,6 +21,43 @@ STATUS_END = "<!-- CF_REFERENCE_PROFILE_STATUS_END -->"
 VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+(?:[.\-+][0-9A-Za-z.\-+]+)?$")
 
 
+# Estimator identifiers read awkwardly in prose; everything else in the
+# compatibility lock is already a readable phrase.
+_ESTIMATOR_PHRASES = {"aipw-unnormalized": "unnormalized-AIPW"}
+
+
+def _profile_phrase(profile: dict) -> str:
+    """Describe a profile from its own compatibility lock, not from assumption.
+
+    This text was hardcoded as "randomized", which was true of every profile
+    promoted up to v9 and would be a false claim about an observational one.
+    The lock already records the regime, so read it rather than restate it.
+    """
+    compatibility = profile.get("compatibility") or {}
+    estimator = str(compatibility.get("estimator", ""))
+    parts = (
+        str(compatibility.get("mode", "")),
+        str(compatibility.get("outcome_type", "")),
+        _ESTIMATOR_PHRASES.get(estimator, estimator),
+    )
+    described = " ".join(part for part in parts if part)
+    if not described:
+        raise ValueError("Promoted profile does not declare a compatibility lock")
+    return described
+
+
+def _claim_sentence(profile: dict) -> str:
+    """Non-randomized promotions must not inherit randomization's standing."""
+    compatibility = profile.get("compatibility") or {}
+    if str(compatibility.get("mode")) == "randomized":
+        return ""
+    return (
+        " Assignment is estimated rather than known, so its claims are "
+        "assumption-dependent causal and rest on the declared covariates being "
+        "sufficient; they are not supported by randomization."
+    )
+
+
 def _replace_once(text: str, pattern: str, replacement: str, label: str) -> str:
     updated, count = re.subn(
         pattern, replacement, text, count=1, flags=re.MULTILINE | re.DOTALL
@@ -77,9 +114,10 @@ def promote(
     )
     status = (
         f"{STATUS_START}\n"
-        f"The randomized continuous unnormalized-AIPW profile `{profile['profile_id']}` "
+        f"The {_profile_phrase(profile)} profile `{profile['profile_id']}` "
         f"is promoted. Its packaged profile checksum is `{profile['profile_checksum']}` and "
-        "confirmatory support is available only when this profile is explicitly selected.\n"
+        "confirmatory support is available only when this profile is explicitly selected."
+        f"{_claim_sentence(profile)}\n"
         f"{STATUS_END}"
     )
     documentation.write_text(
