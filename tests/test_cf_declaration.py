@@ -294,3 +294,103 @@ def test_stability_seeds_are_part_of_declaration_identity() -> None:
     declared = replace(baseline, stability_seeds=(101, 211, 307, 401, 503))
     assert declared.to_dict()["stability_seeds"] == [101, 211, 307, 401, 503]
     assert declared.declaration_hash != baseline.declaration_hash
+
+
+def _profile(mode: str, assignment: str, profile_id: str = "regime-test") -> CFSupportProfile:
+    return CFSupportProfile(
+        profile_id=profile_id,
+        protocol_checksum="a" * 64,
+        calibration_evidence_checksum="b" * 64,
+        validation_evidence_checksum="c" * 64,
+        thresholds={
+            "minimum_ess_ratio": 0.25,
+            "maximum_normalized_weight": 0.20,
+            "maximum_top_one_percent_weight_share": 0.35,
+            "maximum_absolute_weighted_balance_difference": 1.0,
+            "maximum_influence_top_one_percent_share": 0.50,
+            "maximum_seed_standardized_departure": 1.5,
+        },
+        compatibility={
+            "mode": mode,
+            "outcome_type": "continuous",
+            "estimator": "aipw-unnormalized",
+            "estimand_id": "study-population-standardized-means",
+            "assignment": assignment,
+            "independent_unit": "row",
+        },
+        state="promoted",
+    )
+
+
+def _install(monkeypatch: pytest.MonkeyPatch, profile: CFSupportProfile) -> None:
+    monkeypatch.setattr(
+        SupportPolicy, "_trusted_profile", staticmethod(lambda _id: profile.to_dict())
+    )
+
+
+def test_packaged_policy_accepts_an_observational_regime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install(monkeypatch, _profile("observational-causal", "estimated"))
+    policy = SupportPolicy.packaged("regime-test")
+    assert policy.calibrated is True
+    assert (policy.profile_mode, policy.profile_assignment) == (
+        "observational-causal",
+        "estimated",
+    )
+
+
+def test_packaged_policy_refuses_a_regime_the_release_cannot_govern(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Mode and assignment must pair coherently; a profile claiming estimated
+    # assignment under randomization describes a campaign that cannot exist.
+    for mode, assignment in (
+        ("standardized-associational", "estimated"),
+        ("randomized", "estimated"),
+        ("observational-causal", "known-constant"),
+    ):
+        _install(monkeypatch, _profile(mode, assignment))
+        with pytest.raises(ValueError, match="incompatible analysis lock"):
+            SupportPolicy.packaged("regime-test")
+
+
+def test_a_calibrated_profile_only_governs_its_own_regime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Held-out evidence from one regime must not vouch for another."""
+    _install(monkeypatch, _profile("randomized", "known-constant"))
+    randomized_policy = SupportPolicy.packaged("regime-test")
+    known = KnownAssignment(probabilities=(("g0", 0.5), ("g1", 0.5)))
+    estimated = EstimatedAssignment()
+
+    assert randomized_policy.governs(AnalysisMode.RANDOMIZED, known) is None
+    assert "cannot govern" in (
+        randomized_policy.governs(AnalysisMode.OBSERVATIONAL_CAUSAL, estimated) or ""
+    )
+    # Stratified randomization is a different validated object from constant.
+    stratified = KnownAssignment(
+        stratum_column="site",
+        stratum_probabilities=(("s1", (("g0", 0.5), ("g1", 0.5))),),
+    )
+    assert "known-stratified" in (
+        randomized_policy.governs(AnalysisMode.RANDOMIZED, stratified) or ""
+    )
+
+    _install(monkeypatch, _profile("observational-causal", "estimated"))
+    observational_policy = SupportPolicy.packaged("regime-test")
+    assert observational_policy.governs(AnalysisMode.OBSERVATIONAL_CAUSAL, estimated) is None
+    assert "cannot govern" in (
+        observational_policy.governs(AnalysisMode.RANDOMIZED, known) or ""
+    )
+
+
+def test_uncalibrated_policy_governs_every_mode() -> None:
+    provisional = SupportPolicy()
+    assert provisional.calibrated is False
+    for mode, assignment in (
+        (AnalysisMode.RANDOMIZED, KnownAssignment(probabilities=(("g0", 0.5), ("g1", 0.5)))),
+        (AnalysisMode.OBSERVATIONAL_CAUSAL, EstimatedAssignment()),
+        (AnalysisMode.STANDARDIZED_ASSOCIATIONAL, EstimatedAssignment()),
+    ):
+        assert provisional.governs(mode, assignment) is None

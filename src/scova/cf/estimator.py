@@ -198,27 +198,14 @@ class SCOVACF:
         """Run SCOVA-CF or return a typed refusal for an unmet prerequisite."""
         if not isinstance(data, pd.DataFrame):
             raise TypeError("data must be a pandas DataFrame")
-        if (
-            declaration.support_policy.calibrated
-            and declaration.mode is not AnalysisMode.RANDOMIZED
-        ):
+        incompatible = declaration.support_policy.governs(
+            declaration.mode, declaration.assignment
+        )
+        if incompatible is not None:
             return self._refusal(
                 declaration,
                 code="refused/incompatible-support-profile",
-                reason="The packaged randomized reference profile cannot govern another mode",
-            )
-        if (
-            declaration.support_policy.calibrated
-            and isinstance(declaration.assignment, KnownAssignment)
-            and not declaration.assignment.probabilities
-        ):
-            return self._refusal(
-                declaration,
-                code="refused/incompatible-support-profile",
-                reason=(
-                    "The packaged reference profile validates constant assignment "
-                    "probabilities only"
-                ),
+                reason=incompatible,
             )
         if declaration.post_treatment_covariates:
             return self._refusal(
