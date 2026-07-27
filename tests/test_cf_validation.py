@@ -1157,3 +1157,66 @@ def test_overlap_factor_is_the_only_lever_on_common_support() -> None:
     assert worst_propensity("full") > 0.05
     assert worst_propensity("partial") < 0.01
     assert worst_propensity("poor") < 0.01
+
+
+V10_SPEC = Path("benchmarks/specs/cf_reference_v10.json")
+
+
+def test_v10_is_a_wholly_observational_protocol_reusing_no_evidence() -> None:
+    protocol = CFValidationProtocol.load(V10_SPEC)
+    assert protocol.protocol_id == "cf-observational-continuous-aipw-unnormalized-v10"
+    assert protocol.checksum == (
+        "5808f020a67ad4362bbe8d5656829e0abb0f8b3c28b3c735dc5f900ef0da997d"
+    )
+    assert protocol.reference_profile["mode"] == "observational-causal"
+    assert protocol.reference_profile["assignment"] == "estimated"
+
+    # Every lane must be confounded. A randomized cell here would let
+    # randomization-supported evidence vouch for an assumption-dependent
+    # causal profile, which is exactly what the profile regime lock forbids.
+    lanes = (
+        list(protocol.retained_cells)
+        + list(protocol.plasmode_cells)
+        + list(protocol.external_cells)
+        + [reference["cell"] for reference in protocol.inference_cells]
+    )
+    assert lanes
+    for cell in lanes:
+        assert cell.get("confounding") not in (None, "none")
+        assert cell.get("confounding_form") in {"linear", "nonlinear"}
+        assert cell.get("overlap") in {"full", "partial", "poor"}
+
+    # v9 inherited external and inference evidence from randomized v5/v6 runs.
+    # Those say nothing about estimated assignment, so v10 generates its own.
+    assert protocol.calibration_source is None
+    assert protocol.external_source is None
+    assert protocol.inference_source is None
+    assert protocol.candidate_source is None
+    assert CFValidationProtocol.from_dict(protocol.to_dict()).checksum == protocol.checksum
+
+
+def test_v10_design_is_reproducible_and_pairwise_complete() -> None:
+    from scripts.generate_cf_v10_design import build_spec
+
+    protocol = CFValidationProtocol.load(V10_SPEC)
+    regenerated = build_spec()
+    assert regenerated["retained_cells"] == [dict(cell) for cell in protocol.retained_cells]
+    provenance = regenerated["design_selection"]
+    assert provenance["pairwise_pairs_covered"] == provenance["pairwise_pairs_total"]
+
+
+def test_v10_seed_partitions_avoid_every_earlier_campaign() -> None:
+    """Seeds must stay valid scikit-learn states, and v3-v9 crowd the ceiling."""
+    v10 = CFValidationProtocol.load(V10_SPEC)
+    lanes = [v10.pilot, v10.calibration, v10.validation, v10.external, v10.inference]
+    assert all(lane is not None for lane in lanes)
+    highest = max(lane.start + 60 * lane.count for lane in lanes if lane is not None)
+    assert highest < 2**32
+    for spec in (SPEC, V4_SPEC, V6_SPEC, V8_SPEC, V9_SPEC):
+        other = CFValidationProtocol.load(spec)
+        for mine in lanes:
+            for theirs in (other.pilot, other.calibration, other.validation):
+                assert mine is not None
+                mine_end = mine.start + 60 * mine.count
+                theirs_end = theirs.start + 60 * theirs.count
+                assert mine_end <= theirs.start or theirs_end <= mine.start
