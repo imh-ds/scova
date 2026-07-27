@@ -108,6 +108,13 @@ _CONFOUNDING_STRENGTH = {"none": 0.0, "weak": 0.25, "moderate": 0.5, "strong": 1
 _OVERLAP_DEGRADED_SHARE = {"full": 0.0, "partial": 0.15, "poor": 0.35}
 
 
+def _standardize(values: np.ndarray) -> np.ndarray:
+    spread = float(values.std())
+    if spread == 0.0:
+        return np.zeros_like(values)
+    return (values - values.mean()) / spread
+
+
 def _assignment_signal(x: np.ndarray, form: str) -> np.ndarray:
     """Standardized f(X) driving covariate-dependent assignment."""
     if form == "linear":
@@ -116,36 +123,63 @@ def _assignment_signal(x: np.ndarray, form: str) -> np.ndarray:
         signal = np.sin(1.5 * x[:, 0]) + 0.6 * x[:, 1] ** 2 - 0.4 * np.abs(x[:, 2])
     else:
         raise ValueError(f"Unknown confounding form: {form}")
-    spread = float(signal.std())
-    if spread == 0.0:
-        return np.zeros_like(signal)
-    return (signal - signal.mean()) / spread
+    return _standardize(signal)
+
+
+def _plasmode_assignment_signal(score: np.ndarray, form: str) -> np.ndarray:
+    """Assignment signal for real covariates, driven by the principal score.
+
+    Real feature columns have arbitrary order and scale, so keying assignment on
+    x[:, 0..2] the way the Gaussian simulation does would make the confounder an
+    artifact of column ordering. The principal score already drives the outcome
+    baseline, which makes it the honest confounder here: assignment and outcome
+    share the same real covariate structure.
+    """
+    if form == "linear":
+        return _standardize(score)
+    if form == "nonlinear":
+        return _standardize(0.8 * score**2 - 0.5 * np.abs(score) + 0.4 * np.sin(2.0 * score))
+    raise ValueError(f"Unknown confounding form: {form}")
 
 
 def _unit_probabilities(
-    x: np.ndarray, k: int, cell: Mapping[str, Any], rng: np.random.Generator
+    signal_source: np.ndarray, k: int, cell: Mapping[str, Any], rng: np.random.Generator,
+    *, plasmode: bool = False,
 ) -> np.ndarray | None:
     """Covariate-dependent assignment probabilities, or None if randomized.
 
     Returns an (n, k) matrix. Cells that do not declare confounding keep the
-    constant-allocation behaviour, so randomized protocols are unaffected.
+    constant-allocation behaviour and consume no randomness, so randomized
+    protocols are byte-for-byte unaffected.
     """
     strength = _CONFOUNDING_STRENGTH[str(cell.get("confounding", "none"))]
     if strength == 0.0:
         return None
-    signal = _assignment_signal(x, str(cell.get("confounding_form", "linear")))
+    form = str(cell.get("confounding_form", "linear"))
+    signal = (
+        _plasmode_assignment_signal(signal_source, form)
+        if plasmode
+        else _assignment_signal(signal_source, form)
+    )
     # Bound the signal before it becomes a logit. The nonlinear form is
     # heavy-tailed once standardized, and unbounded logits drive a few units to
     # propensity ~0 on their own -- which would confound the confounding factor
     # with the overlap factor and leave "full overlap" cells already degenerate.
     loadings = np.linspace(-1.0, 1.0, k)
     logits = strength * np.outer(np.tanh(signal), loadings)
+    # Allocation enters as a log-odds intercept. Without it the constant
+    # allocation vector would be computed and then ignored for every confounded
+    # cell, leaving a declared factor of the frozen design with no effect on the
+    # data. Here it sets the marginal group sizes that the covariate signal then
+    # perturbs, which is what "rare group" means when assignment is not designed.
+    baseline = _probabilities(k, str(cell["allocation"]), "strong")
+    logits = logits + np.log(baseline)[None, :]
     share = _OVERLAP_DEGRADED_SHARE[str(cell.get("overlap", "full"))]
     if share > 0.0:
         # Amplify the logits for a random share of units so their assignment is
         # near-deterministic. Those units have no counterfactual counterpart,
         # which is the failure support screening is meant to catch.
-        degraded = rng.random(len(x)) < share
+        degraded = rng.random(len(signal)) < share
         logits[degraded] *= 6.0
     logits -= logits.max(axis=1, keepdims=True)
     probabilities = np.exp(logits)
@@ -280,7 +314,12 @@ def simulate_plasmode_cell(cell: Mapping[str, Any], *, seed: int) -> CampaignDat
         heterogeneous = 0.25 * code * score if effect == "heterogeneous" else 0.0
         means[:, code] = baseline + group_effects[code] + heterogeneous
     probabilities = _probabilities(k, str(cell["allocation"]), "strong")
-    codes = rng.choice(k, size=n, p=probabilities)
+    unit_probabilities = _unit_probabilities(score, k, cell, rng, plasmode=True)
+    if unit_probabilities is None:
+        codes = rng.choice(k, size=n, p=probabilities)
+    else:
+        thresholds = np.cumsum(unit_probabilities, axis=1)
+        codes = (rng.random(n)[:, None] > thresholds).sum(axis=1).clip(max=k - 1)
     outcome = means[np.arange(n), codes] + _errors(rng, x, str(cell["noise"]))
     columns = tuple(f"x{index}" for index in range(1, x.shape[1] + 1))
     data = pd.DataFrame(x, columns=columns)
@@ -299,6 +338,7 @@ def simulate_plasmode_cell(cell: Mapping[str, Any], *, seed: int) -> CampaignDat
             "source_feature_names": list(names),
             "sampling": "without-replacement",
         },
+        unit_probabilities=unit_probabilities,
     )
 
 
