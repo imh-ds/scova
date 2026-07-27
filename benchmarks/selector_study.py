@@ -1,12 +1,15 @@
 """Methods study: how should SCOVA-CF pick its propensity learner?
 
-The incumbent rule (`SCOVA._select_propensity_model`) picks between logistic
-regression and gradient boosting by inner-fold log loss.  Log loss scores
+The rule this study evaluated picked between logistic regression and gradient
+boosting by inner-fold log loss.  Log loss scores
 *prediction* of group membership, but the propensity's job in AIPW is
 *confounding control*, so under weak nonlinear confounding the misspecified
 linear learner wins the contest and bias leaks through with no warning.
 
-This harness compares candidate replacement rules on identical data.  Both
+The estimator now fixes the flexible learner instead; this harness is what
+settled that, and reproduces the old rule as its `adaptive` arm.
+
+It compares candidate rules on identical data.  Both
 propensity candidates and the outcome regression are cross-fitted ONCE per
 replicate; every rule then reuses those fits and is evaluated through the real
 estimator via ``SCOVACFNuisancePredictions``, so differences between rules are
@@ -30,6 +33,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
+from sklearn.metrics import log_loss
 
 from scova import ContrastSpec
 from scova.cf import (
@@ -112,6 +116,38 @@ def declaration(data, k, strategy="adaptive"):
     )
 
 
+def incumbent_scores(x, group_codes, candidates, n_splits=3):
+    """Inner-fold log loss per candidate: the rule the estimator used to apply.
+
+    Kept here rather than in ``scova`` because the estimator no longer selects
+    the propensity from the data.  Reproducing the historical rule is what lets
+    the "adaptive" arm below stay a like-for-like comparison.
+    """
+    counts = np.bincount(group_codes)
+    usable = min(n_splits, int(np.min(counts)))
+    if usable < 2:
+        return dict.fromkeys(candidates, float("inf"))
+    folds = np.empty(len(group_codes), dtype=int)
+    for code in np.unique(group_codes):
+        indices = np.flatnonzero(group_codes == code)
+        folds[indices] = np.arange(len(indices)) % usable
+    scores = {}
+    for name, candidate in candidates.items():
+        predicted = np.empty((len(x), len(np.unique(group_codes))))
+        for fold in np.unique(folds):
+            train = folds != fold
+            test = ~train
+            model = clone(candidate)
+            model.fit(x[train], group_codes[train])
+            probability = np.asarray(model.predict_proba(x[test]), dtype=float)
+            for column, code in enumerate(np.asarray(model.classes_, dtype=int)):
+                predicted[test, code] = probability[:, column]
+        scores[name] = float(
+            log_loss(group_codes, predicted, labels=np.arange(predicted.shape[1]))
+        )
+    return scores
+
+
 def shared_nuisance_fits(x, codes, outcome, folds, k, labels):
     """Cross-fit both propensity candidates and the outcome regression once.
 
@@ -128,7 +164,7 @@ def shared_nuisance_fits(x, codes, outcome, folds, k, labels):
         test = folds == fold
         train = ~test
         # Inner-fold scores drive the incumbent rule; compute them once per fold.
-        _, _, scores = SCOVA._select_propensity_model(x[train], codes[train])
+        scores = incumbent_scores(x[train], codes[train], candidates)
         fold_scores.append({"fold": int(fold), **scores})
         for name, candidate in candidates.items():
             model = clone(candidate)

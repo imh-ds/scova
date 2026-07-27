@@ -62,11 +62,28 @@ def test_default_adaptive_nuisance_selection_is_recorded() -> None:
     assert metadata["outcome_model"] == "adaptive"
     selection = metadata["selection"]
     assert selection["criterion"] == {
-        "propensity": "log_loss",
+        "propensity": "fixed-flexible",
         "outcome": "mean_squared_error",
     }
     assert len(selection["propensity"]) == 4
     assert set(selection["outcome"]) == set(result.group_labels)
+
+
+def test_adaptive_propensity_is_always_the_flexible_learner() -> None:
+    """The propensity is fixed, not scored.
+
+    Selecting it by predictive fit chose the misspecified linear learner in
+    ~all folds under nonlinear confounding, biasing the estimate while leaving
+    the intervals narrow.  Every fold must report the flexible learner, and no
+    log-loss score may be recorded, whatever the data look like.
+    """
+    for seed in (20, 31, 42):
+        simulation = generate_data("randomized", n=360, seed=seed)
+        result = SCOVA().fit(simulation.data, declaration(seed=seed + 1))
+        folds = result.nuisance_metadata["selection"]["propensity"]
+        assert folds, "adaptive cross-fitting must record a propensity choice per fold"
+        assert {entry["selected"] for entry in folds} == {"HistGradientBoostingClassifier"}
+        assert not any("scores" in entry for entry in folds)
 
 
 def test_linear_and_custom_nuisance_strategies_remain_available() -> None:

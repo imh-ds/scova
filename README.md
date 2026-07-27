@@ -30,8 +30,9 @@ The current vertical slice provides:
 
 - immutable, hashed analysis declarations;
 - deterministic stratified cross-fitting;
-- adaptive cross-fitted nuisance learning: regularized linear and
-  histogram-gradient-boosting candidates selected by inner-fold loss;
+- adaptive cross-fitted nuisance learning: a fixed histogram-gradient-boosting
+  propensity, and a regularized-linear/boosting outcome model selected by
+  inner-fold loss;
 - multinomial propensity and group-specific outcome models;
 - standardized group means, pairwise/custom contrasts, influence values, and
   pointwise Wald inference;
@@ -106,9 +107,19 @@ benchmarks is in
 
 `SCOVA()` defaults to `nuisance_strategy="adaptive"`. Within each outer
 cross-fitting fold it chooses between regularized linear and
-histogram-gradient-boosting nuisance candidates by deterministic inner-fold
-log loss for the propensity model and mean squared error for each group outcome
-model. The result artifact records the selected learner and candidate scores.
+histogram-gradient-boosting candidates for each group outcome model, by
+deterministic inner-fold mean squared error. The result artifact records the
+selected learner and candidate scores.
+
+The **propensity model is not selected from the data**: the adaptive strategy
+always cross-fits the histogram-gradient-boosting classifier. Scoring it by
+predictive fit is unsound, because log loss measures prediction of group
+membership while the propensity's role in AIPW is confounding control. Under
+nonlinear confounding the predictive contest picked the misspecified linear
+learner in nearly every fold, biasing the estimate while leaving intervals
+narrow. Fixing the flexible learner trades precision for validity: on genuinely
+linear propensities it is slightly conservative rather than wrong, at the cost
+of wider intervals in small samples. See `benchmarks/selector_study.py`.
 
 Use `SCOVA(nuisance_strategy="linear")` for the former transparent
 Ridge/logistic baseline. Use `nuisance_strategy="custom"` together with both
