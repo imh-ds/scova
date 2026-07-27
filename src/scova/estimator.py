@@ -10,7 +10,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator, clone
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
 from sklearn.linear_model import LogisticRegression, Ridge
-from sklearn.metrics import log_loss, mean_squared_error
+from sklearn.metrics import mean_squared_error
 
 from ._aipw import assemble_aipw, validate_probability_matrix
 from ._version import __version__
@@ -22,6 +22,10 @@ from .result import SCOVAResult, Verdict
 # regression suite while keeping the implementation centralized.
 _validate_probabilities = validate_probability_matrix
 _assemble_aipw = assemble_aipw
+
+# The adaptive strategy always cross-fits this propensity learner; see
+# SCOVA._adaptive_propensity_model for why the choice is not data-dependent.
+_FLEXIBLE_PROPENSITY = "HistGradientBoostingClassifier"
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,45 +105,35 @@ class SCOVA:
             ),
         }
 
-    @staticmethod
-    def _inner_folds(group_codes: np.ndarray, n_splits: int = 3) -> np.ndarray:
-        """Deterministic stratified folds used only to select nuisance candidates."""
-        counts = np.bincount(group_codes)
-        usable_splits = min(n_splits, int(np.min(counts)))
-        if usable_splits < 2:
-            return np.zeros(len(group_codes), dtype=int)
-        folds = np.empty(len(group_codes), dtype=int)
-        for code in np.unique(group_codes):
-            indices = np.flatnonzero(group_codes == code)
-            folds[indices] = np.arange(len(indices)) % usable_splits
-        return folds
-
     @classmethod
-    def _select_propensity_model(
-        cls, x: np.ndarray, group_codes: np.ndarray
-    ) -> tuple[BaseEstimator, str, dict[str, float]]:
-        """Choose a probability learner by deterministic inner-fold log loss."""
-        candidates = cls._adaptive_propensity_candidates()
-        folds = cls._inner_folds(group_codes)
-        scores: dict[str, float] = {}
-        for name, candidate in candidates.items():
-            if len(np.unique(folds)) < 2:
-                scores[name] = float("inf")
-                continue
-            predicted = np.empty((len(x), len(np.unique(group_codes))))
-            for fold in np.unique(folds):
-                train = folds != fold
-                test = ~train
-                model = clone(candidate)
-                model.fit(x[train], group_codes[train])
-                probability = np.asarray(model.predict_proba(x[test]), dtype=float)
-                for column, code in enumerate(np.asarray(model.classes_, dtype=int)):
-                    predicted[test, code] = probability[:, column]
-            scores[name] = float(
-                log_loss(group_codes, predicted, labels=np.arange(predicted.shape[1]))
-            )
-        selected_name = min(scores, key=scores.__getitem__)
-        return clone(candidates[selected_name]), selected_name, scores
+    def _adaptive_propensity_model(cls) -> tuple[BaseEstimator, str]:
+        """Return the flexible propensity learner, unconditionally.
+
+        This deliberately does not hold a contest.  Selecting the propensity by
+        predictive fit is unsound: log loss scores prediction of group
+        membership, but the propensity's job in AIPW is confounding control, and
+        the two disagree exactly where it matters.  Under weak-to-moderate
+        nonlinear confounding the nonlinear signal is too faint for boosting to
+        win on log loss, so the misspecified linear learner was chosen almost
+        always -- measured at 96% of folds with two groups and 100% with three
+        -- and its bias passed into the estimate while the intervals stayed
+        narrow.  No margin or tie-break repairs a contest that one-sided.
+
+        The trade is asymmetric, which is why it is worth making.  Choosing the
+        linear learner wrongly is a validity failure: coverage fell to 0.53-0.74
+        against a nominal 0.95.  Choosing the flexible one wrongly costs only
+        precision -- on genuinely linear propensities it stays at or slightly
+        above nominal coverage (0.95-0.99) with wider intervals, up to 1.4x RMSE
+        with two groups and 2.8x with three at small samples, decaying to <=1.2x
+        by 800 per group.  Callers who know the propensity is linear can still
+        say so with ``nuisance_strategy="linear"``.
+
+        Evidence: benchmarks/selector_study.py, Actions run 30188022106
+        (64 design cells, 400 replications, pinned numerical stack).
+        """
+        return clone(cls._adaptive_propensity_candidates()[_FLEXIBLE_PROPENSITY]), (
+            _FLEXIBLE_PROPENSITY
+        )
 
     @classmethod
     def _select_outcome_model(
@@ -247,14 +241,8 @@ class SCOVA:
             if known_propensity is not None:
                 propensity[test] = known_propensity[test]
             elif self.nuisance_strategy == "adaptive":
-                (
-                    propensity_model,
-                    propensity_name,
-                    propensity_scores,
-                ) = self._select_propensity_model(x[train], group_codes[train])
-                propensity_selected.append(
-                    {"fold": int(fold), "selected": propensity_name, "scores": propensity_scores}
-                )
+                propensity_model, propensity_name = self._adaptive_propensity_model()
+                propensity_selected.append({"fold": int(fold), "selected": propensity_name})
             elif known_propensity is None and self.nuisance_strategy == "linear":
                 propensity_model = self._linear_propensity_model()
             elif known_propensity is None:
@@ -302,7 +290,13 @@ class SCOVA:
         }
         if self.nuisance_strategy == "adaptive":
             metadata["selection"] = {
-                "criterion": {"propensity": "log_loss", "outcome": "mean_squared_error"},
+                # The propensity is fixed, not scored: a predictive criterion
+                # selects the wrong learner for confounding control. Only the
+                # outcome regression is still chosen from the data.
+                "criterion": {
+                    "propensity": "fixed-flexible",
+                    "outcome": "mean_squared_error",
+                },
                 "inner_folds": 3,
                 "propensity": propensity_selected if known_propensity is None else [],
                 "outcome": outcome_selected,
