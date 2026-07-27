@@ -26,6 +26,7 @@ from scova.cf import (
     AnalysisMode,
     CFSupportProfile,
     CFValidationProtocol,
+    EstimatedAssignment,
     KnownAssignment,
     SCOVACFDeclaration,
     SCOVACFRefusal,
@@ -43,6 +44,10 @@ class CampaignData:
     group_labels: tuple[str, ...]
     true_group_means: np.ndarray
     source_metadata: Mapping[str, Any]
+    # Present only for observational cells, where assignment depends on the
+    # covariates and there is no single constant allocation to declare. Its
+    # presence is what switches the declaration to estimated assignment.
+    unit_probabilities: np.ndarray | None = None
 
 
 def _installed_version(package: str) -> str:
@@ -92,6 +97,59 @@ def _probabilities(k: int, allocation: str, support: str) -> np.ndarray:
     if support == "weak":
         values = np.geomspace(1.0, 0.03, k)
     return values / values.sum()
+
+
+# Confounding strength: the multiplier on the standardized assignment signal.
+_CONFOUNDING_STRENGTH = {"none": 0.0, "weak": 0.25, "moderate": 0.5, "strong": 1.0}
+# Share of units driven into the near-deterministic propensity region. A floor
+# on the minimum propensity does not create poor overlap -- it only produces a
+# handful of extreme units, and support screening never engages. Degrading a
+# *fraction* of the population is what actually removes common support.
+_OVERLAP_DEGRADED_SHARE = {"full": 0.0, "partial": 0.15, "poor": 0.35}
+
+
+def _assignment_signal(x: np.ndarray, form: str) -> np.ndarray:
+    """Standardized f(X) driving covariate-dependent assignment."""
+    if form == "linear":
+        signal = 0.9 * x[:, 0] - 0.5 * x[:, 1] + 0.3 * x[:, 2]
+    elif form == "nonlinear":
+        signal = np.sin(1.5 * x[:, 0]) + 0.6 * x[:, 1] ** 2 - 0.4 * np.abs(x[:, 2])
+    else:
+        raise ValueError(f"Unknown confounding form: {form}")
+    spread = float(signal.std())
+    if spread == 0.0:
+        return np.zeros_like(signal)
+    return (signal - signal.mean()) / spread
+
+
+def _unit_probabilities(
+    x: np.ndarray, k: int, cell: Mapping[str, Any], rng: np.random.Generator
+) -> np.ndarray | None:
+    """Covariate-dependent assignment probabilities, or None if randomized.
+
+    Returns an (n, k) matrix. Cells that do not declare confounding keep the
+    constant-allocation behaviour, so randomized protocols are unaffected.
+    """
+    strength = _CONFOUNDING_STRENGTH[str(cell.get("confounding", "none"))]
+    if strength == 0.0:
+        return None
+    signal = _assignment_signal(x, str(cell.get("confounding_form", "linear")))
+    # Bound the signal before it becomes a logit. The nonlinear form is
+    # heavy-tailed once standardized, and unbounded logits drive a few units to
+    # propensity ~0 on their own -- which would confound the confounding factor
+    # with the overlap factor and leave "full overlap" cells already degenerate.
+    loadings = np.linspace(-1.0, 1.0, k)
+    logits = strength * np.outer(np.tanh(signal), loadings)
+    share = _OVERLAP_DEGRADED_SHARE[str(cell.get("overlap", "full"))]
+    if share > 0.0:
+        # Amplify the logits for a random share of units so their assignment is
+        # near-deterministic. Those units have no counterfactual counterpart,
+        # which is the failure support screening is meant to catch.
+        degraded = rng.random(len(x)) < share
+        logits[degraded] *= 6.0
+    logits -= logits.max(axis=1, keepdims=True)
+    probabilities = np.exp(logits)
+    return probabilities / probabilities.sum(axis=1, keepdims=True)
 
 
 def _conditional_means(x: np.ndarray, cell: Mapping[str, Any]) -> np.ndarray:
@@ -149,7 +207,16 @@ def simulate_reference_cell(cell: Mapping[str, Any], *, seed: int) -> CampaignDa
         x[:, column] = 0.35 * x[:, column - 1] + np.sqrt(1 - 0.35**2) * x[:, column]
     probabilities = _probabilities(k, str(cell["allocation"]), str(cell["support"]))
     means = _conditional_means(x, cell)
-    codes = rng.choice(k, size=n, p=probabilities)
+    unit_probabilities = _unit_probabilities(x, k, cell, rng)
+    if unit_probabilities is None:
+        codes = rng.choice(k, size=n, p=probabilities)
+    else:
+        # Draw per unit from its own assignment distribution. Vectorized by
+        # inverse transform so the number of rng draws does not depend on n
+        # in a way that would make cells irreproducible across shards.
+        thresholds = np.cumsum(unit_probabilities, axis=1)
+        draws = rng.random(n)
+        codes = (draws[:, None] > thresholds).sum(axis=1).clip(max=k - 1)
     if cell["support"] == "structural-failure":
         codes[codes == k - 1] = 0
     outcome = means[np.arange(n), codes] + _errors(rng, x, str(cell["noise"]))
@@ -162,6 +229,7 @@ def simulate_reference_cell(cell: Mapping[str, Any], *, seed: int) -> CampaignDa
         group_labels=labels,
         true_group_means=means.mean(axis=0),
         source_metadata={"kind": "simulation"},
+        unit_probabilities=unit_probabilities,
     )
 
 
@@ -248,24 +316,46 @@ def _declaration(
         )
         for label in generated.group_labels[1:]
     )
+    observational = generated.unit_probabilities is not None
+    # The reference estimator refuses unless the propensity and outcome
+    # strategies agree, so both read from the cell's single learner factor.
+    strategy = str(cell["learner"])
     return SCOVACFDeclaration(
         outcome="outcome",
         group="group",
         covariates=covariates,
-        mode=AnalysisMode.RANDOMIZED,
-        scientific_question="Reference randomized population-counterfactual means",
+        mode=(
+            AnalysisMode.OBSERVATIONAL_CAUSAL if observational else AnalysisMode.RANDOMIZED
+        ),
+        scientific_question=(
+            "Reference observational population-counterfactual means"
+            if observational
+            else "Reference randomized population-counterfactual means"
+        ),
         eligibility="All generated independent units",
         target_population="Generated finite study population",
         group_definitions=tuple(
-            (label, f"Randomized condition {label}") for label in generated.group_labels
+            (
+                label,
+                f"Naturally occurring group {label}"
+                if observational
+                else f"Randomized condition {label}",
+            )
+            for label in generated.group_labels
         ),
         outcome_time="simulated follow-up",
         outcome_units="simulated points",
         covariate_rationales=tuple((name, "Baseline prognostic factor") for name in covariates),
-        assignment=KnownAssignment(
-            probabilities=tuple(zip(generated.group_labels, generated.probabilities, strict=True))
+        assignment=(
+            EstimatedAssignment(nuisance_strategy=strategy)  # type: ignore[arg-type]
+            if observational
+            else KnownAssignment(
+                probabilities=tuple(
+                    zip(generated.group_labels, generated.probabilities, strict=True)
+                )
+            )
         ),
-        outcome_nuisance_strategy=str(cell["learner"]),  # type: ignore[arg-type]
+        outcome_nuisance_strategy=strategy,  # type: ignore[arg-type]
         n_splits=3,
         random_state=17,
         stability_seeds=STABILITY_SEEDS if include_stability else (),

@@ -16,16 +16,21 @@ from benchmarks.cf_external_validation import (
     fixed_nuisance_score,
 )
 from benchmarks.cf_reference_campaign import (
+    _declaration,
     plasmode_source_checksum,
     run_campaign,
     run_shard,
     simulate_plasmode_cell,
+    simulate_reference_cell,
     write_deterministic_gzip,
 )
 from scova._aipw import assemble_aipw
 from scova.cf import (
+    AnalysisMode,
     CFSupportProfile,
     CFValidationProtocol,
+    EstimatedAssignment,
+    KnownAssignment,
     SeedPartition,
     _numerical_identity,
     canonical_checksum,
@@ -1091,3 +1096,64 @@ def test_v9_consolidates_robust_margin_and_family_wise_coverage_gate() -> None:
     assert protocol.external_source == v8.external_source
     assert protocol.inference_source == v8.inference_source
     assert CFValidationProtocol.from_dict(protocol.to_dict()).checksum == protocol.checksum
+
+
+_OBSERVATIONAL_BASE = {
+    "allocation": "balanced",
+    "effect": "constant",
+    "learner": "adaptive",
+    "n_covariates": 5,
+    "n_groups": 2,
+    "n_per_group": 120,
+    "noise": "normal",
+    "support": "strong",
+    "surface": "smooth-nonlinear",
+}
+
+
+def test_cells_without_confounding_stay_randomized() -> None:
+    """The observational path must be additive: no confounding key, no change."""
+    protocol = CFValidationProtocol.load(V9_SPEC)
+    for cell in protocol.retained_cells[:6]:
+        generated = simulate_reference_cell(cell, seed=31)
+        assert generated.unit_probabilities is None
+        declaration = _declaration(generated, cell, include_stability=False)
+        assert declaration.mode is AnalysisMode.RANDOMIZED
+        assert isinstance(declaration.assignment, KnownAssignment)
+
+
+def test_confounded_cells_declare_estimated_assignment() -> None:
+    cell = {**_OBSERVATIONAL_BASE, "confounding": "strong", "confounding_form": "nonlinear"}
+    generated = simulate_reference_cell(cell, seed=31)
+    assert generated.unit_probabilities is not None
+    assert generated.unit_probabilities.shape == (len(generated.data), 2)
+    np.testing.assert_allclose(generated.unit_probabilities.sum(axis=1), 1.0)
+    declaration = _declaration(generated, cell, include_stability=False)
+    assert declaration.mode is AnalysisMode.OBSERVATIONAL_CAUSAL
+    assert isinstance(declaration.assignment, EstimatedAssignment)
+    # The reference estimator refuses unless both nuisance strategies agree.
+    assert declaration.assignment.nuisance_strategy == declaration.outcome_nuisance_strategy
+
+
+def test_overlap_factor_is_the_only_lever_on_common_support() -> None:
+    """Confounding strength must not degrade overlap on its own.
+
+    The standardized nonlinear signal is heavy-tailed, so unbounded logits would
+    drive units to propensity ~0 regardless of the overlap factor, leaving
+    nothing for support screening to distinguish.
+    """
+    def worst_propensity(overlap: str) -> float:
+        cell = {
+            **_OBSERVATIONAL_BASE,
+            "confounding": "strong",
+            "confounding_form": "nonlinear",
+            "overlap": overlap,
+        }
+        return min(
+            float(simulate_reference_cell(cell, seed=900 + rep).unit_probabilities.min())
+            for rep in range(5)
+        )
+
+    assert worst_propensity("full") > 0.05
+    assert worst_propensity("partial") < 0.01
+    assert worst_propensity("poor") < 0.01
