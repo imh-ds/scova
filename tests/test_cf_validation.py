@@ -1166,7 +1166,7 @@ def test_v10_is_a_wholly_observational_protocol_reusing_no_evidence() -> None:
     protocol = CFValidationProtocol.load(V10_SPEC)
     assert protocol.protocol_id == "cf-observational-continuous-aipw-unnormalized-v10"
     assert protocol.checksum == (
-        "552b41679b2cf5d2e30a3107d6cf07a2619f0cf16d96a6db2bd1696c9c0995ff"
+        "0e91bc13763bb02da6d6ba4e71476977508065165302004ebced8ec13d27f03a"
     )
     assert protocol.reference_profile["mode"] == "observational-causal"
     assert protocol.reference_profile["assignment"] == "estimated"
@@ -1226,6 +1226,22 @@ def test_v10_retained_cells_can_all_be_fitted() -> None:
         for cell in protocol.retained_cells
         if cell["allocation"] == "rare" and cell["n_per_group"] <= 30
     ]
+
+
+def test_v10_plasmode_checksums_match_the_pinned_stack() -> None:
+    """Dataset checksums hash bundled scikit-learn data, not this repository.
+
+    Generating them on whatever the author has installed freezes a spec the
+    pinned campaign can never satisfy: the source-truth check recomputes them
+    under scikit-learn 1.6.1 and would mismatch on the first real run.
+    """
+    from scripts.generate_cf_v10_design import PINNED_DATASET_CHECKSUMS
+
+    v10 = CFValidationProtocol.load(V10_SPEC)
+    v9 = CFValidationProtocol.load(V9_SPEC)
+    assert v10.dataset_checksums == PINNED_DATASET_CHECKSUMS
+    # v9's were frozen in the pinned environment, so they are the reference.
+    assert v10.dataset_checksums == v9.dataset_checksums
 
 
 def test_v10_seed_partitions_avoid_every_earlier_campaign() -> None:

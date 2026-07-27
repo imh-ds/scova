@@ -64,6 +64,33 @@ NAMES = tuple(FACTORS)
 # a group on purpose -- without the calibration lane being mostly refusals.
 MINIMUM_EXPECTED_ARM = 10.0
 
+# Plasmode source checksums hash the bundled scikit-learn data, so they are a
+# property of the pinned numerical stack rather than of this repository. Every
+# campaign tier installs benchmarks/requirements-cf-validation.txt, which pins
+# scikit-learn 1.6.1; computing these on whatever the generator happens to have
+# installed would freeze a spec that the campaign can never satisfy. These are
+# the 1.6.1 values, identical to the ones the v9 spec was frozen with in CI.
+PINNED_DATASET_CHECKSUMS = {
+    "breast-cancer": "ba4d19cf8137014a7cbcc9f1d625891c176da5a3dbf2af07333081d81f57e90f",
+    "diabetes": "28128d0ec207a1c0ac5e23a5fdbad720215a35b5f18741fef26c4ecd254dc278",
+}
+PINNED_SKLEARN = "1.6.1"
+
+
+def dataset_checksums() -> dict[str, str]:
+    """Pinned plasmode checksums, cross-checked when the stack actually matches."""
+    import sklearn
+
+    if sklearn.__version__ == PINNED_SKLEARN:
+        computed = {name: plasmode_source_checksum(name) for name in PINNED_DATASET_CHECKSUMS}
+        if computed != PINNED_DATASET_CHECKSUMS:
+            raise SystemExit(
+                "scikit-learn "
+                f"{PINNED_SKLEARN} now yields {computed}, not the pinned values. "
+                "The frozen datasets changed; do not regenerate the spec silently."
+            )
+    return dict(PINNED_DATASET_CHECKSUMS)
+
 
 def expected_smallest_arm(cell: dict[str, Any]) -> float:
     from benchmarks.cf_reference_campaign import _probabilities
@@ -362,10 +389,7 @@ def build_spec() -> dict[str, Any]:
             "maximum_seed_standardized_departure": [0.95, 0.98, 0.99],
         },
         "design_selection": provenance,
-        "dataset_checksums": {
-            "diabetes": plasmode_source_checksum("diabetes"),
-            "breast-cancer": plasmode_source_checksum("breast-cancer"),
-        },
+        "dataset_checksums": dataset_checksums(),
         "dependency_lock_checksum": dependency_lock_checksum(),
         "software": {"python": "3.12.13", "scikit-learn": "1.6.1", "numpy": "2.2.6"},
     }
