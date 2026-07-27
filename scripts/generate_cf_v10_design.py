@@ -47,12 +47,67 @@ FACTORS: dict[str, tuple[Any, ...]] = {
 RETAINED_CELLS = 48
 NAMES = tuple(FACTORS)
 
+# A cell is infeasible when its smallest group is expected to be too small to
+# fit at all. The estimator needs n_splits (3) observations per group, so a
+# design point whose smallest arm is expected to hold ~3 units refuses on
+# roughly half its draws and calibrates thresholds against noise rather than
+# against the method.
+#
+# The binding quantity is n_per_group * n_groups * min(baseline propensity),
+# and measuring it shows `rare` allocation is not the worst corner: at
+# n_per_group 20 it expects 3.0-3.9 units in the smallest arm, while `weak`
+# support expects 1.2-1.8 and overrides allocation entirely. Excluding only the
+# rare corner would leave most degenerate cells in place.
+#
+# The floor is deliberately above the hard n_splits limit so that refusal stays
+# possible where the design intends it -- `structural-failure` still collapses
+# a group on purpose -- without the calibration lane being mostly refusals.
+MINIMUM_EXPECTED_ARM = 10.0
+
+
+def expected_smallest_arm(cell: dict[str, Any]) -> float:
+    from benchmarks.cf_reference_campaign import _probabilities
+
+    baseline = _probabilities(
+        int(cell["n_groups"]), str(cell["allocation"]), str(cell["support"])
+    )
+    return float(cell["n_per_group"]) * int(cell["n_groups"]) * float(baseline.min())
+
+
+def is_feasible(cell: dict[str, Any]) -> bool:
+    return expected_smallest_arm(cell) >= MINIMUM_EXPECTED_ARM
+
+
+def _feasibility_subspace() -> list[dict[str, Any]]:
+    """Every combination of the four factors feasibility depends on."""
+    from itertools import product
+
+    keys = ("allocation", "support", "n_groups", "n_per_group")
+    return [
+        dict(zip(keys, values, strict=True))
+        for values in product(*(FACTORS[key] for key in keys))
+    ]
+
 
 def _all_pairs() -> set[tuple[str, Any, str, Any]]:
+    """Pairs a feasible cell can actually realize.
+
+    Coverage is scored against this rather than the full cross product, so an
+    unreachable pair like (support=weak, n_per_group=20) is not counted as a
+    coverage failure for a design that is right to avoid it.
+    """
+    constrained = {"allocation", "support", "n_groups", "n_per_group"}
+    reachable = [cell for cell in _feasibility_subspace() if is_feasible(cell)]
     pairs = set()
     for left, right in combinations(NAMES, 2):
         for left_value in FACTORS[left]:
             for right_value in FACTORS[right]:
+                candidate = {left: left_value, right: right_value}
+                relevant = {k: v for k, v in candidate.items() if k in constrained}
+                if relevant and not any(
+                    all(cell[k] == v for k, v in relevant.items()) for cell in reachable
+                ):
+                    continue
                 pairs.add((left, left_value, right, right_value))
     return pairs
 
@@ -95,7 +150,17 @@ def _grow_from_anchor(
             if gain > best_gain:
                 best_level, best_gain = level, gain
         cell[name] = best_level
-    return {name: cell[name] for name in NAMES}
+    ordered = {name: cell[name] for name in NAMES}
+    if not is_feasible(ordered):
+        # Repair by raising n_per_group to the smallest feasible level. Every
+        # (allocation, support, n_groups) triple has one, so this always
+        # succeeds; the anchor is preserved unless it fixed n_per_group, and
+        # such anchors are excluded from the pair universe above.
+        for level in FACTORS["n_per_group"]:
+            if is_feasible({**ordered, "n_per_group": level}):
+                ordered["n_per_group"] = level
+                break
+    return ordered
 
 
 def select_design() -> tuple[list[dict[str, Any]], dict[str, Any]]:
@@ -119,12 +184,13 @@ def select_design() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         if cell not in chosen:
             chosen.append(cell)
     provenance = {
-        "method": "v10-observational-greedy-pairwise-coverage",
+        "method": "v10-observational-greedy-pairwise-coverage-feasible",
         "candidate_order": "declared-factor-level-order",
         "retained_cells": RETAINED_CELLS,
         "tie_break": "earliest-declared-level",
         "pairwise_pairs_total": total,
         "pairwise_pairs_covered": total - len(remaining),
+        "minimum_expected_smallest_arm": MINIMUM_EXPECTED_ARM,
     }
     return chosen, provenance
 

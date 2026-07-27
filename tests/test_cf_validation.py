@@ -1166,7 +1166,7 @@ def test_v10_is_a_wholly_observational_protocol_reusing_no_evidence() -> None:
     protocol = CFValidationProtocol.load(V10_SPEC)
     assert protocol.protocol_id == "cf-observational-continuous-aipw-unnormalized-v10"
     assert protocol.checksum == (
-        "5808f020a67ad4362bbe8d5656829e0abb0f8b3c28b3c735dc5f900ef0da997d"
+        "552b41679b2cf5d2e30a3107d6cf07a2619f0cf16d96a6db2bd1696c9c0995ff"
     )
     assert protocol.reference_profile["mode"] == "observational-causal"
     assert protocol.reference_profile["assignment"] == "estimated"
@@ -1203,6 +1203,29 @@ def test_v10_design_is_reproducible_and_pairwise_complete() -> None:
     assert regenerated["retained_cells"] == [dict(cell) for cell in protocol.retained_cells]
     provenance = regenerated["design_selection"]
     assert provenance["pairwise_pairs_covered"] == provenance["pairwise_pairs_total"]
+
+
+def test_v10_retained_cells_can_all_be_fitted() -> None:
+    """No design point may expect fewer units in its smallest arm than it can fit.
+
+    `weak` support at small n expects 1.2-1.8 units in the smallest arm, below
+    the n_splits floor, so such a cell would refuse on most draws and calibrate
+    thresholds against noise. `structural-failure` is exempt in spirit -- it
+    empties a group on purpose -- but it is constrained the same way here
+    because the emptying happens after assignment, not through the baseline.
+    """
+    from scripts.generate_cf_v10_design import MINIMUM_EXPECTED_ARM, expected_smallest_arm
+
+    protocol = CFValidationProtocol.load(V10_SPEC)
+    for cell in protocol.retained_cells:
+        arm = expected_smallest_arm(dict(cell))
+        assert arm >= MINIMUM_EXPECTED_ARM, f"{dict(cell)} expects only {arm:.1f}"
+    # The corner that prompted the constraint is gone.
+    assert not [
+        cell
+        for cell in protocol.retained_cells
+        if cell["allocation"] == "rare" and cell["n_per_group"] <= 30
+    ]
 
 
 def test_v10_seed_partitions_avoid_every_earlier_campaign() -> None:
