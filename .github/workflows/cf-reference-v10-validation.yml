@@ -58,6 +58,10 @@ on:
       recovery_run_id:
         description: Optional prior run containing shard checkpoints to resume
         required: false
+      freeze_tag:
+        description: Freeze tag every tier must run from
+        required: true
+        default: scova-cf-reference-v10-freeze-r2
 
 permissions:
   actions: read
@@ -65,7 +69,9 @@ permissions:
 
 env:
   SPEC: benchmarks/specs/cf_reference_v10.json
-  FREEZE_TAG: scova-cf-reference-v10-freeze-r1
+  # An input, not a constant: a refreeze would otherwise need a commit to
+  # change it, and that commit moves the very tag it is trying to point at.
+  FREEZE_TAG: ${{ inputs.freeze_tag }}
   PYTHONHASHSEED: "0"
 
 jobs:
@@ -110,10 +116,10 @@ jobs:
           python -m benchmarks.cf_inference_campaign --help
       - run: >-
           python -m scripts.write_cf_freeze_manifest --spec "$SPEC"
-          --require-tag "$FREEZE_TAG" --output freeze/cf-reference-v10-freeze-r1.json
+          --require-tag "$FREEZE_TAG" --output "freeze/${FREEZE_TAG}.json"
       - uses: actions/upload-artifact@v6
         with:
-          name: cf-reference-v10-freeze-r1
+          name: ${{ inputs.freeze_tag }}
           path: freeze/
           retention-days: 90
 
