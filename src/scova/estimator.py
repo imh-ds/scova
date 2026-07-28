@@ -11,6 +11,8 @@ from sklearn.base import BaseEstimator, clone
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.metrics import mean_squared_error
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from ._aipw import assemble_aipw, validate_probability_matrix
 from ._version import __version__
@@ -26,6 +28,29 @@ _assemble_aipw = assemble_aipw
 # The adaptive strategy always cross-fits this propensity learner; see
 # SCOVA._adaptive_propensity_model for why the choice is not data-dependent.
 _FLEXIBLE_PROPENSITY = "HistGradientBoostingClassifier"
+
+
+def _scaled(name: str, model: BaseEstimator) -> Pipeline:
+    """Standardize covariates before a linear learner.
+
+    Neither LogisticRegression nor Ridge is scale free. On covariates whose
+    columns differ by orders of magnitude the fit is badly conditioned: the
+    solver's path then depends on floating-point ordering, so the same input on
+    different hardware lands on materially different coefficients. Measured on
+    the breast-cancer plasmode cells, whose columns span a ~215,000x scale
+    ratio, a third of contrasts failed to reproduce between two runs of an
+    identical campaign.
+
+    Scaling also fixes what the penalty means. Ridge's alpha and logistic's L2
+    shrink coefficients toward zero in the units they are expressed in, so on
+    raw columns they crush small-scale covariates and barely touch large-scale
+    ones -- the penalty ends up depending on whether a covariate was recorded in
+    millimetres or kilometres.
+
+    Tree learners are left alone: they split on order, not magnitude, and are
+    already invariant. Only the linear learners are wrapped.
+    """
+    return Pipeline([("scale", StandardScaler()), (name, model)])
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,16 +106,16 @@ class SCOVA:
 
     @staticmethod
     def _linear_propensity_model() -> BaseEstimator:
-        return LogisticRegression(max_iter=2000)
+        return _scaled("LogisticRegression", LogisticRegression(max_iter=2000))
 
     @staticmethod
     def _linear_outcome_model() -> BaseEstimator:
-        return Ridge(alpha=1.0)
+        return _scaled("Ridge", Ridge(alpha=1.0))
 
     @staticmethod
     def _adaptive_propensity_candidates() -> dict[str, BaseEstimator]:
         return {
-            "LogisticRegression": LogisticRegression(max_iter=2000),
+            "LogisticRegression": _scaled("LogisticRegression", LogisticRegression(max_iter=2000)),
             "HistGradientBoostingClassifier": HistGradientBoostingClassifier(
                 learning_rate=0.05, max_leaf_nodes=15, l2_regularization=1.0, random_state=0
             ),
@@ -99,7 +124,7 @@ class SCOVA:
     @staticmethod
     def _adaptive_outcome_candidates() -> dict[str, BaseEstimator]:
         return {
-            "Ridge": Ridge(alpha=1.0),
+            "Ridge": _scaled("Ridge", Ridge(alpha=1.0)),
             "HistGradientBoostingRegressor": HistGradientBoostingRegressor(
                 learning_rate=0.05, max_leaf_nodes=15, l2_regularization=1.0, random_state=0
             ),
