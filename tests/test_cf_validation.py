@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from sklearn.base import clone
 from sklearn.linear_model import Ridge
 
 from benchmarks import aggregate_cf_campaign, cf_inference_campaign
@@ -24,6 +25,7 @@ from benchmarks.cf_reference_campaign import (
     simulate_reference_cell,
     write_deterministic_gzip,
 )
+from scova import SCOVA
 from scova._aipw import assemble_aipw
 from scova.cf import (
     AnalysisMode,
@@ -35,6 +37,7 @@ from scova.cf import (
     _numerical_identity,
     canonical_checksum,
 )
+from scova.estimator import _scaled
 from scova.simulate import generate_data
 
 sys.path.insert(0, str(Path("scripts").resolve()))
@@ -423,10 +426,13 @@ def test_external_outcome_adapters_preserve_treatment_specific_linear_policy() -
         design, outcome
     )
     counterfactual_design = np.array([[4.0, 0.0], [4.0, 1.0]])
+    # The reference is the estimator's linear learner, which standardizes its
+    # covariates; comparing against a bare Ridge would assert the adapter uses
+    # a different learner from the one SCOVA actually fits.
     expected = np.array(
         [
-            Ridge(alpha=1.0).fit(features[:4], outcome[:4]).predict([[4.0]])[0],
-            Ridge(alpha=1.0).fit(features[4:], outcome[4:]).predict([[4.0]])[0],
+            _scaled("Ridge", Ridge(alpha=1.0)).fit(features[:4], outcome[:4]).predict([[4.0]])[0],
+            _scaled("Ridge", Ridge(alpha=1.0)).fit(features[4:], outcome[4:]).predict([[4.0]])[0],
         ]
     )
     assert np.allclose(fitted.predict(counterfactual_design), expected)
@@ -1291,3 +1297,31 @@ def test_every_spec_declares_quantiles_the_calibrator_can_read(spec_path: Path) 
         assert grid, f"{name} grid is empty"
         assert all(0.0 <= float(q) <= 1.0 for q in grid), f"{name} holds non-quantiles"
         assert list(grid) == sorted(grid), f"{name} grid is not ascending"
+
+
+def test_linear_learners_are_invariant_to_covariate_scale() -> None:
+    """Rescaling a column must not change the answer.
+
+    Unscaled, LogisticRegression and Ridge are badly conditioned on covariates
+    whose columns differ by orders of magnitude: the solver never converges and
+    its path depends on floating-point ordering, so identical campaigns
+    disagreed on a third of the breast-cancer plasmode contrasts. The penalty
+    is also expressed in each covariate's own units, so an unscaled fit depends
+    on whether a column was recorded in millimetres or kilometres.
+    """
+    rng = np.random.default_rng(7)
+    x = rng.normal(size=(200, 3))
+    y = (x[:, 0] + 0.5 * rng.normal(size=200) > 0).astype(int)
+    outcome = 2.0 * x[:, 0] - x[:, 1] + rng.normal(size=200)
+    # The same covariates, one column recorded in different units.
+    stretched = x * np.array([1.0, 1e4, 1e-4])
+
+    propensity = SCOVA._linear_propensity_model()
+    a = clone(propensity).fit(x, y).predict_proba(x)
+    b = clone(propensity).fit(stretched, y).predict_proba(stretched)
+    np.testing.assert_allclose(a, b, rtol=1e-6, atol=1e-8)
+
+    regressor = SCOVA._linear_outcome_model()
+    c = clone(regressor).fit(x, outcome).predict(x)
+    d = clone(regressor).fit(stretched, outcome).predict(stretched)
+    np.testing.assert_allclose(c, d, rtol=1e-6, atol=1e-8)

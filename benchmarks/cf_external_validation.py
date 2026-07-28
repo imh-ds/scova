@@ -12,6 +12,10 @@ from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostin
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.metrics import mean_squared_error
 
+# The external comparison only means something if the outside implementations
+# receive the same nuisance learners SCOVA uses, scaling included.
+from scova.estimator import _scaled
+
 
 @dataclass(frozen=True, slots=True)
 class ExternalAgreement:
@@ -77,12 +81,12 @@ class SelectedOutcomeRegressor(RegressorMixin, BaseEstimator):
         if self.learner_policy == "linear":
             self.selected_name_ = "Ridge"
             self.selection_scores_ = {"Ridge": 0.0}
-            self.model_ = Ridge(alpha=1.0).fit(features, outcome)
+            self.model_ = _scaled("Ridge", Ridge(alpha=1.0)).fit(features, outcome)
             return self
         if self.learner_policy != "adaptive":
             raise ValueError(f"Unknown learner policy: {self.learner_policy}")
         candidates = {
-            "Ridge": Ridge(alpha=1.0),
+            "Ridge": _scaled("Ridge", Ridge(alpha=1.0)),
             "HistGradientBoostingRegressor": HistGradientBoostingRegressor(
                 learning_rate=0.05,
                 max_leaf_nodes=15,
@@ -192,7 +196,10 @@ def _splits(folds: np.ndarray) -> list[tuple[np.ndarray, np.ndarray]]:
 
 def _learners(policy: str) -> tuple[Any, Any]:
     if policy == "linear":
-        return LogisticRegression(max_iter=2000), Ridge(alpha=1.0)
+        return (
+            _scaled("LogisticRegression", LogisticRegression(max_iter=2000)),
+            _scaled("Ridge", Ridge(alpha=1.0)),
+        )
     if policy == "adaptive":
         return (
             HistGradientBoostingClassifier(
@@ -230,8 +237,8 @@ def doubleml_shared_score(
         data = dml.DoubleMLData.from_arrays(x, outcome, treatment)
         model = dml.DoubleMLAPOS(
             data,
-            ml_g=Ridge(alpha=1.0),
-            ml_m=LogisticRegression(max_iter=2000),
+            ml_g=_scaled("Ridge", Ridge(alpha=1.0)),
+            ml_m=_scaled("LogisticRegression", LogisticRegression(max_iter=2000)),
             treatment_levels=levels,
             n_folds=len(np.unique(folds)),
             normalize_ipw=False,
