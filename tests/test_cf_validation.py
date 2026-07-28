@@ -1166,7 +1166,7 @@ def test_v10_is_a_wholly_observational_protocol_reusing_no_evidence() -> None:
     protocol = CFValidationProtocol.load(V10_SPEC)
     assert protocol.protocol_id == "cf-observational-continuous-aipw-unnormalized-v10"
     assert protocol.checksum == (
-        "0e91bc13763bb02da6d6ba4e71476977508065165302004ebced8ec13d27f03a"
+        "b810032c51f3ea46ddd1480ba17255a4ecd65374f160e0b1bb122a44cf5ac557"
     )
     assert protocol.reference_profile["mode"] == "observational-causal"
     assert protocol.reference_profile["assignment"] == "estimated"
@@ -1259,3 +1259,35 @@ def test_v10_seed_partitions_avoid_every_earlier_campaign() -> None:
                 mine_end = mine.start + 60 * mine.count
                 theirs_end = theirs.start + 60 * theirs.count
                 assert mine_end <= theirs.start or theirs_end <= mine.start
+
+
+@pytest.mark.parametrize(
+    "spec_path",
+    # v2 is a deliberately blocked historical artifact that does not load.
+    sorted(
+        path
+        for path in Path("benchmarks/specs").glob("cf_reference_v*.json")
+        if "blocked" not in path.stem
+    ),
+    ids=lambda path: path.stem,
+)
+def test_every_spec_declares_quantiles_the_calibrator_can_read(spec_path: Path) -> None:
+    """threshold_quantiles has a fixed two-key shape, and nothing enforced it.
+
+    calibrate_cf_support reads quantiles["minimum_ess_ratio"] for the lower grid
+    and quantiles["upper_metrics"] as one shared grid for every upper feature.
+    The branch that reads them is marked no-cover, so a per-metric mapping --
+    valid JSON, wrong shape -- survived freeze_check, a full pilot and 128
+    calibration shards before failing with KeyError.
+    """
+    protocol = CFValidationProtocol.load(spec_path)
+    quantiles = protocol.threshold_quantiles
+    if quantiles is None:
+        return  # the calibrator falls back to its built-in grids
+    assert set(quantiles) == {"minimum_ess_ratio", "upper_metrics"}, (
+        f"{spec_path.name} declares {sorted(quantiles)}"
+    )
+    for name, grid in quantiles.items():
+        assert grid, f"{name} grid is empty"
+        assert all(0.0 <= float(q) <= 1.0 for q in grid), f"{name} holds non-quantiles"
+        assert list(grid) == sorted(grid), f"{name} grid is not ascending"
