@@ -380,13 +380,13 @@ def build_spec() -> dict[str, Any]:
             "end_to_end_max_se_difference": 1.0,
             "end_to_end_signed_se_difference": 0.05,
         },
+        # calibrate_cf_support reads exactly two keys: a lower grid for
+        # minimum_ess_ratio and ONE shared upper grid for every upper feature.
+        # A per-metric mapping parses as valid JSON and passes every gate up to
+        # and including 128 calibration shards, then dies on KeyError.
         "threshold_quantiles": {
-            "minimum_ess_ratio": [0.01, 0.02, 0.05],
-            "maximum_normalized_weight": [0.95, 0.98, 0.99],
-            "maximum_top_one_percent_weight_share": [0.95, 0.98, 0.99],
-            "maximum_absolute_weighted_balance_difference": [0.95, 0.98, 0.99],
-            "maximum_influence_top_one_percent_share": [0.95, 0.98, 0.99],
-            "maximum_seed_standardized_departure": [0.95, 0.98, 0.99],
+            "minimum_ess_ratio": [0, 0.01, 0.025, 0.05, 0.1, 0.2],
+            "upper_metrics": [0.8, 0.9, 0.95, 0.975, 0.99, 1],
         },
         "design_selection": provenance,
         "dataset_checksums": dataset_checksums(),
