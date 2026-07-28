@@ -329,6 +329,14 @@ def test_cf_promotion_applies_only_exact_evidence_and_release_text(
     profile = {
         "profile_id": "cf-randomized-continuous-aipw-unnormalized-v3-promoted",
         "profile_checksum": "c" * 64,
+        # A promoted profile always carries its lock; the status text is
+        # written from it rather than assuming a regime.
+        "compatibility": {
+            "mode": "randomized",
+            "assignment": "known-constant",
+            "outcome_type": "continuous",
+            "estimator": "aipw-unnormalized",
+        },
     }
     proposed = {"schema_version": 1, "profiles": [profile]}
     (evidence / "cf-reference-support-profile.json").write_text(
@@ -371,7 +379,16 @@ def test_cf_promotion_version_is_caller_supplied_and_validated(
     """The release version is an input, not a constant baked into the script."""
     evidence = tmp_path / "evidence"
     evidence.mkdir()
-    profile = {"profile_id": "cf-profile", "profile_checksum": "d" * 64}
+    profile = {
+        "profile_id": "cf-profile",
+        "profile_checksum": "d" * 64,
+        "compatibility": {
+            "mode": "randomized",
+            "assignment": "known-constant",
+            "outcome_type": "continuous",
+            "estimator": "aipw-unnormalized",
+        },
+    }
     (evidence / "cf-reference-support-profile.json").write_text(
         json.dumps(profile), encoding="utf-8"
     )
@@ -413,3 +430,40 @@ def test_cf_promotion_version_is_caller_supplied_and_validated(
         with pytest.raises(ValueError, match="not a valid version"):
             promote_cf_reference.promote(version=bad, **kwargs)
         assert 'version = "0.3.0.dev0"' in pyproject.read_text(encoding="utf-8")
+
+
+def test_promotion_describes_the_profile_from_its_own_lock() -> None:
+    """The status text must not assert a regime the profile does not declare.
+
+    It was hardcoded as "randomized", which held for every profile promoted up
+    to v9 and would be a false claim about an observational one.
+    """
+    from scripts.promote_cf_reference import _claim_sentence, _profile_phrase
+
+    randomized = {
+        "compatibility": {
+            "mode": "randomized",
+            "assignment": "known-constant",
+            "outcome_type": "continuous",
+            "estimator": "aipw-unnormalized",
+        }
+    }
+    observational = {
+        "compatibility": {
+            "mode": "observational-causal",
+            "assignment": "estimated",
+            "outcome_type": "continuous",
+            "estimator": "aipw-unnormalized",
+        }
+    }
+    # The randomized wording is unchanged, so promoting v9 again is a no-op.
+    assert _profile_phrase(randomized) == "randomized continuous unnormalized-AIPW"
+    assert _claim_sentence(randomized) == ""
+
+    assert _profile_phrase(observational) == "observational-causal continuous unnormalized-AIPW"
+    claim = _claim_sentence(observational)
+    assert "assumption-dependent causal" in claim
+    assert "not supported by randomization" in claim
+
+    with pytest.raises(ValueError, match="compatibility lock"):
+        _profile_phrase({})
