@@ -61,7 +61,9 @@ on:
       freeze_tag:
         description: Freeze tag every tier must run from
         required: true
-        default: scova-cf-reference-v10-freeze-r2
+        # Keep this at the current freeze. A stale default means a dispatch
+        # from the web UI silently runs a superseded one.
+        default: scova-cf-reference-v10-freeze-r4
 
 permissions:
   actions: read
