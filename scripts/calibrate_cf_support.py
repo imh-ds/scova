@@ -123,6 +123,51 @@ def _passes(record: dict[str, Any], thresholds: dict[str, float]) -> bool:
     )
 
 
+# Optional metric. When a protocol omits it the enrichment gate scores error
+# rate alone, exactly as it did for the randomized protocols v3-v9.
+_STANDARD_ERROR_RATIO_METRIC = "maximum_standard_error_ratio"
+
+
+def _unadjusted_se(record: MappingLike) -> dict[Any, float]:
+    """Standard errors of the paired unadjusted benchmark, keyed by group code."""
+    benchmarks = record.get("benchmarks") or {}
+    unadjusted = benchmarks.get("unadjusted") or {}
+    widths: dict[Any, float] = {}
+    for contrast in unadjusted.get("contrasts", ()):
+        error = contrast.get("standard_error")
+        if error:
+            widths[contrast.get("group_code")] = float(error)
+    return widths
+
+
+def _uninformative(
+    contrast: MappingLike, widths: dict[Any, float], ratio_limit: float | None
+) -> bool:
+    """Is this estimate too imprecise to be worth reporting?
+
+    In the observational regime an over-weighted analysis does not come out
+    wrong, it comes out vacuous: the estimate stays covered because the interval
+    grew enormous. Scoring only error rate therefore ranks the least usable
+    cells as the safest, and the enrichment gate inverts.
+
+    Precision is measured against the paired unadjusted benchmark rather than in
+    outcome units, because that benchmark's standard error already carries both
+    the outcome scale and the sample size -- so the ratio isolates the precision
+    cost of adjusting, and stays comparable across datasets and study sizes. It
+    is a width yardstick only: the unadjusted estimate is biased under
+    confounding and is never a correctness reference.
+
+    A contrast with no usable benchmark is left unflagged, which makes the gate
+    harder to pass rather than easier.
+    """
+    if ratio_limit is None:
+        return False
+    reference = widths.get(contrast.get("group_code"))
+    if not reference:
+        return False
+    return float(contrast["standard_error"]) / reference > float(ratio_limit)
+
+
 def _unstable_enrichment(
     records: list[dict[str, Any]],
     thresholds: dict[str, float],
@@ -131,16 +176,19 @@ def _unstable_enrichment(
     supported = [record for record in records if _passes(record, thresholds)]
     unstable = [record for record in records if not _passes(record, thresholds)]
 
+    ratio_limit = metrics.get(_STANDARD_ERROR_RATIO_METRIC)
+
     def bad_counts(values: list[dict[str, Any]]) -> tuple[float, float]:
-        contrasts = [contrast for record in values for contrast in record["contrasts"]]
-        bad = float(
-            sum(
-                (not value["covered"])
-                or abs(value["estimate"] - value["truth"]) > 2 * value["standard_error"]
-                for value in contrasts
-            )
-        )
-        return bad, float(len(contrasts))
+        bad = total = 0.0
+        for record in values:
+            widths = _unadjusted_se(record) if ratio_limit is not None else {}
+            for contrast in record["contrasts"]:
+                total += 1.0
+                wrong = (not contrast["covered"]) or abs(
+                    contrast["estimate"] - contrast["truth"]
+                ) > 2 * contrast["standard_error"]
+                bad += float(wrong or _uninformative(contrast, widths, ratio_limit))
+        return bad, total
 
     supported_bad_count, supported_total = bad_counts(supported)
     unstable_bad_count, unstable_total = bad_counts(unstable)

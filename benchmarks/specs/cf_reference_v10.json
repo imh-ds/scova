@@ -316,6 +316,7 @@
   "end_to_end_mean_se_difference": 0.25,
   "end_to_end_signed_se_difference": 0.05,
   "maximum_se_ratio": 1.1,
+  "maximum_standard_error_ratio": 10.0,
   "maximum_standardized_bias": 0.1,
   "minimum_se_ratio": 0.9,
   "minimum_strong_cell_pass_fraction": 0.8,

@@ -373,6 +373,14 @@ def build_spec() -> dict[str, Any]:
             "minimum_unstable_absolute_enrichment": 0.05,
             "minimum_unstable_risk_ratio": 2.0,
             "unstable_risk_ratio_selection_confidence": 0.95,
+            # A contrast counts against the enrichment gate when it is
+            # wrong OR more than this many times wider than the paired
+            # unadjusted benchmark. Without it the gate scores error rate
+            # alone, and in this regime the least usable cells never err
+            # -- their intervals are vacuous -- so the gate inverts.
+            # 10 separates cleanly on the r3 lane: supported contrasts
+            # come out 92% good against 82% bad among unstable ones.
+            "maximum_standard_error_ratio": 10.0,
             "coverage_family_wise_error": 0.05,
             "shared_score_tolerance": 1e-12,
             "doubleml_shared_tolerance": 1e-10,

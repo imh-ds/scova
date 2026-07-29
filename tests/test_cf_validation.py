@@ -1172,7 +1172,7 @@ def test_v10_is_a_wholly_observational_protocol_reusing_no_evidence() -> None:
     protocol = CFValidationProtocol.load(V10_SPEC)
     assert protocol.protocol_id == "cf-observational-continuous-aipw-unnormalized-v10"
     assert protocol.checksum == (
-        "b810032c51f3ea46ddd1480ba17255a4ecd65374f160e0b1bb122a44cf5ac557"
+        "d640f4b1f9ef1787ca42fbb9b2f5a3ded461d2005c56a14bca995218dd51962a"
     )
     assert protocol.reference_profile["mode"] == "observational-causal"
     assert protocol.reference_profile["assignment"] == "estimated"
@@ -1325,3 +1325,88 @@ def test_linear_learners_are_invariant_to_covariate_scale() -> None:
     c = clone(regressor).fit(x, outcome).predict(x)
     d = clone(regressor).fit(stretched, outcome).predict(stretched)
     np.testing.assert_allclose(c, d, rtol=1e-6, atol=1e-8)
+
+
+def _enrichment_record(*, supported: bool, se_ratio: float) -> dict:
+    """A covered contrast whose interval is `se_ratio` times the unadjusted one."""
+    features = {
+        "minimum_ess_ratio": 0.9 if supported else 0.01,
+        "maximum_normalized_weight": 0.1 if supported else 0.9,
+        "maximum_top_one_percent_weight_share": 0.1 if supported else 0.9,
+        "maximum_absolute_weighted_balance_difference": 0.1 if supported else 5.0,
+        "maximum_influence_top_one_percent_share": 0.1 if supported else 0.9,
+        "maximum_seed_standardized_departure": 0.1 if supported else 5.0,
+    }
+    return {
+        "refused": False,
+        "support_features": features,
+        "contrasts": [
+            {
+                "group_code": 1,
+                "covered": True,
+                "estimate": 0.0,
+                "truth": 0.0,
+                "standard_error": se_ratio,
+            }
+        ],
+        "benchmarks": {
+            "unadjusted": {"contrasts": [{"group_code": 1, "standard_error": 1.0}]}
+        },
+    }
+
+
+_ENRICHMENT_THRESHOLDS = {
+    "minimum_ess_ratio": 0.5,
+    "maximum_normalized_weight": 0.5,
+    "maximum_top_one_percent_weight_share": 0.5,
+    "maximum_absolute_weighted_balance_difference": 1.0,
+    "maximum_influence_top_one_percent_share": 0.5,
+    "maximum_seed_standardized_departure": 1.0,
+}
+_ENRICHMENT_METRICS = {
+    "minimum_unstable_risk_ratio": 2.0,
+    "minimum_unstable_absolute_enrichment": 0.05,
+}
+
+
+def test_enrichment_counts_a_vacuous_interval_against_the_gate() -> None:
+    """Every contrast here is covered; the unstable ones are merely useless.
+
+    Scoring error rate alone ranks them as the safest cells, which is why the
+    gate inverted on the observational lane. With the metric declared, an
+    interval far wider than the unadjusted benchmark's counts as bad.
+    """
+    records = [_enrichment_record(supported=True, se_ratio=1.0) for _ in range(20)]
+    records += [_enrichment_record(supported=False, se_ratio=100.0) for _ in range(20)]
+
+    without = _unstable_enrichment(records, _ENRICHMENT_THRESHOLDS, _ENRICHMENT_METRICS)
+    assert without["unstable_bad_rate"] == 0.0
+    assert without["passed"] is False
+
+    with_metric = _unstable_enrichment(
+        records,
+        _ENRICHMENT_THRESHOLDS,
+        {**_ENRICHMENT_METRICS, "maximum_standard_error_ratio": 10.0},
+    )
+    assert with_metric["unstable_bad_rate"] == 1.0
+    assert with_metric["supported_bad_rate"] == 0.0
+    assert with_metric["passed"] is True
+
+
+def test_enrichment_ignores_contrasts_with_no_usable_benchmark() -> None:
+    """A missing benchmark must make the gate harder to pass, never easier."""
+    records = [_enrichment_record(supported=True, se_ratio=1.0) for _ in range(20)]
+    for index in range(20):
+        record = _enrichment_record(supported=False, se_ratio=100.0)
+        if index < 10:  # half lose their comparator entirely
+            record["benchmarks"] = {"unadjusted": {"contrasts": []}}
+        records.append(record)
+
+    result = _unstable_enrichment(
+        records,
+        _ENRICHMENT_THRESHOLDS,
+        {**_ENRICHMENT_METRICS, "maximum_standard_error_ratio": 10.0},
+    )
+    # Only the ten with a benchmark are flagged, so the rate halves rather than
+    # the unusable ones being counted as bad by default.
+    assert result["unstable_bad_rate"] == 0.5
