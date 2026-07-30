@@ -1410,3 +1410,32 @@ def test_enrichment_ignores_contrasts_with_no_usable_benchmark() -> None:
     # Only the ten with a benchmark are flagged, so the rate halves rather than
     # the unusable ones being counted as bad by default.
     assert result["unstable_bad_rate"] == 0.5
+
+
+def test_both_enrichment_implementations_score_identically() -> None:
+    """The vectorized path is what calibration calls; the scalar one is what
+    most tests call. They each inlined the badness rule, so a fix applied to
+    the scalar version alone passed its tests and changed nothing on a real
+    run -- 590 candidates, still zero screened, with byte-identical numbers.
+    """
+    records = [_enrichment_record(supported=True, se_ratio=1.0) for _ in range(15)]
+    records += [_enrichment_record(supported=False, se_ratio=100.0) for _ in range(15)]
+    metrics = {**_ENRICHMENT_METRICS, "maximum_standard_error_ratio": 10.0}
+
+    scalar = _unstable_enrichment(records, _ENRICHMENT_THRESHOLDS, metrics)
+    vector = _candidate_enrichments(records, [_ENRICHMENT_THRESHOLDS], metrics)[0]
+    for field in (
+        "supported_bad_rate",
+        "unstable_bad_rate",
+        "absolute_enrichment",
+        "risk_ratio",
+        "passed",
+    ):
+        assert scalar[field] == vector[field], field
+    assert vector["passed"] is True
+
+    # and they must agree when the metric is absent, too
+    plain_scalar = _unstable_enrichment(records, _ENRICHMENT_THRESHOLDS, _ENRICHMENT_METRICS)
+    plain_vector = _candidate_enrichments(records, [_ENRICHMENT_THRESHOLDS], _ENRICHMENT_METRICS)[0]
+    assert plain_scalar["unstable_bad_rate"] == plain_vector["unstable_bad_rate"] == 0.0
+    assert plain_vector["passed"] is False

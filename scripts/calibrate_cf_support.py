@@ -168,6 +168,25 @@ def _uninformative(
     return float(contrast["standard_error"]) / reference > float(ratio_limit)
 
 
+def _record_bad_count(record: MappingLike, ratio_limit: float | None) -> float:
+    """Contrasts in this record that are wrong or too imprecise to use.
+
+    Shared by both enrichment implementations. They previously each inlined the
+    badness rule, and the vectorized one is what calibration actually calls, so
+    a change applied to only the scalar version passed its own tests and then
+    had no effect on a real run.
+    """
+    widths = _unadjusted_se(record) if ratio_limit is not None else {}
+    return float(
+        sum(
+            (not contrast["covered"])
+            or abs(contrast["estimate"] - contrast["truth"]) > 2 * contrast["standard_error"]
+            or _uninformative(contrast, widths, ratio_limit)
+            for contrast in record["contrasts"]
+        )
+    )
+
+
 def _unstable_enrichment(
     records: list[dict[str, Any]],
     thresholds: dict[str, float],
@@ -179,15 +198,8 @@ def _unstable_enrichment(
     ratio_limit = metrics.get(_STANDARD_ERROR_RATIO_METRIC)
 
     def bad_counts(values: list[dict[str, Any]]) -> tuple[float, float]:
-        bad = total = 0.0
-        for record in values:
-            widths = _unadjusted_se(record) if ratio_limit is not None else {}
-            for contrast in record["contrasts"]:
-                total += 1.0
-                wrong = (not contrast["covered"]) or abs(
-                    contrast["estimate"] - contrast["truth"]
-                ) > 2 * contrast["standard_error"]
-                bad += float(wrong or _uninformative(contrast, widths, ratio_limit))
+        bad = sum(_record_bad_count(record, ratio_limit) for record in values)
+        total = float(sum(len(record["contrasts"]) for record in values))
         return bad, total
 
     supported_bad_count, supported_total = bad_counts(supported)
@@ -251,17 +263,9 @@ def _candidate_enrichments(
     for index in range(1, len(feature_names)):
         supported &= features[:, index, None] <= limits[None, :, index]
     contrast_counts = np.asarray([len(record["contrasts"]) for record in records], dtype=float)
+    ratio_limit = metrics.get(_STANDARD_ERROR_RATIO_METRIC)
     bad_counts = np.asarray(
-        [
-            sum(
-                (not value["covered"])
-                or abs(value["estimate"] - value["truth"])
-                > 2 * value["standard_error"]
-                for value in record["contrasts"]
-            )
-            for record in records
-        ],
-        dtype=float,
+        [_record_bad_count(record, ratio_limit) for record in records], dtype=float
     )
     supported_contrasts = supported.T @ contrast_counts
     supported_bad_counts = supported.T @ bad_counts
