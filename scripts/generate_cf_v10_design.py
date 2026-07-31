@@ -411,7 +411,21 @@ def build_spec() -> dict[str, Any]:
         "design_selection": provenance,
         "dataset_checksums": dataset_checksums(),
         "dependency_lock_checksum": dependency_lock_checksum(),
-        "software": {"python": "3.12.13", "scikit-learn": "1.6.1", "numpy": "2.2.6"},
+        # Every package the frozen lanes import, not just the ones the
+        # estimator fits with. cf_external_agreement compares the whole
+        # installed environment against this block, so an under-declared
+        # software map cannot match and blocks that lane outright; doubleml and
+        # econml are the comparators it agrees against, so their versions are
+        # exactly the ones that must be pinned here.
+        "software": {
+            "python": "3.12.13",
+            "numpy": "2.2.6",
+            "pandas": "2.2.3",
+            "scipy": "1.15.3",
+            "scikit-learn": "1.6.1",
+            "doubleml": "0.11.3",
+            "econml": "0.16.0",
+        },
     }
 
 

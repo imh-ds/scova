@@ -133,6 +133,86 @@ def test_packaged_support_policy_requires_exact_promoted_compatibility(
         SupportPolicy.packaged("packaged-test")
 
 
+def test_packaged_arm_density_enforces_the_declared_scope_not_only_the_threshold(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A profile must screen at the density it claims to have been validated at.
+
+    Arm density lives in both halves of a v10-era profile: compatibility holds
+    the scope the campaign certified, thresholds hold the floor calibration
+    picked inside it. Reading only the threshold would advertise a scope of 10
+    units per covariate while screening at 0.36 -- roughly thirty times thinner
+    than anything the campaign ever ran.
+    """
+    compatibility = {
+        "mode": "observational-causal",
+        "outcome_type": "continuous",
+        "estimator": "aipw-unnormalized",
+        "estimand_id": "study-population-standardized-means",
+        "assignment": "estimated",
+        "independent_unit": "row",
+        "minimum_group_count": 50,
+        "minimum_arm_units_per_covariate": 10.0,
+    }
+    thresholds = {
+        "minimum_ess_ratio": 0.25,
+        "minimum_arm_units_per_covariate": 0.36,
+        "maximum_normalized_weight": 0.20,
+        "maximum_top_one_percent_weight_share": 0.35,
+        "maximum_absolute_weighted_balance_difference": 1.0,
+        "maximum_influence_top_one_percent_share": 0.50,
+        "maximum_seed_standardized_departure": 1.5,
+    }
+    profile = CFSupportProfile(
+        profile_id="density-test",
+        protocol_checksum="a" * 64,
+        calibration_evidence_checksum="b" * 64,
+        validation_evidence_checksum="c" * 64,
+        thresholds=thresholds,
+        compatibility=compatibility,
+        state="promoted",
+    )
+    monkeypatch.setattr(
+        SupportPolicy,
+        "_trusted_profile",
+        staticmethod(lambda _profile_id: profile.to_dict()),
+    )
+    assert SupportPolicy.packaged("density-test").min_arm_units_per_covariate == 10.0
+
+    # The calibrated floor still binds when it is the stricter of the two.
+    stricter = replace(
+        profile,
+        thresholds={**thresholds, "minimum_arm_units_per_covariate": 24.0},
+    )
+    monkeypatch.setattr(
+        SupportPolicy,
+        "_trusted_profile",
+        staticmethod(lambda _profile_id: stricter.to_dict()),
+    )
+    assert SupportPolicy.packaged("density-test").min_arm_units_per_covariate == 24.0
+
+    # v3-v9 declare neither key, so the bound stays inactive for them.
+    legacy = replace(
+        profile,
+        compatibility={
+            name: value
+            for name, value in compatibility.items()
+            if name != "minimum_arm_units_per_covariate"
+        },
+        thresholds={
+            name: value
+            for name, value in thresholds.items()
+            if name != "minimum_arm_units_per_covariate"
+        },
+    )
+    monkeypatch.setattr(
+        SupportPolicy,
+        "_trusted_profile",
+        staticmethod(lambda _profile_id: legacy.to_dict()),
+    )
+    assert SupportPolicy.packaged("density-test").min_arm_units_per_covariate == 0.0
+
+
 def test_associational_claim_is_derived_not_user_selected() -> None:
     declaration = randomized_declaration(
         mode=AnalysisMode.STANDARDIZED_ASSOCIATIONAL,

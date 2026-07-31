@@ -243,8 +243,15 @@ class SupportPolicy:
         thresholds = profile.thresholds
         return cls(
             min_group_count=int(compatibility.get("minimum_group_count", 20)),
-            min_arm_units_per_covariate=float(
-                thresholds.get("minimum_arm_units_per_covariate", 0.0)
+            # Arm density appears in both halves of the profile and they mean
+            # different things: compatibility carries the scope the campaign
+            # certified, thresholds carry the floor calibration selected inside
+            # that scope. Enforcing only the calibrated floor would let an
+            # analysis far thinner than anything the campaign validated be told
+            # it is supported, so the binding bound is the stricter of the two.
+            min_arm_units_per_covariate=max(
+                float(compatibility.get("minimum_arm_units_per_covariate", 0.0)),
+                float(thresholds.get("minimum_arm_units_per_covariate", 0.0)),
             ),
             min_ess_ratio=float(thresholds["minimum_ess_ratio"]),
             max_normalized_weight=float(thresholds["maximum_normalized_weight"]),
