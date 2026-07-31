@@ -466,12 +466,36 @@ def _structural(cell: dict[str, Any]) -> bool:
     return cell.get("support") == "structural-failure"
 
 
+# Covariate counts of the frozen plasmode sources. The datasets are pinned by
+# checksum, so these are fixed; simulation cells declare n_covariates directly.
+_PLASMODE_COVARIATE_COUNTS = {"diabetes": 10, "breast-cancer": 30}
+
+
+def _cell_covariate_count(cell: dict[str, Any], kind: str) -> int:
+    if kind == "plasmode":
+        return _PLASMODE_COVARIATE_COUNTS[str(cell["dataset"])]
+    return int(cell.get("n_covariates", 5))
+
+
 def _strong(
     cell: dict[str, Any],
     kind: str,
     minimum_expected_arm_count: float = 30.0,
     maximum_group_count: int | None = None,
+    minimum_arm_units_per_covariate: float = 0.0,
 ) -> bool:
+    """Is this cell inside the region the profile claims to serve?
+
+    This decides the denominator, which is why an absolute arm count is not
+    enough. The AIPW product bias is governed by how much data each arm gives
+    the nuisance models *relative to the covariate dimension*: v10 cell 59 has
+    an expected smallest arm of 54 -- comfortably past a count of 50 -- but only
+    1.8 rows per covariate against breast-cancer's 30, and it is biased.
+
+    A threshold cannot fix that, because a cell screened out by a threshold
+    still counts against the usefulness criterion as a failing cell. Only
+    narrowing the claimed scope removes it from the denominator.
+    """
     if kind != "plasmode" and cell.get("support") != "strong":
         return False
     k = int(cell["n_groups"])
@@ -487,10 +511,13 @@ def _strong(
     else:
         return False
     expected_minimum = int(cell["n_per_group"]) * k * float(weights.min() / weights.sum())
-    return expected_minimum >= minimum_expected_arm_count
+    if expected_minimum < minimum_expected_arm_count:
+        return False
+    density = expected_minimum / _cell_covariate_count(cell, kind)
+    return density >= minimum_arm_units_per_covariate
 
 
-def _profile_scope(protocol: CFValidationProtocol) -> tuple[float, int | None]:
+def _profile_scope(protocol: CFValidationProtocol) -> tuple[float, int | None, float]:
     compatibility = dict(protocol.reference_profile)
     return (
         max(
@@ -502,14 +529,16 @@ def _profile_scope(protocol: CFValidationProtocol) -> tuple[float, int | None]:
             if "maximum_group_count" not in compatibility
             else int(compatibility["maximum_group_count"])
         ),
+        # Absent, this is zero and scope is exactly what it was for v3-v9.
+        float(compatibility.get("minimum_arm_units_per_covariate", 0.0)),
     )
 
 
 def _profile_eligible(
     protocol: CFValidationProtocol, cell: dict[str, Any], kind: str
 ) -> bool:
-    minimum, maximum = _profile_scope(protocol)
-    return _strong(cell, kind, minimum, maximum)
+    minimum, maximum, density = _profile_scope(protocol)
+    return _strong(cell, kind, minimum, maximum, density)
 
 
 def _usefulness(

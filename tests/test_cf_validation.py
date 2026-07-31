@@ -1172,7 +1172,7 @@ def test_v10_is_a_wholly_observational_protocol_reusing_no_evidence() -> None:
     protocol = CFValidationProtocol.load(V10_SPEC)
     assert protocol.protocol_id == "cf-observational-continuous-aipw-unnormalized-v10"
     assert protocol.checksum == (
-        "949221891a0153a7abb8f91740962b7304741ae12302254e950c73b3b5c239d9"
+        "0296d815be92329b8215c28948f7fa51ed01c248b33708ff42c75d4000aed172"
     )
     assert protocol.reference_profile["mode"] == "observational-causal"
     assert protocol.reference_profile["assignment"] == "estimated"
@@ -1455,6 +1455,10 @@ def test_arm_density_is_screened_and_separates_the_failing_cells() -> None:
     assert LOWER_FEATURES == ("minimum_ess_ratio", "minimum_arm_units_per_covariate")
     protocol = CFValidationProtocol.load(V10_SPEC)
     assert "minimum_arm_units_per_covariate" in protocol.threshold_quantiles
+    # Density also bounds the profile's claimed scope. A threshold alone cannot
+    # help: a cell screened out still counts against the usefulness criterion,
+    # so only narrowing eligibility removes it from the denominator.
+    assert protocol.reference_profile["minimum_arm_units_per_covariate"] == 10.0
 
     # records from a protocol that predates the feature must screen on ESS only
     legacy = [{"support_features": {"minimum_ess_ratio": 0.5}}]

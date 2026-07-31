@@ -332,6 +332,13 @@ def build_spec() -> dict[str, Any]:
             "independent_unit": "row",
             "minimum_group_count": 50,
             "maximum_group_count": 3,
+            # Rows per covariate required in the smallest arm for a cell to be
+            # inside the claimed scope. Preregistered at the standard ten
+            # observations per covariate rather than at whatever clears this
+            # campaign's failures: r6 showed anything from 3 upward passes, so
+            # the choice is not knife-edge, and an external justification keeps
+            # the scope claim defensible.
+            "minimum_arm_units_per_covariate": 10.0,
         },
         "factors": {name: list(values) for name, values in FACTORS.items()},
         "retained_cells": retained,

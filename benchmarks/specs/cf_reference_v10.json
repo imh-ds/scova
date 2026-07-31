@@ -482,6 +482,7 @@
   "estimator": "aipw-unnormalized",
   "independent_unit": "row",
   "maximum_group_count": 3,
+  "minimum_arm_units_per_covariate": 10.0,
   "minimum_group_count": 50,
   "mode": "observational-causal",
   "outcome_type": "continuous"
