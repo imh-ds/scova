@@ -1185,9 +1185,13 @@
   }
  },
  "software": {
+  "doubleml": "0.11.3",
+  "econml": "0.16.0",
   "numpy": "2.2.6",
+  "pandas": "2.2.3",
   "python": "3.12.13",
-  "scikit-learn": "1.6.1"
+  "scikit-learn": "1.6.1",
+  "scipy": "1.15.3"
  },
  "threshold_quantiles": {
   "minimum_arm_units_per_covariate": [

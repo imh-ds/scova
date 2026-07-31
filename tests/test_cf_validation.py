@@ -1172,7 +1172,7 @@ def test_v10_is_a_wholly_observational_protocol_reusing_no_evidence() -> None:
     protocol = CFValidationProtocol.load(V10_SPEC)
     assert protocol.protocol_id == "cf-observational-continuous-aipw-unnormalized-v10"
     assert protocol.checksum == (
-        "0296d815be92329b8215c28948f7fa51ed01c248b33708ff42c75d4000aed172"
+        "a1c54a76e1fb8401f8d1b7eea50c16ccd77cd9e0e1f0afdb08fe28594c6caccb"
     )
     assert protocol.reference_profile["mode"] == "observational-causal"
     assert protocol.reference_profile["assignment"] == "estimated"
@@ -1299,6 +1299,47 @@ def test_every_spec_declares_quantiles_the_calibrator_can_read(spec_path: Path) 
         assert grid, f"{name} grid is empty"
         assert all(0.0 <= float(q) <= 1.0 for q in grid), f"{name} holds non-quantiles"
         assert list(grid) == sorted(grid), f"{name} grid is not ascending"
+
+
+@pytest.mark.parametrize(
+    "spec_path",
+    sorted(
+        path
+        for path in Path("benchmarks/specs").glob("cf_reference_v*.json")
+        if "blocked" not in path.stem
+    ),
+    ids=lambda path: path.stem,
+)
+def test_every_spec_declares_the_whole_frozen_environment(spec_path: Path) -> None:
+    """The software block must name every package the frozen lanes import.
+
+    cf_external_agreement compares the entire installed environment against
+    this block by dict equality, so a spec that declares a subset can never
+    match and that lane fails outright -- after the freeze, after a full
+    calibration. v10 shipped three of the seven packages and blocked there.
+    doubleml and econml are the comparators external agreement is measured
+    against, so leaving them undeclared also leaves them free to drift.
+    """
+    from benchmarks.cf_external_agreement import _environment
+
+    protocol = CFValidationProtocol.load(spec_path)
+    declared = dict(protocol.software)
+    assert set(declared) == set(_environment()), (
+        f"{spec_path.name} declares {sorted(declared)}, "
+        f"but external agreement inspects {sorted(_environment())}"
+    )
+    pinned = dict(
+        line.split("==", 1)
+        for line in Path("benchmarks/requirements-cf-validation.txt")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if "==" in line
+    )
+    for package, version in pinned.items():
+        assert declared.get(package) == version, (
+            f"{spec_path.name} declares {package} {declared.get(package)!r} "
+            f"against a pinned {version!r}"
+        )
 
 
 def test_linear_learners_are_invariant_to_covariate_scale() -> None:
