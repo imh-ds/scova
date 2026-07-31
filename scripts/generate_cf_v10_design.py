@@ -392,8 +392,13 @@ def build_spec() -> dict[str, Any]:
         # minimum_ess_ratio and ONE shared upper grid for every upper feature.
         # A per-metric mapping parses as valid JSON and passes every gate up to
         # and including 128 calibration shards, then dies on KeyError.
+        # Lower features get their own low-quantile grids; upper features share
+        # one. minimum_arm_units_per_covariate is swept jointly with the ESS
+        # floor so calibration finds where arm density stops supporting the
+        # nuisance models, rather than that bound being asserted up front.
         "threshold_quantiles": {
             "minimum_ess_ratio": [0, 0.01, 0.025, 0.05, 0.1, 0.2],
+            "minimum_arm_units_per_covariate": [0, 0.01, 0.025, 0.05, 0.1, 0.2],
             "upper_metrics": [0.8, 0.9, 0.95, 0.975, 0.99, 1],
         },
         "design_selection": provenance,
