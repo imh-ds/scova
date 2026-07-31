@@ -438,6 +438,9 @@ def _support_features(result: Any) -> dict[str, float]:
     influence = result.diagnostics["influence_concentration"].values()
     return {
         "minimum_ess_ratio": min(group["effective_sample_size_ratio"] for group in groups),
+        "minimum_arm_units_per_covariate": min(
+            group["units_per_covariate"] for group in groups
+        ),
         "maximum_normalized_weight": max(group["maximum_normalized_weight"] for group in groups),
         "maximum_top_one_percent_weight_share": max(
             group["top_one_percent_weight_share"] for group in groups

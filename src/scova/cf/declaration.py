@@ -152,6 +152,12 @@ class SupportPolicy:
     """Versioned support thresholds; defaults are intentionally provisional."""
 
     min_group_count: int = 20
+    # Rows per covariate required in the smallest arm. Zero leaves it inactive,
+    # which is what every protocol before v10 declares. The AIPW product-bias
+    # term is second order in the two nuisance errors, so it is governed by how
+    # much data each arm gives those models relative to the covariate
+    # dimension -- an absolute count cannot express that.
+    min_arm_units_per_covariate: float = 0.0
     min_ess_ratio: float = 0.25
     max_normalized_weight: float = 0.20
     max_top_one_percent_weight_share: float = 0.35
@@ -172,6 +178,8 @@ class SupportPolicy:
     def __post_init__(self) -> None:
         if self.min_group_count < 2:
             raise ValueError("min_group_count must be at least two")
+        if self.min_arm_units_per_covariate < 0:
+            raise ValueError("min_arm_units_per_covariate must not be negative")
         if not 0 < self.min_ess_ratio <= 1:
             raise ValueError("min_ess_ratio must lie in (0, 1]")
         if not 0 < self.max_normalized_weight <= 1:
@@ -235,6 +243,9 @@ class SupportPolicy:
         thresholds = profile.thresholds
         return cls(
             min_group_count=int(compatibility.get("minimum_group_count", 20)),
+            min_arm_units_per_covariate=float(
+                thresholds.get("minimum_arm_units_per_covariate", 0.0)
+            ),
             min_ess_ratio=float(thresholds["minimum_ess_ratio"]),
             max_normalized_weight=float(thresholds["maximum_normalized_weight"]),
             max_top_one_percent_weight_share=float(
@@ -290,6 +301,11 @@ class SupportPolicy:
     def to_dict(self) -> dict[str, Any]:
         return {
             "min_group_count": self.min_group_count,
+            **(
+                {}
+                if not self.min_arm_units_per_covariate
+                else {"min_arm_units_per_covariate": self.min_arm_units_per_covariate}
+            ),
             "min_ess_ratio": self.min_ess_ratio,
             "max_normalized_weight": self.max_normalized_weight,
             "max_top_one_percent_weight_share": self.max_top_one_percent_weight_share,

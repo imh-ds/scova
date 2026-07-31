@@ -1172,7 +1172,7 @@ def test_v10_is_a_wholly_observational_protocol_reusing_no_evidence() -> None:
     protocol = CFValidationProtocol.load(V10_SPEC)
     assert protocol.protocol_id == "cf-observational-continuous-aipw-unnormalized-v10"
     assert protocol.checksum == (
-        "d640f4b1f9ef1787ca42fbb9b2f5a3ded461d2005c56a14bca995218dd51962a"
+        "949221891a0153a7abb8f91740962b7304741ae12302254e950c73b3b5c239d9"
     )
     assert protocol.reference_profile["mode"] == "observational-causal"
     assert protocol.reference_profile["assignment"] == "estimated"
@@ -1290,9 +1290,11 @@ def test_every_spec_declares_quantiles_the_calibrator_can_read(spec_path: Path) 
     quantiles = protocol.threshold_quantiles
     if quantiles is None:
         return  # the calibrator falls back to its built-in grids
-    assert set(quantiles) == {"minimum_ess_ratio", "upper_metrics"}, (
-        f"{spec_path.name} declares {sorted(quantiles)}"
-    )
+    from scripts.calibrate_cf_support import LOWER_FEATURES
+
+    allowed = {"upper_metrics", *LOWER_FEATURES}
+    assert "minimum_ess_ratio" in quantiles and "upper_metrics" in quantiles
+    assert set(quantiles) <= allowed, f"{spec_path.name} declares {sorted(quantiles)}"
     for name, grid in quantiles.items():
         assert grid, f"{name} grid is empty"
         assert all(0.0 <= float(q) <= 1.0 for q in grid), f"{name} holds non-quantiles"
@@ -1439,3 +1441,36 @@ def test_both_enrichment_implementations_score_identically() -> None:
     plain_vector = _candidate_enrichments(records, [_ENRICHMENT_THRESHOLDS], _ENRICHMENT_METRICS)[0]
     assert plain_scalar["unstable_bad_rate"] == plain_vector["unstable_bad_rate"] == 0.0
     assert plain_vector["passed"] is False
+
+
+def test_arm_density_is_screened_and_separates_the_failing_cells() -> None:
+    """The v10 blocker was bias concentrated in the smallest arm.
+
+    Calibration finds the threshold rather than the spec asserting one, so the
+    feature has to be present in the records and swept by the candidate family.
+    Protocols that predate it screen on ESS alone.
+    """
+    from scripts.calibrate_cf_support import LOWER_FEATURES, _active_lower_features
+
+    assert LOWER_FEATURES == ("minimum_ess_ratio", "minimum_arm_units_per_covariate")
+    protocol = CFValidationProtocol.load(V10_SPEC)
+    assert "minimum_arm_units_per_covariate" in protocol.threshold_quantiles
+
+    # records from a protocol that predates the feature must screen on ESS only
+    legacy = [{"support_features": {"minimum_ess_ratio": 0.5}}]
+    assert _active_lower_features(legacy) == ("minimum_ess_ratio",)
+
+    # the failing plasmode cell and a healthy simulated one must be far apart
+    from benchmarks.cf_reference_campaign import _support_features
+    from scova.cf import SCOVACF, SCOVACFRefusal
+
+    failing = dict(allocation="moderate", confounding="strong", confounding_form="linear",
+                   dataset="breast-cancer", effect="null", learner="adaptive", n_groups=3,
+                   n_per_group=100, noise="normal", overlap="full")
+    generated = simulate_plasmode_cell(failing, seed=600_000)
+    result = SCOVACF().analyze(
+        generated.data, _declaration(generated, failing, include_stability=False)
+    )
+    assert not isinstance(result, SCOVACFRefusal)
+    density = _support_features(result)["minimum_arm_units_per_covariate"]
+    assert density < 3.0, density   # ~55 rows against 30 covariates

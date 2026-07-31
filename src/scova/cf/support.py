@@ -53,6 +53,9 @@ def assess_support(
     for code, label in enumerate(group_labels):
         observed = group_codes == code
         count = int(observed.sum())
+        # Nuisance models are fitted per arm, so what limits them is this arm's
+        # rows relative to the covariates they must span, not the total sample.
+        units_per_covariate = float(count) / x.shape[1] if x.shape[1] else float(count)
         weights = observed.astype(float) / propensity[:, code]
         weight_sum = float(weights.sum())
         squared_sum = float(np.square(weights).sum())
@@ -71,6 +74,11 @@ def assess_support(
         if count < policy.min_group_count:
             warnings.append(
                 f"group {label!r} count {count} is below {policy.min_group_count}"
+            )
+        if units_per_covariate < policy.min_arm_units_per_covariate:
+            warnings.append(
+                f"group {label!r} holds {units_per_covariate:.2f} units per covariate, "
+                f"below {policy.min_arm_units_per_covariate:.2f}"
             )
         if ess_ratio < policy.min_ess_ratio:
             warnings.append(
@@ -96,6 +104,7 @@ def assess_support(
             )
         group_diagnostics[str(label)] = {
             "count": count,
+            "units_per_covariate": units_per_covariate,
             "propensity_target_quantiles": {
                 "minimum": float(np.min(propensity[:, code])),
                 "q01": float(np.quantile(propensity[:, code], 0.01)),

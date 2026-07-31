@@ -15,6 +15,12 @@ import numpy as np
 from scova.cf import CFSupportProfile, CFValidationProtocol, canonical_checksum
 
 LOWER_FEATURE = "minimum_ess_ratio"
+# Features where a larger value is safer. v3-v9 screen on ESS alone; v10 adds
+# arm density because the AIPW product bias is governed by how much data each
+# arm gives the nuisance models relative to the covariate dimension. A protocol
+# whose records lack a feature simply does not screen on it, so older lanes
+# calibrate exactly as before.
+LOWER_FEATURES = (LOWER_FEATURE, "minimum_arm_units_per_covariate")
 
 # Optional selection metric.  When a spec sets it, calibration *ranks* the
 # candidates that already clear the preregistered enrichment floor by the
@@ -118,7 +124,11 @@ def _verify_evidence(evidence: dict[str, Any]) -> None:
 def _passes(record: dict[str, Any], thresholds: dict[str, float]) -> bool:
     features = record["support_features"]
     return bool(
-        features[LOWER_FEATURE] >= thresholds[LOWER_FEATURE]
+        all(
+            features[name] >= thresholds[name]
+            for name in LOWER_FEATURES
+            if name in thresholds
+        )
         and all(features[name] <= thresholds[name] for name in UPPER_FEATURES)
     )
 
@@ -242,6 +252,14 @@ def _unstable_enrichment(
     }
 
 
+def _active_lower_features(records: list[dict[str, Any]]) -> tuple[str, ...]:
+    """Lower features present in these records, in declared order."""
+    if not records:
+        return (LOWER_FEATURE,)
+    available = records[0]["support_features"]
+    return tuple(name for name in LOWER_FEATURES if name in available)
+
+
 def _candidate_enrichments(
     records: list[dict[str, Any]],
     candidates: list[dict[str, float]],
@@ -250,7 +268,8 @@ def _candidate_enrichments(
     """Vectorize the preregistered enrichment screen across candidate rules."""
     if not candidates:
         return []
-    feature_names = (LOWER_FEATURE, *UPPER_FEATURES)
+    feature_names = (*_active_lower_features(records), *UPPER_FEATURES)
+    lower_count = len(feature_names) - len(UPPER_FEATURES)
     features = np.asarray(
         [[record["support_features"][name] for name in feature_names] for record in records],
         dtype=float,
@@ -260,7 +279,9 @@ def _candidate_enrichments(
         dtype=float,
     )
     supported = features[:, 0, None] >= limits[None, :, 0]
-    for index in range(1, len(feature_names)):
+    for index in range(1, lower_count):
+        supported &= features[:, index, None] >= limits[None, :, index]
+    for index in range(lower_count, len(feature_names)):
         supported &= features[:, index, None] <= limits[None, :, index]
     contrast_counts = np.asarray([len(record["contrasts"]) for record in records], dtype=float)
     ratio_limit = metrics.get(_STANDARD_ERROR_RATIO_METRIC)
@@ -528,7 +549,8 @@ def _candidate_usefulness(
 ) -> list[tuple[bool, float]]:
     if not candidates:
         return []
-    feature_names = (LOWER_FEATURE, *UPPER_FEATURES)
+    feature_names = (*_active_lower_features(records), *UPPER_FEATURES)
+    lower_count = len(feature_names) - len(UPPER_FEATURES)
     features = np.asarray(
         [[record["support_features"][name] for name in feature_names] for record in records],
         dtype=float,
@@ -538,7 +560,9 @@ def _candidate_usefulness(
         dtype=float,
     )
     supported = features[:, 0, None] >= limits[None, :, 0]
-    for index in range(1, len(feature_names)):
+    for index in range(1, lower_count):
+        supported &= features[:, index, None] >= limits[None, :, index]
+    for index in range(lower_count, len(feature_names)):
         supported &= features[:, index, None] <= limits[None, :, index]
     cell_indices = np.asarray([int(record["cell_index"]) for record in records])
     strong_cells = sorted(
@@ -613,14 +637,23 @@ def calibrate(
     if quantiles is None:
         lower_q = (0.0, 0.01, 0.025, 0.05, 0.10, 0.20)
         upper_q = (0.80, 0.90, 0.95, 0.975, 0.99, 1.0)
-    else:  # pragma: no cover - retained for future schema extension
+    else:
         lower_q = tuple(quantiles["minimum_ess_ratio"])
         upper_q = tuple(quantiles["upper_metrics"])
+    lower_features = _active_lower_features(fit_records)
+    # Each lower feature may declare its own grid; absent one it reuses the ESS
+    # grid, so a protocol adding a feature need not restate the quantiles.
+    lower_grids = {
+        name: tuple((quantiles or {}).get(name, lower_q)) for name in lower_features
+    }
     grids = {
-        LOWER_FEATURE: tuple(
-            float(np.quantile([r["support_features"][LOWER_FEATURE] for r in fit_records], q))
-            for q in lower_q
-        ),
+        **{
+            name: tuple(
+                float(np.quantile([r["support_features"][name] for r in fit_records], q))
+                for q in lower_grids[name]
+            )
+            for name in lower_features
+        },
         **{
             name: tuple(
                 float(np.quantile([r["support_features"][name] for r in fit_records], q))
@@ -629,14 +662,17 @@ def calibrate(
             for name in UPPER_FEATURES
         },
     }
-    feature_names = (LOWER_FEATURE, *UPPER_FEATURES)
+    feature_names = (*lower_features, *UPPER_FEATURES)
     candidates: dict[tuple[float, ...], dict[str, float]] = {}
-    # The preregistered family uses one common upper-tail quantile, plus a
-    # deterministic one-feature deviation. This spans strict-to-permissive
-    # rules without an impractical 6^7 Cartesian search.
-    for lower, common_index in itertools.product(grids[LOWER_FEATURE], range(len(upper_q))):
+    # The preregistered family sweeps every lower feature jointly, then takes one
+    # common upper-tail quantile plus a deterministic one-feature deviation. That
+    # spans strict-to-permissive rules without an impractical Cartesian search.
+    for combination in itertools.product(
+        *(grids[name] for name in lower_features), range(len(upper_q))
+    ):
+        *lower_values, common_index = combination
         baseline = {
-            LOWER_FEATURE: lower,
+            **dict(zip(lower_features, lower_values, strict=True)),
             **{name: grids[name][common_index] for name in UPPER_FEATURES},
         }
         candidates[tuple(baseline[name] for name in feature_names)] = baseline
@@ -656,7 +692,7 @@ def calibrate(
         if useful:
             # Smaller upper limits and larger ESS floors win exact objective ties.
             conservative = (
-                -thresholds[LOWER_FEATURE],
+                *(-thresholds[name] for name in lower_features),
                 *(thresholds[name] for name in UPPER_FEATURES),
             )
             ranked.append((-objective, conservative, thresholds))

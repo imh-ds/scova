@@ -1189,6 +1189,14 @@
   "scikit-learn": "1.6.1"
  },
  "threshold_quantiles": {
+  "minimum_arm_units_per_covariate": [
+   0,
+   0.01,
+   0.025,
+   0.05,
+   0.1,
+   0.2
+  ],
   "minimum_ess_ratio": [
    0,
    0.01,
