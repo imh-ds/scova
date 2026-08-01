@@ -583,6 +583,12 @@ def test_campaign_environment_identity_ignores_only_host_platform() -> None:
 def _fake_numerical_source(commit: str, path: str) -> bytes:
     if path.endswith(".json"):
         return b"{}"
+    if path in _numerical_identity._EXTERNAL_NUMERICAL_PATHS:
+        fitted = "None" if commit == "after-comparator-fix" else "known"
+        return f"def comparator(): return {fitted}\n".encode()
+    if path == "scripts/calibrate_cf_support.py":
+        rule = "'v9'" if commit == "after-selection-rule" else "'v8'"
+        return f"def select(): return {rule}\n".encode()
     if path == "benchmarks/cf_reference_campaign.py":
         governance = "candidate_source = True" if commit == "after-governance" else "pass"
         return f"""
@@ -639,6 +645,35 @@ def test_numerical_fingerprints_are_evidence_specific(
     assert _numerical_identity.cf_numerical_fingerprint(
         "before-inference-gate", "inference"
     ) != _numerical_identity.cf_numerical_fingerprint("after-inference-gate", "inference")
+
+
+def test_campaign_fingerprint_excludes_the_external_comparators(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A comparator fix must not force a 128-shard calibration lane to re-run.
+
+    cf_external_agreement and cf_external_validation cannot alter a calibration
+    record -- they read a fitted result and compare it against DoubleML. Before
+    the campaign kind existed the prerequisite check compared calibration
+    commits verbatim, so editing them cost a full re-run for nothing. What DOES
+    determine calibration evidence still has to bind.
+    """
+    monkeypatch.setattr(_numerical_identity, "_committed_file", _fake_numerical_source)
+    fingerprint = _numerical_identity.cf_numerical_fingerprint
+    assert fingerprint("before-comparator-fix", "campaign") == fingerprint(
+        "after-comparator-fix", "campaign"
+    )
+    # The same edit must still invalidate external-agreement evidence.
+    assert fingerprint("before-comparator-fix", "external") != fingerprint(
+        "after-comparator-fix", "external"
+    )
+    # Selection and campaign sources remain binding for calibration.
+    assert fingerprint("before-selection-rule", "campaign") != fingerprint(
+        "after-selection-rule", "campaign"
+    )
+    assert fingerprint("before-governance", "campaign") == fingerprint(
+        "after-governance", "campaign"
+    )
 
 
 def test_numerical_fingerprint_refactor_does_not_invalidate_evidence(
@@ -1299,6 +1334,46 @@ def test_every_spec_declares_quantiles_the_calibrator_can_read(spec_path: Path) 
         assert grid, f"{name} grid is empty"
         assert all(0.0 <= float(q) <= 1.0 for q in grid), f"{name} holds non-quantiles"
         assert list(grid) == sorted(grid), f"{name} grid is not ascending"
+
+
+@pytest.mark.parametrize(
+    ("spec_path", "expected"),
+    [(V9_SPEC, "known"), (V10_SPEC, "fitted")],
+    ids=["v9-randomized", "v10-observational"],
+)
+def test_comparators_only_get_a_known_propensity_when_the_design_supplies_one(
+    spec_path: Path, expected: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Under estimated assignment the comparators must fit their own propensity.
+
+    `generated.probabilities` is the marginal allocation, constant across
+    units. That IS the truth for a randomized design. Under v10 the propensity
+    varies by unit -- on the strongest external cell the true values span
+    [0.12, 0.88] against a constant 0.5 -- so passing it would misspecify both
+    comparators into effectively unadjusted estimators and compare SCOVA-CF's
+    confounding-adjusted answer against them.
+    """
+    from benchmarks import cf_external_agreement as agreement
+    from benchmarks.cf_external_validation import ExternalAgreement
+
+    seen: list[object] = []
+
+    def _capture(*_args: object, known_probabilities: object, **_kwargs: object):
+        seen.append(known_probabilities)
+        return ExternalAgreement("DoubleMLAPOS", "0", "blocked/missing-dependency")
+
+    protocol = CFValidationProtocol.load(spec_path)
+    monkeypatch.setattr(agreement, "_environment", lambda: dict(protocol.software))
+    monkeypatch.setattr(agreement, "doubleml_apos", _capture)
+    monkeypatch.setattr(agreement, "econml_drlearner", _capture)
+    agreement.run_external_agreement(protocol, replications=1, max_cells=1)
+
+    assert seen, "comparators were never invoked"
+    if expected == "fitted":
+        assert all(value is None for value in seen), seen
+    else:
+        assert all(value is not None for value in seen), seen
+        assert all(len(set(np.asarray(value).ravel().tolist())) >= 1 for value in seen)
 
 
 @pytest.mark.parametrize(

@@ -291,9 +291,18 @@ def doubleml_apos(
     folds: np.ndarray,
     *,
     learner_policy: str,
-    known_probabilities: tuple[float, ...],
+    known_probabilities: tuple[float, ...] | None,
 ) -> ExternalAgreement:
-    """Fit DoubleML outcome nuisances with known randomized assignment probabilities."""
+    """Fit DoubleML against the same estimation problem SCOVA-CF faces.
+
+    Under a randomized design the assignment probabilities are known constants,
+    so supplying them removes a nuisance the comparator should not have to
+    estimate.  Under estimated assignment there is no such constant to supply:
+    the propensity varies by unit, and handing DoubleML a flat marginal would
+    misspecify it into an outcome-regression-only estimator on confounded data.
+    ``known_probabilities`` is therefore None in that regime and DoubleML fits
+    its own propensity, which is what an independent reimplementation means.
+    """
     try:
         import doubleml as dml
         from doubleml.utils import PSProcessorConfig
@@ -316,18 +325,24 @@ def doubleml_apos(
             draw_sample_splitting=False,
         )
         model.set_sample_splitting(_splits(folds))
-        external = {
-            level: {"ml_m": np.full((len(outcome), 1), known_probabilities[code])}
-            for code, level in enumerate(levels)
-        }
-        model.fit(external_predictions=external)
+        if known_probabilities is None:
+            model.fit()
+            detail = "Independently fitted DoubleML propensity and outcome nuisances"
+        else:
+            model.fit(
+                external_predictions={
+                    level: {"ml_m": np.full((len(outcome), 1), known_probabilities[code])}
+                    for code, level in enumerate(levels)
+                }
+            )
+            detail = "Known-design propensities; independently fitted DoubleML outcome nuisances"
         return ExternalAgreement(
             "DoubleMLAPOS",
             version("doubleml"),
             "complete",
             tuple(float(value) for value in np.ravel(model.coef)),
             tuple(float(value) for value in np.ravel(model.se)),
-            detail="Known-design propensities; independently fitted DoubleML outcome nuisances",
+            detail=detail,
         )
     except (Exception, PackageNotFoundError) as error:  # pragma: no cover - external API
         return ExternalAgreement(
@@ -345,9 +360,15 @@ def econml_drlearner(
     folds: np.ndarray,
     *,
     learner_policy: str,
-    known_probabilities: tuple[float, ...],
+    known_probabilities: tuple[float, ...] | None,
 ) -> ExternalAgreement:
-    """Fit EconML with X=None, covariates in W, and frozen fold indices."""
+    """Fit EconML with X=None, covariates in W, and frozen fold indices.
+
+    As with DoubleML, a known constant propensity is supplied only where the
+    design actually provides one.  ``KnownRandomizationClassifier`` returns the
+    same row regardless of covariates, so under estimated assignment it would
+    strip out the confounding adjustment the comparison is meant to test.
+    """
     try:
         from econml.dr import DRLearner
     except ImportError:
@@ -355,7 +376,11 @@ def econml_drlearner(
     try:
         levels = tuple(int(value) for value in np.unique(treatment))
         model = DRLearner(
-            model_propensity=KnownRandomizationClassifier(known_probabilities),
+            model_propensity=(
+                _learners(learner_policy)[0]
+                if known_probabilities is None
+                else KnownRandomizationClassifier(known_probabilities)
+            ),
             model_regression=TreatmentSpecificOutcomeRegressor(
                 n_groups=len(levels), learner_policy=learner_policy
             ),
@@ -374,7 +399,10 @@ def econml_drlearner(
             version("econml"),
             "complete",
             estimates,
-            detail="Known-design propensities; X=None; W=covariates; intercept-only final model",
+            detail=(
+                ("Known-design propensities; " if known_probabilities is not None else "")
+                + "X=None; W=covariates; intercept-only final model"
+            ),
         )
     except (Exception, PackageNotFoundError) as error:  # pragma: no cover - external API
         return ExternalAgreement(
