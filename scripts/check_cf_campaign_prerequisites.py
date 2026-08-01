@@ -72,7 +72,20 @@ def prerequisite_reasons(
     )
     if calibration_campaign.get("protocol_checksum") != protocol.checksum and not source_campaign:
         reasons.append("calibration campaign protocol mismatch")
-    if calibration_campaign.get("git_commit") != expected_commit and not source_campaign:
+    # The external and inference lanes below have always accepted a different
+    # commit whose numerically-relevant sources are byte-identical. Calibration
+    # compared commits verbatim, so a fix to a downstream comparator -- code
+    # that cannot alter a calibration record -- forced the whole 128-shard lane
+    # to be regenerated. It now gets the same treatment, against a fingerprint
+    # scoped to what actually produces calibration evidence.
+    calibration_matches = same_cf_numerical_implementation(
+        str(calibration_campaign.get("git_commit")), expected_commit, "campaign"
+    )
+    if (
+        calibration_campaign.get("git_commit") != expected_commit
+        and not calibration_matches
+        and not source_campaign
+    ):
         reasons.append("calibration campaign commit mismatch")
     if not _valid_checksum(calibration_campaign, "evidence_checksum"):
         reasons.append("calibration campaign checksum mismatch")

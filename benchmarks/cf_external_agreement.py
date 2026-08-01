@@ -97,6 +97,14 @@ def run_external_agreement(
     if count < 1 or count > partition.count:
         raise ValueError("replications must lie within the frozen external lane")
     cells = protocol.external_cells[:max_cells]
+    # A known constant propensity is a property of the DESIGN, not of the
+    # harness. v3-v9 randomize, so the design probabilities are the truth and
+    # supplying them keeps the comparison to the outcome nuisance alone. v10
+    # assigns on covariates, where `generated.probabilities` is only the
+    # marginal allocation -- passing it would hand both comparators a flat,
+    # misspecified propensity on confounded data and compare SCOVA-CF's
+    # adjusted estimate against two effectively unadjusted ones.
+    known_design = str(protocol.reference_profile.get("assignment")) == "known-constant"
     fixed_max = 0.0
     shared_errors = {
         "means": 0.0,
@@ -206,7 +214,7 @@ def run_external_agreement(
                 treatment,
                 result.fold_assignments,
                 learner_policy=str(cell["learner"]),
-                known_probabilities=generated.probabilities,
+                known_probabilities=generated.probabilities if known_design else None,
             )
             econ = econml_drlearner(
                 x,
@@ -214,7 +222,7 @@ def run_external_agreement(
                 treatment,
                 result.fold_assignments,
                 learner_policy=str(cell["learner"]),
-                known_probabilities=generated.probabilities,
+                known_probabilities=generated.probabilities if known_design else None,
             )
             if dml.status == "complete":
                 scale = np.where(

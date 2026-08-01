@@ -7,7 +7,7 @@ import subprocess
 from hashlib import sha256
 from typing import Literal
 
-EvidenceKind = Literal["external", "inference"]
+EvidenceKind = Literal["campaign", "external", "inference"]
 
 # Whole-file entries are restricted to modules whose contents determine fitted
 # values, uncertainty, or evidence gates.  Mixed orchestration modules are
@@ -36,6 +36,15 @@ _EXTERNAL_NUMERICAL_PATHS = (
     "benchmarks/cf_external_validation.py",
 )
 
+# Calibration evidence is produced by the campaign shards, aggregated, then
+# reduced to a candidate profile.  Everything that determines those numbers is
+# listed here or in the campaign symbols below; the external comparators are
+# deliberately NOT, because they cannot change a calibration lane's contents.
+_CAMPAIGN_NUMERICAL_PATHS = (
+    "benchmarks/aggregate_cf_campaign.py",
+    "scripts/calibrate_cf_support.py",
+)
+
 _CAMPAIGN_NUMERICAL_SYMBOLS = (
     "STABILITY_SEEDS",
     "CampaignData",
@@ -60,7 +69,16 @@ _INFERENCE_NUMERICAL_SYMBOLS = (
     "aggregate",
 )
 
+_KIND_NUMERICAL_PATHS: dict[EvidenceKind, tuple[str, ...]] = {
+    "campaign": _CAMPAIGN_NUMERICAL_PATHS,
+    "external": _EXTERNAL_NUMERICAL_PATHS,
+    "inference": (),
+}
+
 _MIXED_NUMERICAL_SOURCES: dict[EvidenceKind, tuple[tuple[str, tuple[str, ...]], ...]] = {
+    "campaign": (
+        ("benchmarks/cf_reference_campaign.py", _CAMPAIGN_NUMERICAL_SYMBOLS),
+    ),
     "external": (
         ("benchmarks/cf_reference_campaign.py", _CAMPAIGN_NUMERICAL_SYMBOLS[:7]),
     ),
@@ -128,9 +146,7 @@ def _committed_file(commit: str, path: str) -> bytes:
 def cf_numerical_fingerprint(commit: str, kind: EvidenceKind) -> str:
     """Hash code that can change the specified evidence's numerical meaning."""
     digest = sha256()
-    whole_paths = _CORE_NUMERICAL_PATHS + (
-        _EXTERNAL_NUMERICAL_PATHS if kind == "external" else ()
-    )
+    whole_paths = _CORE_NUMERICAL_PATHS + _KIND_NUMERICAL_PATHS[kind]
     for path in whole_paths:
         digest.update(path.encode("utf-8"))
         digest.update(b"\0")
