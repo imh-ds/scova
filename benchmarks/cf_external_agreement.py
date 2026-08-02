@@ -31,6 +31,24 @@ from scova.cf import (
     canonical_checksum,
 )
 
+# An end-to-end cell is only evidence if the outside implementation is free to
+# disagree. When every difference in a cell sits at the precision the SHARED
+# score lane already certifies as identity, that cell is not an independent
+# comparison: it is `shared_score` recomputed through a second API, and it can
+# no longer detect anything that lane does not already detect.
+#
+# Set to the shared lane's own DoubleML tolerance, which is the honest reading
+# of "indistinguishable from recomputing SCOVA". Nine orders of magnitude
+# separate the two regimes in practice -- r9 measured degenerate cells at
+# 2.5e-15 to 2.3e-14 and the weakest informative cell at 1.1e-1 -- so the exact
+# value is not delicate.
+DEGENERATE_DIFFERENCE_IN_SCOVA_SE = 1e-10
+
+# What a non-authoritative `--allow-incomplete` smoke run may end on. The
+# authoritative gate is `all_numerical_agreement_gates_passed`, which requires
+# the complete frozen lane and "complete" from both implementations.
+SMOKE_ADMISSIBLE_STATUSES = frozenset({"complete", "incomplete/degenerate-subset"})
+
 
 def _maximum_error(left: np.ndarray, right: np.ndarray) -> float:
     return float(np.max(np.abs(np.asarray(left) - np.asarray(right))))
@@ -53,28 +71,98 @@ def _environment() -> dict[str, str]:
     return values
 
 
-def _summary(name: str, signed: list[float], blocked: list[str]) -> dict[str, Any]:
+def _summary(
+    name: str,
+    signed: list[float],
+    cell_indices: list[int],
+    blocked: list[str],
+    *,
+    lane_complete: bool,
+) -> dict[str, Any]:
+    """Score an implementation on the cells where it could actually disagree.
+
+    Degenerate cells are reported but excluded from the tolerance statistics,
+    because pooling them does not average two comparable populations -- it
+    averages real differences against exact zeros and reports the dilution as
+    agreement. r9 is the worked example: DoubleML's mean over all eight cells
+    was 0.1244 and "passed" 0.25, while its three informative cells averaged
+    0.2626 and failed. Excluding the zeros can only RAISE these statistics, so
+    this is strictly harder to pass, never a loosened tolerance.
+
+    A COMPLETE lane with no informative cell left is refused outright. It has
+    not agreed with SCOVA-CF; it has stopped being an independent measurement.
+
+    A truncated lane is not judged that way, because informativeness is a
+    property of the frozen cell set rather than of an arbitrary prefix of it.
+    `external_smoke` runs one replication of one cell, and the frozen lane's
+    first cell is k=2, where DoubleMLAPOS's one-vs-rest propensity and SCOVA's
+    2-class multinomial are the same estimator -- degenerate by construction
+    and nothing to do with the health of the run. Refusing there would cost the
+    two-minute canary that exists to catch environment breakage before a
+    five-hour calibration, to detect something the tier never claimed.
+    """
     values = np.asarray(signed, dtype=float)
-    absolute = np.abs(values)
-    passed = bool(
+    cells = np.asarray(cell_indices, dtype=int)
+    per_cell: list[dict[str, Any]] = []
+    informative = np.zeros(values.shape, dtype=bool)
+    for cell_index in sorted({int(value) for value in cells.tolist()}):
+        member = cells == cell_index
+        cell_maximum = float(np.abs(values[member]).max())
+        degenerate = cell_maximum <= DEGENERATE_DIFFERENCE_IN_SCOVA_SE
+        if not degenerate:
+            informative |= member
+        per_cell.append(
+            {
+                "cell_index": cell_index,
+                "comparison_count": int(member.sum()),
+                "maximum_absolute_difference_in_scova_se": cell_maximum,
+                "degenerate": degenerate,
+            }
+        )
+    scored = values[informative]
+    absolute = np.abs(scored)
+    informative_cells = sum(1 for row in per_cell if not row["degenerate"])
+    if not values.size:
+        # Never produced a comparison at all -- a blocked run, not a degenerate
+        # one. Unchanged from before this check existed.
+        status = "blocked/agreement-tolerance"
+    elif not informative_cells:
+        # Distinct from a tolerance failure, and it must stay distinct: a lane
+        # that cannot detect disagreement is not a lane that found none. The
+        # truncated form is never authoritative -- `complete_frozen_lane` is
+        # false, so `all_numerical_agreement_gates_passed` is false regardless.
+        status = (
+            "blocked/lane-degenerate" if lane_complete else "incomplete/degenerate-subset"
+        )
+    elif (
         not blocked
-        and values.size
         and float(absolute.mean()) <= 0.25
         and float(absolute.max()) <= 1.0
-        and abs(float(values.mean())) <= 0.05
-    )
+        and abs(float(scored.mean())) <= 0.05
+    ):
+        status = "complete"
+    else:
+        status = "blocked/agreement-tolerance"
     return {
         "implementation": name,
-        "status": "complete" if passed else "blocked/agreement-tolerance",
+        "status": status,
         "mean_absolute_difference_in_scova_se": (
-            None if not values.size else float(absolute.mean())
+            None if not scored.size else float(absolute.mean())
         ),
         "maximum_absolute_difference_in_scova_se": (
-            None if not values.size else float(absolute.max())
+            None if not scored.size else float(absolute.max())
         ),
         "mean_signed_difference_in_scova_se": (
-            None if not values.size else float(values.mean())
+            None if not scored.size else float(scored.mean())
         ),
+        # Everything below describes the denominator the three figures above
+        # were computed on, so a reader can tell a lane that agreed from a lane
+        # that could not disagree without re-deriving it from run_details.
+        "scored_comparison_count": int(scored.size),
+        "total_comparison_count": int(values.size),
+        "informative_cell_count": informative_cells,
+        "degenerate_cell_count": len(per_cell) - informative_cells,
+        "cells": per_cell,
         "blocked_details": blocked,
     }
 
@@ -114,7 +202,12 @@ def run_external_agreement(
         "contrasts": 0.0,
         "contrast_standard_errors": 0.0,
     }
-    signed = {"DoubleMLAPOS": [], "EconML.DRLearner": []}
+    signed: dict[str, list[float]] = {"DoubleMLAPOS": [], "EconML.DRLearner": []}
+    # Which cell each difference came from. Kept in lockstep with `signed` so
+    # degeneracy can be judged per cell: it is a property of the cell's design
+    # (at k=2 one-vs-rest and 2-class multinomial propensities are the same
+    # estimator), not of the lane as a whole.
+    scored_cells: dict[str, list[int]] = {"DoubleMLAPOS": [], "EconML.DRLearner": []}
     blocked: dict[str, list[str]] = {"DoubleMLAPOS": [], "EconML.DRLearner": []}
     details: list[dict[str, Any]] = []
     for cell_index, cell in enumerate(cells):
@@ -230,9 +323,11 @@ def run_external_agreement(
                     result.group_standard_errors,
                     np.nan,
                 )
-                signed["DoubleMLAPOS"].extend(
-                    ((np.asarray(dml.estimates) - result.group_means) / scale).tolist()
-                )
+                differences = (
+                    (np.asarray(dml.estimates) - result.group_means) / scale
+                ).tolist()
+                signed["DoubleMLAPOS"].extend(differences)
+                scored_cells["DoubleMLAPOS"].extend([cell_index] * len(differences))
             else:
                 blocked["DoubleMLAPOS"].append(
                     f"fitted cell={cell_index} rep={repetition}: {dml.detail}"
@@ -242,9 +337,11 @@ def run_external_agreement(
                 [result.contrasts[f"g{code} - g0"].standard_error for code in range(1, len(labels))]
             )
             if econ.status == "complete":
-                signed["EconML.DRLearner"].extend(
-                    ((np.asarray(econ.estimates) - reference) / reference_se).tolist()
-                )
+                differences = (
+                    (np.asarray(econ.estimates) - reference) / reference_se
+                ).tolist()
+                signed["EconML.DRLearner"].extend(differences)
+                scored_cells["EconML.DRLearner"].extend([cell_index] * len(differences))
             else:
                 blocked["EconML.DRLearner"].append(
                     f"fitted cell={cell_index} rep={repetition}: {econ.detail}"
@@ -267,14 +364,14 @@ def run_external_agreement(
         and shared_errors["contrasts"] <= 1e-10
         and shared_errors["contrast_standard_errors"] <= 1e-10
     )
+    complete = count == partition.count and len(cells) == len(protocol.external_cells)
     summaries = [
-        _summary(name, signed[name], blocked[name])
+        _summary(name, signed[name], scored_cells[name], blocked[name], lane_complete=complete)
         for name in ("DoubleMLAPOS", "EconML.DRLearner")
     ]
-    complete = count == partition.count and len(cells) == len(protocol.external_cells)
     evidence: dict[str, Any] = {
         "artifact_type": "scova-cf-external-agreement",
-        "schema_version": 2,
+        "schema_version": 3,
         "protocol_checksum": protocol.checksum,
         "git_commit": _git_commit(),
         "dependency_lock_checksum": dependency_lock_checksum(),
@@ -294,6 +391,8 @@ def run_external_agreement(
             "mean_absolute_tolerance_in_scova_se": 0.25,
             "maximum_absolute_tolerance_in_scova_se": 1.0,
             "mean_signed_tolerance_in_scova_se": 0.05,
+            "degenerate_difference_in_scova_se": DEGENERATE_DIFFERENCE_IN_SCOVA_SE,
+            "scored_on": "cells-that-are-not-degenerate",
             "implementations": summaries,
         },
         "run_details": details,
@@ -329,10 +428,14 @@ def main() -> None:
         json.dumps(evidence, indent=2, sort_keys=True, allow_nan=False),
         encoding="utf-8",
     )
+    # A truncated smoke run checks that the lane executes, not that it agrees
+    # informatively -- see `_summary`. It still requires shared_score, which is
+    # the arithmetic check and is never degenerate by design.
     partial_agreement_passed = bool(
         evidence["shared_score"]["passed"]
         and all(
-            row["status"] == "complete" for row in evidence["end_to_end"]["implementations"]
+            row["status"] in SMOKE_ADMISSIBLE_STATUSES
+            for row in evidence["end_to_end"]["implementations"]
         )
     )
     if not evidence["all_numerical_agreement_gates_passed"] and not (

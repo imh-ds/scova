@@ -1376,6 +1376,176 @@ def test_comparators_only_get_a_known_propensity_when_the_design_supplies_one(
         assert all(len(set(np.asarray(value).ravel().tolist())) >= 1 for value in seen)
 
 
+def _differences(*groups: tuple[int, int, float]) -> tuple[list[float], list[int]]:
+    """Build (signed, cell_index) pairs of a given magnitude, mean-zero signed.
+
+    Alternating signs keep the signed mean at exactly zero so these fixtures
+    isolate the absolute-difference gate, which is the one the r9 pooling
+    artifact defeated.
+    """
+    signed: list[float] = []
+    cells: list[int] = []
+    for cell_index, count, magnitude in groups:
+        signed.extend(magnitude if position % 2 else -magnitude for position in range(count))
+        cells.extend([cell_index] * count)
+    return signed, cells
+
+
+def test_end_to_end_refuses_a_comparator_that_only_reproduces_scova() -> None:
+    """A comparator agreeing to 1e-14 has stopped being an independent measurement.
+
+    r9's EconML lane was reported `complete` at 2.5e-15 mean. `econml_drlearner`
+    already replicates SCOVA's outcome policy and is handed SCOVA's own fold
+    assignments; once it also fits the same propensity class, every nuisance is
+    deterministically identical and it recomputes SCOVA's own AIPW through a
+    second API. That duplicates `shared_score`, which already certifies the
+    arithmetic at 1e-13 -- it is not corroboration from an outside estimator.
+    """
+    from benchmarks.cf_external_agreement import _summary
+
+    signed, cells = _differences(*((index, 100, 2.5e-15) for index in range(8)))
+    summary = _summary("EconML.DRLearner", signed, cells, [], lane_complete=True)
+
+    # Every tolerance is satisfied, which is exactly why the old gate passed it.
+    assert float(np.abs(signed).mean()) <= 0.25
+    assert summary["status"] == "blocked/lane-degenerate"
+    assert summary["informative_cell_count"] == 0
+    assert summary["degenerate_cell_count"] == 8
+    assert summary["scored_comparison_count"] == 0
+    assert summary["total_comparison_count"] == 800
+    # No statistic may be reported for a lane that could not disagree.
+    assert summary["mean_absolute_difference_in_scova_se"] is None
+
+
+def test_end_to_end_scores_only_the_cells_that_could_disagree() -> None:
+    """Degenerate cells must not dilute the tolerance means.
+
+    This is r9's DoubleML lane to the reported decimals. DoubleMLAPOS fits a
+    one-vs-rest binary propensity per level while SCOVA fits one multi-class
+    model; at k=2 those are the same estimator, so its five k=2 cells agreed at
+    2.3e-14 while the three k=3 cells carried real disagreement. Averaging 500
+    machine-precision zeros into 450 genuine differences reported 0.1244 and
+    passed 0.25. Scored on the informative half it is 0.2626 and fails.
+    """
+    from benchmarks.cf_external_agreement import _summary
+
+    signed, cells = _differences(
+        # k=2: 5 cells x 50 replications x 2 arms, degenerate by construction.
+        *((index, 100, 2.3e-14) for index in (0, 1, 2, 3, 7)),
+        # k=3: 3 cells x 50 replications x 3 arms, genuinely informative.
+        *((index, 150, 0.2626) for index in (4, 5, 6)),
+    )
+    summary = _summary("DoubleMLAPOS", signed, cells, [], lane_complete=True)
+
+    # The artifact this check exists to remove.
+    assert round(float(np.abs(signed).mean()), 4) == 0.1244
+    assert summary["status"] == "blocked/agreement-tolerance"
+    assert summary["informative_cell_count"] == 3
+    assert summary["degenerate_cell_count"] == 5
+    assert summary["scored_comparison_count"] == 450
+    assert summary["total_comparison_count"] == 950
+    assert round(summary["mean_absolute_difference_in_scova_se"], 4) == 0.2626
+    # Excluding the zeros can only raise the mean, never lower it.
+    assert summary["mean_absolute_difference_in_scova_se"] > float(np.abs(signed).mean())
+    degenerate = {row["cell_index"] for row in summary["cells"] if row["degenerate"]}
+    assert degenerate == {0, 1, 2, 3, 7}
+
+
+def test_end_to_end_still_completes_when_every_cell_is_informative() -> None:
+    """The passing path is unchanged for a lane that genuinely agrees.
+
+    Without this the check could be satisfied by refusing everything, which
+    would be a different way of learning nothing.
+    """
+    from benchmarks.cf_external_agreement import _summary
+
+    signed, cells = _differences(*((index, 100, 0.2) for index in range(8)))
+    summary = _summary("DoubleMLAPOS", signed, cells, [], lane_complete=True)
+
+    assert summary["status"] == "complete"
+    assert summary["informative_cell_count"] == 8
+    assert summary["degenerate_cell_count"] == 0
+    assert summary["scored_comparison_count"] == summary["total_comparison_count"] == 800
+    # A blocked replication still refuses the lane, as before.
+    assert (
+        _summary(
+            "DoubleMLAPOS", signed, cells, ["cell=0 rep=0: boom"], lane_complete=True
+        )["status"]
+        == "blocked/agreement-tolerance"
+    )
+
+
+def test_informativeness_is_not_judged_on_a_truncated_smoke_lane() -> None:
+    """`external_smoke` must survive the degeneracy check.
+
+    The smoke tier runs one replication of one cell to prove the lane executes
+    at all -- it caught the r7 software block in two minutes and is the cheapest
+    check in the campaign. The frozen lane's first cell is k=2, where
+    DoubleMLAPOS is degenerate by construction, so judging a one-cell prefix for
+    informativeness would refuse every smoke run for a reason that says nothing
+    about the run. Informativeness is a property of the whole frozen lane.
+    """
+    from benchmarks.cf_external_agreement import (
+        SMOKE_ADMISSIBLE_STATUSES,
+        _summary,
+    )
+
+    signed, cells = _differences((0, 2, 2.3e-14))
+    truncated = _summary("DoubleMLAPOS", signed, cells, [], lane_complete=False)
+    frozen = _summary("DoubleMLAPOS", signed, cells, [], lane_complete=True)
+
+    assert truncated["status"] == "incomplete/degenerate-subset"
+    assert frozen["status"] == "blocked/lane-degenerate"
+    assert truncated["degenerate_cell_count"] == 1
+    # The smoke tier exits zero on this; the frozen lane must not.
+    assert truncated["status"] in SMOKE_ADMISSIBLE_STATUSES
+    assert frozen["status"] not in SMOKE_ADMISSIBLE_STATUSES
+    # And it may never be mistaken for agreement.
+    assert truncated["status"] != "complete"
+
+
+def test_end_to_end_differences_stay_bound_to_the_cell_they_came_from(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Cell attribution must survive the lane, not just the summary.
+
+    DoubleMLAPOS contributes one difference per arm and EconML.DRLearner one
+    per contrast, so the two accumulate at different rates within the same
+    replication. If the recorded cell index drifted out of step with the
+    differences, degeneracy would be judged against the wrong cell and the
+    whole check would silently mis-attribute.
+    """
+    from benchmarks import cf_external_agreement as agreement
+    from benchmarks.cf_external_validation import ExternalAgreement
+
+    protocol = CFValidationProtocol.load(V10_SPEC)
+    monkeypatch.setattr(agreement, "_environment", lambda: dict(protocol.software))
+
+    def _arms(*args: object, **_kwargs: object) -> ExternalAgreement:
+        # DoubleMLAPOS reports one estimate per arm. The value is irrelevant,
+        # the bookkeeping is not.
+        groups = int(np.max(np.asarray(args[2])) + 1)
+        return ExternalAgreement("stub", "0", "complete", estimates=(1e3,) * groups)
+
+    def _contrasts(*args: object, **_kwargs: object) -> ExternalAgreement:
+        # EconML.DRLearner reports one estimate per contrast against arm 0.
+        groups = int(np.max(np.asarray(args[2])) + 1)
+        return ExternalAgreement("stub", "0", "complete", estimates=(1e3,) * (groups - 1))
+
+    monkeypatch.setattr(agreement, "doubleml_apos", _arms)
+    monkeypatch.setattr(agreement, "econml_drlearner", _contrasts)
+    evidence = agreement.run_external_agreement(protocol, replications=2, max_cells=3)
+
+    for summary in evidence["end_to_end"]["implementations"]:
+        assert summary["total_comparison_count"] == sum(
+            row["comparison_count"] for row in summary["cells"]
+        )
+        assert [row["cell_index"] for row in summary["cells"]] == [0, 1, 2]
+        # Every cell got the same number of replications, so a drifting index
+        # would show up as an uneven split.
+        assert len({row["comparison_count"] for row in summary["cells"]}) == 1
+
+
 @pytest.mark.parametrize(
     "spec_path",
     sorted(
