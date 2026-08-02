@@ -177,7 +177,21 @@ def _grow_from_anchor(
     is a deterministic function of FACTORS alone -- no seed to record.
     """
     left_name, left_value, right_name, right_value = anchor
-    cell: dict[str, Any] = {left_name: left_value, right_name: right_value}
+    return _grow_from({left_name: left_value, right_name: right_value}, remaining)
+
+
+def _grow_from(
+    fixed: dict[str, Any], remaining: set[tuple[str, Any, str, Any]]
+) -> dict[str, Any]:
+    """Hold `fixed` and fill every remaining factor greedily.
+
+    Split out so a cell can be pinned on the factors that decide profile
+    eligibility -- support, arms, allocation, size, covariate count, learner --
+    while the six factors eligibility does not constrain are still chosen for
+    pairwise coverage. A mandatory cell that also fixed those six would spend
+    budget without earning any.
+    """
+    cell: dict[str, Any] = dict(fixed)
     for name in NAMES:
         if name in cell:
             continue
@@ -205,12 +219,34 @@ def _grow_from_anchor(
     return ordered
 
 
-def select_design() -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Greedy pairwise-covering construction; deterministic, no randomness."""
+def select_design(
+    mandatory: tuple[dict[str, Any], ...] = (),
+    *,
+    method: str = "v10-observational-greedy-pairwise-coverage-feasible",
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Greedy pairwise-covering construction; deterministic, no randomness.
+
+    `mandatory` cells are placed first and their pairs credited before the
+    greedy fill, so reserving a region costs less than its cell count. They are
+    empty by default, which leaves the v10 construction exactly as frozen.
+    """
     total = len(_all_pairs())
     remaining = _all_pairs()
     every_pair = _sorted_pairs(_all_pairs())
     chosen: list[dict[str, Any]] = []
+    for fixed in mandatory:
+        # Mandatory entries are PARTIAL cells: they pin only what the region
+        # being reserved depends on, and the rest is grown greedily so the cell
+        # still pays for its place in the budget with pairwise coverage.
+        ordered = _grow_from(dict(fixed), remaining)
+        if any(ordered[name] != value for name, value in fixed.items()):
+            # The feasibility repair moves n_per_group, which would silently
+            # relocate the very cell being reserved.
+            raise SystemExit(f"mandatory cell {fixed} was altered into {ordered}")
+        if ordered in chosen:
+            raise SystemExit(f"mandatory cell is duplicated: {ordered}")
+        chosen.append(ordered)
+        remaining -= _covered_by(ordered)
     filler = 0
     while len(chosen) < RETAINED_CELLS:
         if remaining:
@@ -226,7 +262,7 @@ def select_design() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         if cell not in chosen:
             chosen.append(cell)
     provenance = {
-        "method": "v10-observational-greedy-pairwise-coverage-feasible",
+        "method": method,
         "candidate_order": "declared-factor-level-order",
         "retained_cells": RETAINED_CELLS,
         "tie_break": "earliest-declared-level",
@@ -234,6 +270,8 @@ def select_design() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         "pairwise_pairs_covered": total - len(remaining),
         "minimum_expected_smallest_arm": MINIMUM_EXPECTED_ARM,
     }
+    if mandatory:
+        provenance["mandatory_cells"] = len(mandatory)
     return chosen, provenance
 
 

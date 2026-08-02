@@ -1201,6 +1201,7 @@ def test_overlap_factor_is_the_only_lever_on_common_support() -> None:
 
 
 V10_SPEC = Path("benchmarks/specs/cf_reference_v10.json")
+V11_SPEC = Path("benchmarks/specs/cf_reference_v11.json")
 
 
 def test_v10_is_a_wholly_observational_protocol_reusing_no_evidence() -> None:
@@ -1845,3 +1846,81 @@ def test_design_coverage_audit_requires_complete_pairwise_coverage() -> None:
     }
 
     assert any("pairwise coverage" in failure for failure in design_coverage_failures(spec))
+
+
+def test_v11_grid_satisfies_the_coverage_audit_that_v10_fails() -> None:
+    """The point of the rebuild, stated as the gate it has to pass.
+
+    v10's eligible cells fell 9 / 1 / 0 / 1 across the claimed (n_groups,
+    learner) strata because pairwise coverage optimizes marginals while
+    eligibility is a conjunction, so eligible cells only ever arose by
+    accident. v11 reserves the region first and spends what is left on
+    coverage.
+    """
+    from scripts.generate_cf_v10_design import (
+        MINIMUM_ELIGIBLE_CELLS_PER_STRATUM,
+        design_coverage_failures,
+        eligible_cells_by_stratum,
+    )
+
+    v11 = json.loads(V11_SPEC.read_text(encoding="utf-8"))
+    v10 = json.loads(V10_SPEC.read_text(encoding="utf-8"))
+
+    assert design_coverage_failures(v11) == []
+    assert design_coverage_failures(v10), "v10 must still fail, or the audit proves nothing"
+    counts = eligible_cells_by_stratum(v11)
+    assert set(counts) == {(2, "linear"), (2, "adaptive"), (3, "linear"), (3, "adaptive")}
+    assert min(counts.values()) >= MINIMUM_ELIGIBLE_CELLS_PER_STRATUM
+    # The stratum that was empty is the one worth naming.
+    assert counts[(3, "linear")] >= MINIMUM_ELIGIBLE_CELLS_PER_STRATUM
+
+
+def test_v11_is_reproducible_and_collapses_no_factor() -> None:
+    """Rebuilding the grid must not buy eligibility by narrowing the design.
+
+    A cheap way to populate every stratum is to drop the factors that make
+    cells hard to populate. That would trade a coverage gap for a blind spot,
+    so the factor space and the pairwise claim both have to survive intact.
+    """
+    from scripts.generate_cf_v11_design import build_spec
+
+    protocol = CFValidationProtocol.load(V11_SPEC)
+    v10 = CFValidationProtocol.load(V10_SPEC)
+    regenerated = build_spec()
+
+    assert regenerated["retained_cells"] == [dict(cell) for cell in protocol.retained_cells]
+    assert dict(protocol.factors) == dict(v10.factors)
+    assert dict(protocol.metrics) == dict(v10.metrics)
+    provenance = regenerated["design_selection"]
+    assert provenance["pairwise_pairs_covered"] == provenance["pairwise_pairs_total"]
+    assert len(protocol.retained_cells) == 48
+    assert protocol.protocol_id.endswith("v11")
+    assert protocol.checksum != v10.checksum
+
+
+def test_v11_brackets_the_density_bound_it_is_meant_to_estimate() -> None:
+    """v10 could not inform its own arm-density bound.
+
+    Every eligible cell sat at or above 10.0 and five sat exactly on it, so the
+    lane the bound was fitted on held nothing on the other side of it. Cells
+    that clear the absolute count floor but fail on density alone are what
+    separate the two terms.
+    """
+    from scripts.generate_cf_v10_design import expected_smallest_arm
+
+    protocol = CFValidationProtocol.load(V11_SPEC)
+    bound = float(protocol.reference_profile["minimum_arm_units_per_covariate"])
+    floor = float(protocol.reference_profile["minimum_group_count"])
+
+    isolating = [
+        cell
+        for cell in protocol.retained_cells
+        if cell["support"] == "strong"
+        and int(cell["n_groups"]) <= int(protocol.reference_profile["maximum_group_count"])
+        and expected_smallest_arm(dict(cell)) >= floor
+        and expected_smallest_arm(dict(cell)) / int(cell["n_covariates"]) < bound
+    ]
+    assert isolating, "no cell fails on density alone; the bound stays unidentified"
+    for groups in (2, 3):
+        below = [cell for cell in isolating if int(cell["n_groups"]) == groups]
+        assert below, f"k={groups} has no sub-boundary density cell"
