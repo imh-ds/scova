@@ -2079,6 +2079,8 @@ def test_boundary_procedure_refuses_an_unidentifiable_design_before_fitting() ->
         ({"pass_probability_target": 0.8}, "pass_probability_target"),
         ({"minimum_distinct_densities_per_stratum": 2}, "at least 3"),
         ({"bootstrap_resamples": 100}, "at least 1000"),
+        ({"minimum_observations_per_parameter": 0}, "must be positive"),
+        ({"require_bracketing_per_stratum": "yes"}, "must be boolean"),
     ],
 )
 def test_boundary_declaration_rejects_valid_json_with_wrong_content(
@@ -2104,3 +2106,45 @@ def test_boundary_declaration_is_absent_from_earlier_protocols() -> None:
         assert CFValidationProtocol.load(spec_path).boundary_estimation is None
     v10 = CFValidationProtocol.load(V10_SPEC)
     assert v10.checksum == "a1c54a76e1fb8401f8d1b7eea50c16ccd77cd9e0e1f0afdb08fe28594c6caccb"
+
+
+@pytest.mark.parametrize(
+    ("block", "dropped"),
+    [("boundary_estimation", "bootstrap_seed"), ("external_agreement", "family_wise_error")],
+)
+def test_preregistered_blocks_reject_a_missing_key(block: str, dropped: str) -> None:
+    """A silently absent key is a procedure that was never fully declared."""
+    values = json.loads(V11_SPEC.read_text(encoding="utf-8"))
+    values[block] = {k: v for k, v in values[block].items() if k != dropped}
+
+    with pytest.raises(ValueError, match="must declare exactly"):
+        CFValidationProtocol.from_dict(values)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ({"comparator_folds": "scova"}, "comparator_folds"),
+        ({"statistic": "absolute-difference-in-scova-se"}, "statistic"),
+        ({"unit_of_observation": "arm"}, "unit_of_observation"),
+        ({"strata": "cell"}, "strata"),
+        ({"comparator_fold_seed_offset": 0}, "non-zero"),
+        ({"family_wise_error": 0.0}, "family_wise_error"),
+        ({"minimum_informative_cell_fraction": 0.0}, "minimum_informative_cell_fraction"),
+        ({"degenerate_difference_in_scova_se": 0.0}, "degenerate_difference_in_scova_se"),
+    ],
+)
+def test_external_agreement_declaration_rejects_wrong_content(
+    mutation: dict[str, object], message: str
+) -> None:
+    """Every degree of freedom in the lane policy has to be a declared one.
+
+    `comparator_fold_seed_offset = 0` is the one worth naming: it parses, it
+    validates as an integer, and it silently hands the comparators SCOVA's own
+    folds again -- restoring the exact degeneracy the policy exists to prevent.
+    """
+    values = json.loads(V11_SPEC.read_text(encoding="utf-8"))
+    values["external_agreement"] = {**values["external_agreement"], **mutation}
+
+    with pytest.raises(ValueError, match=message):
+        CFValidationProtocol.from_dict(values)
