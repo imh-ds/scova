@@ -68,7 +68,7 @@ on:
         required: true
         # Keep this at the current freeze. A stale default means a dispatch
         # from the web UI silently runs a superseded one.
-        default: scova-cf-reference-v11-freeze-r1
+        default: scova-cf-reference-v11-freeze-r2
 
 permissions:
   actions: read
