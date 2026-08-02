@@ -56,7 +56,9 @@ _BASE_OFFSET_Z = 1.959963984540054
 # What a non-authoritative `--allow-incomplete` smoke run may end on. The
 # authoritative gate is `all_numerical_agreement_gates_passed`, which requires
 # the complete frozen lane and "complete" from both implementations.
-SMOKE_ADMISSIBLE_STATUSES = frozenset({"complete", "incomplete/degenerate-subset"})
+SMOKE_ADMISSIBLE_STATUSES = frozenset(
+    {"complete", "incomplete/degenerate-subset", "incomplete/unscored-subset"}
+)
 
 
 def _maximum_error(left: np.ndarray, right: np.ndarray) -> float:
@@ -228,10 +230,20 @@ def _summary(
         }
         for name, values in sorted(by_stratum.items())
     }
+    # Two different failures, and conflating them broke the smoke tier. A
+    # stratum whose offset is estimable and too large is a real signal on any
+    # lane. A stratum with too few units to estimate an offset at all is a
+    # statement about the run's size: on the complete lane that means no
+    # observed spread and must fail closed, but `external_smoke` deliberately
+    # runs ONE replication, so every stratum is unestimable by construction and
+    # a combined check refuses the canary every time.
     breaching = sorted(
         name
         for name, values in strata.items()
-        if values["offset_z"] is None or abs(values["offset_z"]) > critical_z
+        if values["offset_z"] is not None and abs(values["offset_z"]) > critical_z
+    )
+    unestimable = sorted(
+        name for name, values in strata.items() if values["offset_z"] is None
     )
 
     if not records:
@@ -240,10 +252,14 @@ def _summary(
         status = (
             "blocked/lane-degenerate" if lane_complete else "incomplete/degenerate-subset"
         )
-    elif not blocked and not breaching:
-        status = "complete"
-    else:
+    elif blocked or breaching:
         status = "blocked/agreement-tolerance"
+    elif unestimable:
+        status = (
+            "blocked/agreement-tolerance" if lane_complete else "incomplete/unscored-subset"
+        )
+    else:
+        status = "complete"
     return {
         "implementation": name,
         "status": status,
@@ -255,6 +271,7 @@ def _summary(
             else max(abs(row["offset_z"]) for row in strata.values())
         ),
         "breaching_strata": breaching,
+        "unestimable_strata": unestimable,
         "strata": strata,
         # Everything below describes the denominator the figures above were
         # computed on, so a reader can tell a lane that agreed from a lane that

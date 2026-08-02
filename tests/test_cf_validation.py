@@ -1477,6 +1477,72 @@ def test_end_to_end_requires_every_cell_to_be_informative() -> None:
     assert truncated["status"] == "incomplete/degenerate-subset"
 
 
+def test_one_replication_does_not_refuse_the_smoke_lane() -> None:
+    """The r1 smoke failure, pinned.
+
+    `external_smoke` runs `--replications 1 --max-cells 1`, so every stratum
+    holds one unit and no offset can be estimated. Treating unestimable the
+    same as breaching refused the canary every time -- and it is the cheapest
+    check in the campaign, the one that caught the r7 software block in two
+    minutes. An estimable offset that is too large still fails on any lane; it
+    is only the unestimable case that a truncated run is excused.
+    """
+    from benchmarks.cf_external_agreement import SMOKE_ADMISSIBLE_STATUSES, _summary
+
+    single = [
+        {
+            "cell_index": 0,
+            "repetition": 0,
+            "stratum": "k=2,linear",
+            "differences": [-0.198, -0.247],
+        }
+    ]
+    smoke = _summary(
+        "DoubleMLAPOS", single, [], lane_complete=False, critical_z=2.236,
+        minimum_informative_fraction=1.0,
+    )
+
+    assert smoke["status"] == "incomplete/unscored-subset"
+    assert smoke["status"] in SMOKE_ADMISSIBLE_STATUSES
+    assert smoke["unestimable_strata"] == ["k=2,linear"]
+    assert smoke["breaching_strata"] == []
+    # The independent folds did their job: the cell is informative, which is
+    # what the smoke run is there to demonstrate.
+    assert smoke["informative_cell_fraction"] == 1.0
+    assert smoke["degenerate_cell_count"] == 0
+
+    # The same shape on the COMPLETE lane means no observed spread, and must
+    # fail closed rather than be excused.
+    frozen = _summary(
+        "DoubleMLAPOS", single, [], lane_complete=True, critical_z=2.236,
+        minimum_informative_fraction=1.0,
+    )
+    assert frozen["status"] == "blocked/agreement-tolerance"
+    assert frozen["status"] not in SMOKE_ADMISSIBLE_STATUSES
+
+
+def test_a_real_breach_still_fails_a_truncated_lane() -> None:
+    """Being excused for size must not excuse a measurable disagreement."""
+    from benchmarks.cf_external_agreement import _summary
+
+    records = [
+        {
+            "cell_index": 0,
+            "repetition": index,
+            "stratum": "k=2,linear",
+            "differences": [2.0 + 0.01 * index],
+        }
+        for index in range(12)
+    ]
+    summary = _summary(
+        "DoubleMLAPOS", records, [], lane_complete=False, critical_z=2.236,
+        minimum_informative_fraction=1.0,
+    )
+
+    assert summary["breaching_strata"] == ["k=2,linear"]
+    assert summary["status"] == "blocked/agreement-tolerance"
+
+
 def test_comparator_folds_are_independent_of_scova_folds() -> None:
     """Different splits, same group-stratified guarantee.
 
