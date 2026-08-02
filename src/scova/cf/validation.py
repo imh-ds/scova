@@ -68,6 +68,7 @@ class CFValidationProtocol:
     threshold_quantiles: Mapping[str, tuple[float, ...]] | None = None
     calibration_screening: Mapping[str, float] | None = None
     boundary_estimation: Mapping[str, Any] | None = None
+    external_agreement: Mapping[str, Any] | None = None
     calibration_enrichment_screening: bool = False
     calibration_candidate_retention_fraction: float = 1.0
     calibration_source: Mapping[str, str] | None = None
@@ -178,6 +179,8 @@ class CFValidationProtocol:
                 )
         if self.boundary_estimation is not None:
             self._validate_boundary_estimation()
+        if self.external_agreement is not None:
+            self._validate_external_agreement()
         if self.calibration_source is not None:
             required_source = {
                 "protocol_id",
@@ -304,6 +307,11 @@ class CFValidationProtocol:
                 if self.boundary_estimation is None
                 else {"boundary_estimation": dict(self.boundary_estimation)}
             ),
+            **(
+                {}
+                if self.external_agreement is None
+                else {"external_agreement": dict(self.external_agreement)}
+            ),
         }
 
     _BOUNDARY_ESTIMATION_SCHEMA: ClassVar[Mapping[str, Any]] = {
@@ -362,6 +370,48 @@ class CFValidationProtocol:
         if int(declared["bootstrap_resamples"]) < 1000:
             raise ValueError("boundary_estimation.bootstrap_resamples must be at least 1000")
         int(declared["bootstrap_seed"])
+
+    _EXTERNAL_AGREEMENT_SCHEMA: ClassVar[Mapping[str, Any]] = {
+        "comparator_folds": {"independent"},
+        "statistic": {"standardized-offset-z"},
+        "unit_of_observation": {"cell-replication"},
+        "strata": {"n_groups-by-learner"},
+    }
+
+    def _validate_external_agreement(self) -> None:
+        """Reject an end-to-end policy that parses but cannot mean anything."""
+        declared = dict(self.external_agreement or {})
+        expected = set(self._EXTERNAL_AGREEMENT_SCHEMA) | {
+            "comparator_fold_seed_offset",
+            "family_wise_error",
+            "minimum_informative_cell_fraction",
+            "degenerate_difference_in_scova_se",
+        }
+        if set(declared) != expected:
+            raise ValueError(
+                "external_agreement must declare exactly "
+                f"{sorted(expected)}; got {sorted(declared)}"
+            )
+        for name, allowed in self._EXTERNAL_AGREEMENT_SCHEMA.items():
+            if declared[name] not in allowed:
+                raise ValueError(
+                    f"external_agreement.{name} must be one of {sorted(allowed)}; "
+                    f"got {declared[name]!r}"
+                )
+        if int(declared["comparator_fold_seed_offset"]) == 0:
+            # Offset zero silently restores SCOVA's own folds, which is the
+            # degeneracy this policy exists to prevent.
+            raise ValueError("external_agreement.comparator_fold_seed_offset must be non-zero")
+        if not 0.0 < float(declared["family_wise_error"]) < 1.0:
+            raise ValueError("external_agreement.family_wise_error must lie in (0, 1)")
+        if not 0.0 < float(declared["minimum_informative_cell_fraction"]) <= 1.0:
+            raise ValueError(
+                "external_agreement.minimum_informative_cell_fraction must lie in (0, 1]"
+            )
+        if not 0.0 < float(declared["degenerate_difference_in_scova_se"]) < 1.0:
+            raise ValueError(
+                "external_agreement.degenerate_difference_in_scova_se must lie in (0, 1)"
+            )
 
     @property
     def checksum(self) -> str:
@@ -424,6 +474,11 @@ class CFValidationProtocol:
                 None
                 if values.get("boundary_estimation") is None
                 else dict(values["boundary_estimation"])
+            ),
+            external_agreement=(
+                None
+                if values.get("external_agreement") is None
+                else dict(values["external_agreement"])
             ),
             calibration_source=(
                 None

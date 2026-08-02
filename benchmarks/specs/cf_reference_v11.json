@@ -42,6 +42,16 @@
   "retained_cells": 48,
   "tie_break": "earliest-declared-level"
  },
+ "external_agreement": {
+  "comparator_fold_seed_offset": 811,
+  "comparator_folds": "independent",
+  "degenerate_difference_in_scova_se": 1e-10,
+  "family_wise_error": 0.05,
+  "minimum_informative_cell_fraction": 1.0,
+  "statistic": "standardized-offset-z",
+  "strata": "n_groups-by-learner",
+  "unit_of_observation": "cell-replication"
+ },
  "external_cells": [
   {
    "allocation": "balanced",

@@ -1378,132 +1378,147 @@ def test_comparators_only_get_a_known_propensity_when_the_design_supplies_one(
         assert all(len(set(np.asarray(value).ravel().tolist())) >= 1 for value in seen)
 
 
-def _differences(*groups: tuple[int, int, float]) -> tuple[list[float], list[int]]:
-    """Build (signed, cell_index) pairs of a given magnitude, mean-zero signed.
+def _records(*groups: tuple[int, str, int, float]) -> list[dict[str, object]]:
+    """Build (cell, repetition) records whose per-unit mean is the given size.
 
-    Alternating signs keep the signed mean at exactly zero so these fixtures
-    isolate the absolute-difference gate, which is the one the r9 pooling
-    artifact defeated.
+    Signs alternate across repetitions so the offset averages to zero: these
+    fixtures represent two implementations that differ only by fold noise,
+    which is what independent splits produce when both are correct.
     """
-    signed: list[float] = []
-    cells: list[int] = []
-    for cell_index, count, magnitude in groups:
-        signed.extend(magnitude if position % 2 else -magnitude for position in range(count))
-        cells.extend([cell_index] * count)
-    return signed, cells
+    records: list[dict[str, object]] = []
+    for cell_index, stratum, count, magnitude in groups:
+        for repetition in range(count):
+            sign = 1.0 if repetition % 2 else -1.0
+            records.append(
+                {
+                    "cell_index": cell_index,
+                    "repetition": repetition,
+                    "stratum": stratum,
+                    "differences": [sign * magnitude, sign * magnitude],
+                }
+            )
+    return records
 
 
-def test_end_to_end_refuses_a_comparator_that_only_reproduces_scova() -> None:
-    """A comparator agreeing to 1e-14 has stopped being an independent measurement.
+def test_offset_z_ignores_fold_noise_but_catches_a_systematic_shift() -> None:
+    """The statistic independent folds require.
 
-    r9's EconML lane was reported `complete` at 2.5e-15 mean. `econml_drlearner`
-    already replicates SCOVA's outcome policy and is handed SCOVA's own fold
-    assignments; once it also fits the same propensity class, every nuisance is
-    deterministically identical and it recomputes SCOVA's own AIPW through a
-    second API. That duplicates `shared_score`, which already certifies the
-    arithmetic at 1e-13 -- it is not corroboration from an outside estimator.
+    Under different splits an individual difference carries fold noise even
+    when both implementations are right -- scatter alone was measured at a
+    pooled mean |d| of 0.6324 against the old 0.25 tolerance. Random noise
+    averages out across replications; a systematic offset does not.
+    """
+    from benchmarks.cf_external_agreement import _offset_z
+
+    rng = np.random.default_rng(0)
+    noise = rng.normal(0.0, 0.63, size=50).tolist()
+    assert abs(_offset_z(noise)) < 3.0
+    shifted = [value + 0.5 for value in noise]
+    assert abs(_offset_z(shifted)) > 3.0
+    # Unestimable rather than infinite when there is nothing to average.
+    assert _offset_z([0.4]) is None
+    assert _offset_z([0.4, 0.4, 0.4]) is None
+
+
+def test_end_to_end_passes_on_fold_noise_and_fails_on_an_offset() -> None:
+    """Scatter alone must not fail the lane, and a real shift must."""
+    from benchmarks.cf_external_agreement import _summary
+
+    noisy = _records((0, "k=2,linear", 40, 0.63), (1, "k=3,adaptive", 40, 0.63))
+    passing = _summary(
+        "DoubleMLAPOS", noisy, [], lane_complete=True, critical_z=3.0,
+        minimum_informative_fraction=1.0,
+    )
+    assert passing["status"] == "complete"
+    assert passing["maximum_absolute_offset_z"] < 3.0
+    # The old gate scored |difference| against 0.25 and would have refused this.
+    assert all(
+        abs(value) > 0.25
+        for record in noisy
+        for value in record["differences"]  # type: ignore[attr-defined]
+    )
+
+    shifted = [
+        {**record, "differences": [value + 0.5 for value in record["differences"]]}
+        for record in noisy
+    ]
+    failing = _summary(
+        "DoubleMLAPOS", shifted, [], lane_complete=True, critical_z=3.0,
+        minimum_informative_fraction=1.0,
+    )
+    assert failing["status"] == "blocked/agreement-tolerance"
+    assert failing["breaching_strata"] == ["k=2,linear", "k=3,adaptive"]
+
+
+def test_end_to_end_requires_every_cell_to_be_informative() -> None:
+    """Under independent folds there is no legitimate route to identity.
+
+    A degenerate cell therefore means the fold independence did not take
+    effect, which is the silent-harness failure this lane has produced twice --
+    once with a constant propensity handed to both comparators, once when the
+    one-vs-rest estimator change made SCOVA and DoubleMLAPOS the same fit.
     """
     from benchmarks.cf_external_agreement import _summary
 
-    signed, cells = _differences(*((index, 100, 2.5e-15) for index in range(8)))
-    summary = _summary("EconML.DRLearner", signed, cells, [], lane_complete=True)
+    records = _records((0, "k=2,linear", 40, 0.63), (1, "k=3,adaptive", 40, 1e-15))
+    summary = _summary(
+        "DoubleMLAPOS", records, [], lane_complete=True, critical_z=3.0,
+        minimum_informative_fraction=1.0,
+    )
 
-    # Every tolerance is satisfied, which is exactly why the old gate passed it.
-    assert float(np.abs(signed).mean()) <= 0.25
     assert summary["status"] == "blocked/lane-degenerate"
-    assert summary["informative_cell_count"] == 0
-    assert summary["degenerate_cell_count"] == 8
-    assert summary["scored_comparison_count"] == 0
-    assert summary["total_comparison_count"] == 800
-    # No statistic may be reported for a lane that could not disagree.
-    assert summary["mean_absolute_difference_in_scova_se"] is None
-
-
-def test_end_to_end_scores_only_the_cells_that_could_disagree() -> None:
-    """Degenerate cells must not dilute the tolerance means.
-
-    This is r9's DoubleML lane to the reported decimals. DoubleMLAPOS fits a
-    one-vs-rest binary propensity per level while SCOVA fits one multi-class
-    model; at k=2 those are the same estimator, so its five k=2 cells agreed at
-    2.3e-14 while the three k=3 cells carried real disagreement. Averaging 500
-    machine-precision zeros into 450 genuine differences reported 0.1244 and
-    passed 0.25. Scored on the informative half it is 0.2626 and fails.
-    """
-    from benchmarks.cf_external_agreement import _summary
-
-    signed, cells = _differences(
-        # k=2: 5 cells x 50 replications x 2 arms, degenerate by construction.
-        *((index, 100, 2.3e-14) for index in (0, 1, 2, 3, 7)),
-        # k=3: 3 cells x 50 replications x 3 arms, genuinely informative.
-        *((index, 150, 0.2626) for index in (4, 5, 6)),
+    assert summary["informative_cell_fraction"] == 0.5
+    assert summary["degenerate_cell_count"] == 1
+    # Still not judged that way on a truncated smoke run.
+    truncated = _summary(
+        "DoubleMLAPOS", records, [], lane_complete=False, critical_z=3.0,
+        minimum_informative_fraction=1.0,
     )
-    summary = _summary("DoubleMLAPOS", signed, cells, [], lane_complete=True)
-
-    # The artifact this check exists to remove.
-    assert round(float(np.abs(signed).mean()), 4) == 0.1244
-    assert summary["status"] == "blocked/agreement-tolerance"
-    assert summary["informative_cell_count"] == 3
-    assert summary["degenerate_cell_count"] == 5
-    assert summary["scored_comparison_count"] == 450
-    assert summary["total_comparison_count"] == 950
-    assert round(summary["mean_absolute_difference_in_scova_se"], 4) == 0.2626
-    # Excluding the zeros can only raise the mean, never lower it.
-    assert summary["mean_absolute_difference_in_scova_se"] > float(np.abs(signed).mean())
-    degenerate = {row["cell_index"] for row in summary["cells"] if row["degenerate"]}
-    assert degenerate == {0, 1, 2, 3, 7}
-
-
-def test_end_to_end_still_completes_when_every_cell_is_informative() -> None:
-    """The passing path is unchanged for a lane that genuinely agrees.
-
-    Without this the check could be satisfied by refusing everything, which
-    would be a different way of learning nothing.
-    """
-    from benchmarks.cf_external_agreement import _summary
-
-    signed, cells = _differences(*((index, 100, 0.2) for index in range(8)))
-    summary = _summary("DoubleMLAPOS", signed, cells, [], lane_complete=True)
-
-    assert summary["status"] == "complete"
-    assert summary["informative_cell_count"] == 8
-    assert summary["degenerate_cell_count"] == 0
-    assert summary["scored_comparison_count"] == summary["total_comparison_count"] == 800
-    # A blocked replication still refuses the lane, as before.
-    assert (
-        _summary(
-            "DoubleMLAPOS", signed, cells, ["cell=0 rep=0: boom"], lane_complete=True
-        )["status"]
-        == "blocked/agreement-tolerance"
-    )
-
-
-def test_informativeness_is_not_judged_on_a_truncated_smoke_lane() -> None:
-    """`external_smoke` must survive the degeneracy check.
-
-    The smoke tier runs one replication of one cell to prove the lane executes
-    at all -- it caught the r7 software block in two minutes and is the cheapest
-    check in the campaign. The frozen lane's first cell is k=2, where
-    DoubleMLAPOS is degenerate by construction, so judging a one-cell prefix for
-    informativeness would refuse every smoke run for a reason that says nothing
-    about the run. Informativeness is a property of the whole frozen lane.
-    """
-    from benchmarks.cf_external_agreement import (
-        SMOKE_ADMISSIBLE_STATUSES,
-        _summary,
-    )
-
-    signed, cells = _differences((0, 2, 2.3e-14))
-    truncated = _summary("DoubleMLAPOS", signed, cells, [], lane_complete=False)
-    frozen = _summary("DoubleMLAPOS", signed, cells, [], lane_complete=True)
-
     assert truncated["status"] == "incomplete/degenerate-subset"
-    assert frozen["status"] == "blocked/lane-degenerate"
-    assert truncated["degenerate_cell_count"] == 1
-    # The smoke tier exits zero on this; the frozen lane must not.
-    assert truncated["status"] in SMOKE_ADMISSIBLE_STATUSES
-    assert frozen["status"] not in SMOKE_ADMISSIBLE_STATUSES
-    # And it may never be mistaken for agreement.
-    assert truncated["status"] != "complete"
+
+
+def test_comparator_folds_are_independent_of_scova_folds() -> None:
+    """Different splits, same group-stratified guarantee.
+
+    A comparator handed a training fold missing an arm cannot fit a propensity
+    for it, so the independence has to come from the same construction under a
+    different seed rather than from an arbitrary reshuffle.
+    """
+    from benchmarks.cf_external_agreement import _agreement_policy, _comparator_folds
+    from benchmarks.cf_reference_campaign import _declaration, simulate_reference_cell
+    from scova.cf import SCOVACF
+
+    protocol = CFValidationProtocol.load(V11_SPEC)
+    agreement = _agreement_policy(protocol)
+    assert agreement["comparator_folds"] == "independent"
+
+    cell = dict(protocol.external_cells[4])
+    generated = simulate_reference_cell(cell, seed=1_600_000_004)
+    declaration = _declaration(generated, cell, include_stability=False)
+    result = SCOVACF().analyze(generated.data, declaration)
+    codes = np.array(
+        [result.group_labels.index(value) for value in generated.data["group"]]
+    )
+    folds = _comparator_folds(generated.data, declaration, codes, agreement)
+
+    assert not np.array_equal(folds, result.fold_assignments)
+    assert set(np.unique(folds)) == set(np.unique(result.fold_assignments))
+    # Every fold must still contain every arm on both sides of the split.
+    for fold in np.unique(folds):
+        assert set(np.unique(codes[folds != fold])) == set(np.unique(codes))
+
+
+def test_earlier_protocols_keep_shared_folds_and_their_checksums() -> None:
+    """v3-v10 sealed their evidence under shared folds; that must not move."""
+    from benchmarks.cf_external_agreement import _agreement_policy
+
+    for spec_path in (SPEC, V9_SPEC, V10_SPEC):
+        protocol = CFValidationProtocol.load(spec_path)
+        assert protocol.external_agreement is None
+        assert _agreement_policy(protocol)["comparator_folds"] == "scova"
+    assert CFValidationProtocol.load(V10_SPEC).checksum == (
+        "a1c54a76e1fb8401f8d1b7eea50c16ccd77cd9e0e1f0afdb08fe28594c6caccb"
+    )
 
 
 def test_end_to_end_differences_stay_bound_to_the_cell_they_came_from(
@@ -1539,13 +1554,16 @@ def test_end_to_end_differences_stay_bound_to_the_cell_they_came_from(
     evidence = agreement.run_external_agreement(protocol, replications=2, max_cells=3)
 
     for summary in evidence["end_to_end"]["implementations"]:
-        assert summary["total_comparison_count"] == sum(
-            row["comparison_count"] for row in summary["cells"]
-        )
+        assert summary["total_unit_count"] == 3 * 2
         assert [row["cell_index"] for row in summary["cells"]] == [0, 1, 2]
         # Every cell got the same number of replications, so a drifting index
         # would show up as an uneven split.
         assert len({row["comparison_count"] for row in summary["cells"]}) == 1
+        # Strata are read off the cell, so they must match the design.
+        assert set(summary["strata"]) == {
+            f"k={int(dict(cell)['n_groups'])},{dict(cell)['learner']}"
+            for cell in protocol.external_cells[:3]
+        }
 
 
 @pytest.mark.parametrize(

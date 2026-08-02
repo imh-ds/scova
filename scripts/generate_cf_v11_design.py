@@ -67,6 +67,42 @@ SELECTION_METHOD = "v11-observational-reserved-eligibility-then-pairwise-coverag
 #   moving `reference_profile.minimum_arm_units_per_covariate` stays a human
 #   decision needing a new freeze. A campaign that can rescope itself to the
 #   cells that passed is the v8 trap with extra arithmetic.
+# The external end-to-end lane, preregistered.
+#
+# Handed SCOVA's own folds the comparators reproduce SCOVA's nuisances exactly:
+# both fit the declared learner family, and since v11 both fit the propensity
+# one arm at a time. Measured on the v11 external cells, the k=3 comparisons --
+# which carried 100% of the r9 lane's information -- now agree at exactly
+# 0.000e+00. An identity is not corroboration, and `shared_score` already
+# certifies the arithmetic at 1e-13.
+#
+# So the comparators get independent folds, which makes agreement a claim about
+# two implementations rather than about one implementation twice. The cost is
+# that raw differences now carry fold noise: fold-induced scatter alone was
+# measured at a pooled mean |d| of 0.6324 against the old 0.25 tolerance and a
+# maximum of 6.70 against 1.0. The same measurement kept the standardized
+# offset within +/-1.5 across every stratum, because random fold noise averages
+# out across replications and a real implementation difference does not. That
+# is the statistic this lane now scores.
+#
+# The informative fraction is 1.0. Under independent splits there is no
+# legitimate route to identity, so a degenerate cell means the independence did
+# not take effect -- which is the silent-harness failure this lane has produced
+# twice. Requiring every cell to be informative makes that unmissable.
+EXTERNAL_AGREEMENT: dict[str, Any] = {
+    "comparator_folds": "independent",
+    # Added to each cell's declared random_state. The fold construction runs its
+    # seed through a SplitMix64 avalanche, so any offset reorders the whole
+    # partition rather than perturbing ties.
+    "comparator_fold_seed_offset": 811,
+    "statistic": "standardized-offset-z",
+    "unit_of_observation": "cell-replication",
+    "strata": "n_groups-by-learner",
+    "family_wise_error": 0.05,
+    "minimum_informative_cell_fraction": 1.0,
+    "degenerate_difference_in_scova_se": 1e-10,
+}
+
 BOUNDARY_ESTIMATION: dict[str, Any] = {
     "target": "minimum_arm_units_per_covariate",
     "unit_of_observation": "cell",
@@ -173,6 +209,7 @@ def build_spec() -> dict[str, Any]:
     spec["retained_cells"] = retained
     spec["design_selection"] = provenance
     spec["boundary_estimation"] = dict(BOUNDARY_ESTIMATION)
+    spec["external_agreement"] = dict(EXTERNAL_AGREEMENT)
     return spec
 
 

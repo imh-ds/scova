@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import platform
+from collections.abc import Mapping
+from dataclasses import replace
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
@@ -30,6 +33,7 @@ from scova.cf import (
     SCOVACFRefusal,
     canonical_checksum,
 )
+from scripts.calibrate_cf_support import _family_wise_multiplier
 
 # An end-to-end cell is only evidence if the outside implementation is free to
 # disagree. When every difference in a cell sits at the precision the SHARED
@@ -43,6 +47,11 @@ from scova.cf import (
 # 2.5e-15 to 2.3e-14 and the weakest informative cell at 1.1e-1 -- so the exact
 # value is not delicate.
 DEGENERATE_DIFFERENCE_IN_SCOVA_SE = 1e-10
+
+# Used only when a protocol declares no family-wise budget. Two-sided 5% on a
+# single test; the declared budget supersedes it for every protocol that has
+# one.
+_BASE_OFFSET_Z = 1.959963984540054
 
 # What a non-authoritative `--allow-incomplete` smoke run may end on. The
 # authoritative gate is `all_numerical_agreement_gates_passed`, which requires
@@ -71,97 +80,191 @@ def _environment() -> dict[str, str]:
     return values
 
 
+def _agreement_policy(protocol: CFValidationProtocol) -> dict[str, Any]:
+    """Read the preregistered external-agreement policy, or the v3-v10 default.
+
+    Protocols without the block keep shared folds and the raw SE-difference
+    tolerances they were frozen with; nothing about their evidence moves.
+    """
+    declared = getattr(protocol, "external_agreement", None)
+    if declared is None:
+        return {
+            "comparator_folds": "scova",
+            "statistic": "absolute-difference-in-scova-se",
+            "minimum_informative_cell_fraction": 0.0,
+        }
+    return dict(declared)
+
+
+def _comparator_folds(
+    data: Any, declaration: Any, group_codes: np.ndarray, agreement: Mapping[str, Any]
+) -> np.ndarray:
+    """Fold assignments for the comparators.
+
+    Built with SCOVA-CF's own fold construction under a different seed rather
+    than a second splitter: the same group-stratified guarantee has to hold, or
+    a comparator can be handed a training fold missing an arm. The seed salt is
+    run through a SplitMix64 avalanche precisely so a changed seed reorders
+    everything rather than perturbing a few ties.
+    """
+    if agreement.get("comparator_folds") != "independent":
+        raise ValueError("comparator folds requested without an independent-fold policy")
+    offset = int(agreement["comparator_fold_seed_offset"])
+    shifted = replace(declaration, random_state=int(declaration.random_state) + offset)
+    folds, _stratified = SCOVACF._design_folds(data, shifted, group_codes)
+    return folds
+
+
+def _record(
+    cell: Mapping[str, Any], cell_index: int, repetition: int, differences: list[float]
+) -> dict[str, Any]:
+    return {
+        "cell_index": cell_index,
+        "repetition": repetition,
+        "stratum": f"k={int(cell['n_groups'])},{cell['learner']}",
+        "differences": [float(value) for value in differences],
+    }
+
+
+def _offset_z(unit_means: list[float]) -> float | None:
+    """Standardized offset between two implementations, or None if unestimable.
+
+    Under independent folds the comparators no longer share SCOVA's sample
+    splits, so an individual difference carries fold noise even when both
+    implementations are exactly right. Scoring |difference| against SCOVA's
+    standard error therefore measures the split, not the software: fold-induced
+    scatter alone was measured at a pooled mean |d| of 0.6324 against a 0.25
+    tolerance and a maximum of 6.70 against 1.0.
+
+    What survives that noise is a SYSTEMATIC offset. Random fold noise averages
+    to zero across replications; a genuine implementation difference does not.
+    So the statistic is the mean unit difference over its own standard error,
+    and the same measurement that breached the raw tolerances kept this within
+    +/-1.5 across every stratum.
+    """
+    values = np.asarray(unit_means, dtype=float)
+    if values.size < 2:
+        return None
+    deviation = float(values.std(ddof=1))
+    # Zero observed spread gives no usable denominator -- the float residue of
+    # identical values would otherwise divide out to a z of ~1e16. Returning
+    # None fails closed: the caller counts an unestimable stratum as breaching,
+    # which is right either way, since identical units mean either a systematic
+    # offset with no way to size it or a harness feeding the same numbers twice.
+    if deviation <= 1e-12 * max(1.0, float(np.abs(values).max())):
+        return None
+    return float(values.mean() / (deviation / math.sqrt(values.size)))
+
+
 def _summary(
     name: str,
-    signed: list[float],
-    cell_indices: list[int],
+    records: list[dict[str, Any]],
     blocked: list[str],
     *,
     lane_complete: bool,
+    critical_z: float,
+    minimum_informative_fraction: float,
 ) -> dict[str, Any]:
-    """Score an implementation on the cells where it could actually disagree.
+    """Score an implementation by its systematic offset, per stratum.
 
-    Degenerate cells are reported but excluded from the tolerance statistics,
-    because pooling them does not average two comparable populations -- it
-    averages real differences against exact zeros and reports the dilution as
-    agreement. r9 is the worked example: DoubleML's mean over all eight cells
-    was 0.1244 and "passed" 0.25, while its three informative cells averaged
-    0.2626 and failed. Excluding the zeros can only RAISE these statistics, so
-    this is strictly harder to pass, never a loosened tolerance.
+    The comparators no longer share SCOVA's folds, so agreement is a claim
+    about the two implementations rather than about their arithmetic --
+    `shared_score` already certifies the arithmetic at 1e-13 and is the place
+    for that. What independent folds cost is the raw difference: fold-induced
+    scatter alone breaches the old tolerances. What they buy is that a
+    difference means something. See `_offset_z`.
 
-    A COMPLETE lane with no informative cell left is refused outright. It has
-    not agreed with SCOVA-CF; it has stopped being an independent measurement.
+    Degeneracy detection is retained even though independent folds should make
+    it unreachable. That is the point of keeping it: under different splits
+    there is no legitimate route to identity, so a degenerate cell now means the
+    independence did not take effect, which is exactly the silent-harness
+    failure this lane keeps producing. Hence a required informative FRACTION
+    rather than merely "at least one".
 
-    A truncated lane is not judged that way, because informativeness is a
-    property of the frozen cell set rather than of an arbitrary prefix of it.
-    `external_smoke` runs one replication of one cell, and the frozen lane's
-    first cell is k=2, where DoubleMLAPOS's one-vs-rest propensity and SCOVA's
-    2-class multinomial are the same estimator -- degenerate by construction
-    and nothing to do with the health of the run. Refusing there would cost the
-    two-minute canary that exists to catch environment breakage before a
-    five-hour calibration, to detect something the tier never claimed.
+    A truncated lane is still not judged on informativeness, because that is a
+    property of the frozen cell set and not of an arbitrary prefix of it. That
+    keeps `external_smoke` -- one replication of one cell -- working as the
+    two-minute canary it exists to be.
     """
-    values = np.asarray(signed, dtype=float)
-    cells = np.asarray(cell_indices, dtype=int)
     per_cell: list[dict[str, Any]] = []
-    informative = np.zeros(values.shape, dtype=bool)
-    for cell_index in sorted({int(value) for value in cells.tolist()}):
-        member = cells == cell_index
-        cell_maximum = float(np.abs(values[member]).max())
+    by_cell: dict[int, list[dict[str, Any]]] = {}
+    for record in records:
+        by_cell.setdefault(int(record["cell_index"]), []).append(record)
+    degenerate_cells: set[int] = set()
+    for cell_index in sorted(by_cell):
+        flat = [
+            abs(value) for record in by_cell[cell_index] for value in record["differences"]
+        ]
+        cell_maximum = max(flat) if flat else 0.0
         degenerate = cell_maximum <= DEGENERATE_DIFFERENCE_IN_SCOVA_SE
-        if not degenerate:
-            informative |= member
+        if degenerate:
+            degenerate_cells.add(cell_index)
         per_cell.append(
             {
                 "cell_index": cell_index,
-                "comparison_count": int(member.sum()),
+                "comparison_count": len(flat),
                 "maximum_absolute_difference_in_scova_se": cell_maximum,
                 "degenerate": degenerate,
             }
         )
-    scored = values[informative]
-    absolute = np.abs(scored)
-    informative_cells = sum(1 for row in per_cell if not row["degenerate"])
-    if not values.size:
-        # Never produced a comparison at all -- a blocked run, not a degenerate
-        # one. Unchanged from before this check existed.
+    informative_cells = len(by_cell) - len(degenerate_cells)
+    fraction = informative_cells / len(by_cell) if by_cell else 0.0
+
+    scored = [
+        record for record in records if int(record["cell_index"]) not in degenerate_cells
+    ]
+    by_stratum: dict[str, list[float]] = {}
+    for record in scored:
+        # One value per (cell, repetition): the differences inside a replication
+        # share data and nuisances, so they are one observation, not several.
+        by_stratum.setdefault(str(record["stratum"]), []).append(
+            float(np.mean(record["differences"]))
+        )
+    strata = {
+        name: {
+            "unit_count": len(values),
+            "mean_difference_in_scova_se": float(np.mean(values)),
+            "offset_z": _offset_z(values),
+        }
+        for name, values in sorted(by_stratum.items())
+    }
+    breaching = sorted(
+        name
+        for name, values in strata.items()
+        if values["offset_z"] is None or abs(values["offset_z"]) > critical_z
+    )
+
+    if not records:
         status = "blocked/agreement-tolerance"
-    elif not informative_cells:
-        # Distinct from a tolerance failure, and it must stay distinct: a lane
-        # that cannot detect disagreement is not a lane that found none. The
-        # truncated form is never authoritative -- `complete_frozen_lane` is
-        # false, so `all_numerical_agreement_gates_passed` is false regardless.
+    elif fraction < minimum_informative_fraction:
         status = (
             "blocked/lane-degenerate" if lane_complete else "incomplete/degenerate-subset"
         )
-    elif (
-        not blocked
-        and float(absolute.mean()) <= 0.25
-        and float(absolute.max()) <= 1.0
-        and abs(float(scored.mean())) <= 0.05
-    ):
+    elif not blocked and not breaching:
         status = "complete"
     else:
         status = "blocked/agreement-tolerance"
     return {
         "implementation": name,
         "status": status,
-        "mean_absolute_difference_in_scova_se": (
-            None if not scored.size else float(absolute.mean())
+        "statistic": "standardized-offset-z",
+        "critical_offset_z": critical_z,
+        "maximum_absolute_offset_z": (
+            None
+            if not strata or any(row["offset_z"] is None for row in strata.values())
+            else max(abs(row["offset_z"]) for row in strata.values())
         ),
-        "maximum_absolute_difference_in_scova_se": (
-            None if not scored.size else float(absolute.max())
-        ),
-        "mean_signed_difference_in_scova_se": (
-            None if not scored.size else float(scored.mean())
-        ),
-        # Everything below describes the denominator the three figures above
-        # were computed on, so a reader can tell a lane that agreed from a lane
-        # that could not disagree without re-deriving it from run_details.
-        "scored_comparison_count": int(scored.size),
-        "total_comparison_count": int(values.size),
+        "breaching_strata": breaching,
+        "strata": strata,
+        # Everything below describes the denominator the figures above were
+        # computed on, so a reader can tell a lane that agreed from a lane that
+        # could not disagree without re-deriving it from run_details.
+        "scored_unit_count": len(scored),
+        "total_unit_count": len(records),
         "informative_cell_count": informative_cells,
-        "degenerate_cell_count": len(per_cell) - informative_cells,
+        "degenerate_cell_count": len(degenerate_cells),
+        "informative_cell_fraction": fraction,
+        "minimum_informative_cell_fraction": minimum_informative_fraction,
         "cells": per_cell,
         "blocked_details": blocked,
     }
@@ -193,6 +296,7 @@ def run_external_agreement(
     # misspecified propensity on confounded data and compare SCOVA-CF's
     # adjusted estimate against two effectively unadjusted ones.
     known_design = str(protocol.reference_profile.get("assignment")) == "known-constant"
+    agreement = _agreement_policy(protocol)
     fixed_max = 0.0
     shared_errors = {
         "means": 0.0,
@@ -202,26 +306,32 @@ def run_external_agreement(
         "contrasts": 0.0,
         "contrast_standard_errors": 0.0,
     }
-    signed: dict[str, list[float]] = {"DoubleMLAPOS": [], "EconML.DRLearner": []}
-    # Which cell each difference came from. Kept in lockstep with `signed` so
-    # degeneracy can be judged per cell: it is a property of the cell's design
-    # (at k=2 one-vs-rest and 2-class multinomial propensities are the same
-    # estimator), not of the lane as a whole.
-    scored_cells: dict[str, list[int]] = {"DoubleMLAPOS": [], "EconML.DRLearner": []}
+    # One record per (implementation, cell, repetition). That tuple is the
+    # independent unit: differences inside a replication share the same data and
+    # the same fitted nuisances, so they are not separate observations of the
+    # offset between two implementations. Everything the gate needs -- per-cell
+    # degeneracy and the per-stratum offset -- is derived from these.
+    records: dict[str, list[dict[str, Any]]] = {"DoubleMLAPOS": [], "EconML.DRLearner": []}
     blocked: dict[str, list[str]] = {"DoubleMLAPOS": [], "EconML.DRLearner": []}
     details: list[dict[str, Any]] = []
     for cell_index, cell in enumerate(cells):
         for repetition in range(count):
             seed = partition.start + cell_index * partition.count + repetition
             generated = simulate_reference_cell(cell, seed=seed)
-            result = SCOVACF().analyze(
-                generated.data,
-                _declaration(generated, cell, include_stability=False),
-            )
+            declaration = _declaration(generated, cell, include_stability=False)
+            result = SCOVACF().analyze(generated.data, declaration)
             if isinstance(result, SCOVACFRefusal):
                 raise RuntimeError(f"SCOVA-CF refused external fixture: {result.status.code}")
             labels = result.group_labels
             treatment = np.array([labels.index(value) for value in generated.data["group"]])
+            comparator_folds = (
+                _comparator_folds(generated.data, declaration, treatment, agreement)
+                if agreement["comparator_folds"] == "independent"
+                # v3-v10 froze their evidence with shared folds. Changing what
+                # they compare would silently redefine agreement for protocols
+                # that are already sealed.
+                else result.fold_assignments
+            )
             outcome = generated.data["outcome"].to_numpy()
             x = generated.data.loc[:, result.covariate_names].to_numpy()
             literal = fixed_nuisance_score(
@@ -301,11 +411,18 @@ def run_external_agreement(
                     shared_errors["contrast_standard_errors"],
                     _maximum_error(exact_contrast_se, scova_contrast_se),
                 )
+            # The comparators get their OWN folds. Handed SCOVA's splits they
+            # reproduce SCOVA's nuisances exactly -- both fit the declared
+            # learner family, and since v11 both fit the propensity one arm at a
+            # time -- so every cell collapsed to identity and the lane could
+            # only ever report agreement with itself. `shared_score` above is
+            # where the arithmetic is checked, on SCOVA's folds and SCOVA's
+            # nuisances, and it is unaffected by this.
             dml = doubleml_apos(
                 x,
                 outcome,
                 treatment,
-                result.fold_assignments,
+                comparator_folds,
                 learner_policy=str(cell["learner"]),
                 known_probabilities=generated.probabilities if known_design else None,
             )
@@ -313,7 +430,7 @@ def run_external_agreement(
                 x,
                 outcome,
                 treatment,
-                result.fold_assignments,
+                comparator_folds,
                 learner_policy=str(cell["learner"]),
                 known_probabilities=generated.probabilities if known_design else None,
             )
@@ -326,8 +443,9 @@ def run_external_agreement(
                 differences = (
                     (np.asarray(dml.estimates) - result.group_means) / scale
                 ).tolist()
-                signed["DoubleMLAPOS"].extend(differences)
-                scored_cells["DoubleMLAPOS"].extend([cell_index] * len(differences))
+                records["DoubleMLAPOS"].append(
+                    _record(cell, cell_index, repetition, differences)
+                )
             else:
                 blocked["DoubleMLAPOS"].append(
                     f"fitted cell={cell_index} rep={repetition}: {dml.detail}"
@@ -340,8 +458,9 @@ def run_external_agreement(
                 differences = (
                     (np.asarray(econ.estimates) - reference) / reference_se
                 ).tolist()
-                signed["EconML.DRLearner"].extend(differences)
-                scored_cells["EconML.DRLearner"].extend([cell_index] * len(differences))
+                records["EconML.DRLearner"].append(
+                    _record(cell, cell_index, repetition, differences)
+                )
             else:
                 blocked["EconML.DRLearner"].append(
                     f"fitted cell={cell_index} rep={repetition}: {econ.detail}"
@@ -365,8 +484,28 @@ def run_external_agreement(
         and shared_errors["contrast_standard_errors"] <= 1e-10
     )
     complete = count == partition.count and len(cells) == len(protocol.external_cells)
+    # One test per (implementation, stratum). Scoring each against an
+    # uncorrected 5% would inflate the family-wise error with the number of
+    # strata -- the same uncorrected multiplicity that made the v8 per-cell
+    # coverage gate unusable.
+    family_size = sum(
+        len({record["stratum"] for record in records[name]})
+        for name in ("DoubleMLAPOS", "EconML.DRLearner")
+    )
+    critical_z = _family_wise_multiplier(
+        agreement.get("family_wise_error"), max(family_size, 1), _BASE_OFFSET_Z
+    )
     summaries = [
-        _summary(name, signed[name], scored_cells[name], blocked[name], lane_complete=complete)
+        _summary(
+            name,
+            records[name],
+            blocked[name],
+            lane_complete=complete,
+            critical_z=critical_z,
+            minimum_informative_fraction=float(
+                agreement.get("minimum_informative_cell_fraction", 0.0)
+            ),
+        )
         for name in ("DoubleMLAPOS", "EconML.DRLearner")
     ]
     evidence: dict[str, Any] = {
