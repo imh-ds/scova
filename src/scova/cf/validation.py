@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 from itertools import pairwise
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 
 def canonical_checksum(values: Mapping[str, Any]) -> str:
@@ -67,6 +67,7 @@ class CFValidationProtocol:
     calibration_fit_fraction: float = 0.60
     threshold_quantiles: Mapping[str, tuple[float, ...]] | None = None
     calibration_screening: Mapping[str, float] | None = None
+    boundary_estimation: Mapping[str, Any] | None = None
     calibration_enrichment_screening: bool = False
     calibration_candidate_retention_fraction: float = 1.0
     calibration_source: Mapping[str, str] | None = None
@@ -175,6 +176,8 @@ class CFValidationProtocol:
                     "Calibration screening is missing metrics: "
                     f"{sorted(missing)}"
                 )
+        if self.boundary_estimation is not None:
+            self._validate_boundary_estimation()
         if self.calibration_source is not None:
             required_source = {
                 "protocol_id",
@@ -296,7 +299,69 @@ class CFValidationProtocol:
             "dataset_checksums": dict(self.dataset_checksums or {}),
             "dependency_lock_checksum": self.dependency_lock_checksum,
             "design_selection": dict(self.design_selection or {}),
+            **(
+                {}
+                if self.boundary_estimation is None
+                else {"boundary_estimation": dict(self.boundary_estimation)}
+            ),
         }
+
+    _BOUNDARY_ESTIMATION_SCHEMA: ClassVar[Mapping[str, Any]] = {
+        "target": {"minimum_arm_units_per_covariate"},
+        "unit_of_observation": {"cell"},
+        "outcome": {"calibration-screening-cell-gate"},
+        "predictor": {"log10-arm-units-per-covariate"},
+        "model": {"logistic-common-slope-per-stratum-intercept"},
+        "strata": {"n_groups-by-learner-within-claimed-scope"},
+        "pass_probability_target": {"metrics.minimum_strong_cell_pass_fraction"},
+        "interval_method": {"cell-percentile-bootstrap"},
+        "adoption": {"report-only"},
+    }
+
+    def _validate_boundary_estimation(self) -> None:
+        """Reject a declaration that parses but does not say anything usable.
+
+        A block of valid JSON carrying the wrong content is the failure this
+        protocol keeps repeating: `threshold_quantiles` in the wrong shape and a
+        `software` map naming three of seven packages both survived a freeze and
+        a full calibration before dying downstream. A pre-specified analysis
+        procedure is worth less than nothing if it can drift into an
+        unrecognized string and be discovered after the run.
+        """
+        declared = dict(self.boundary_estimation or {})
+        expected = set(self._BOUNDARY_ESTIMATION_SCHEMA) | {
+            "minimum_distinct_densities_per_stratum",
+            "minimum_observations_per_parameter",
+            "require_bracketing_per_stratum",
+            "bootstrap_resamples",
+            "bootstrap_seed",
+        }
+        if set(declared) != expected:
+            raise ValueError(
+                "boundary_estimation must declare exactly "
+                f"{sorted(expected)}; got {sorted(declared)}"
+            )
+        for name, allowed in self._BOUNDARY_ESTIMATION_SCHEMA.items():
+            if declared[name] not in allowed:
+                raise ValueError(
+                    f"boundary_estimation.{name} must be one of {sorted(allowed)}; "
+                    f"got {declared[name]!r}"
+                )
+        if int(declared["minimum_distinct_densities_per_stratum"]) < 3:
+            # Two points fit a two-parameter stratum exactly and leave nothing
+            # to contradict it.
+            raise ValueError(
+                "boundary_estimation.minimum_distinct_densities_per_stratum must be at least 3"
+            )
+        if int(declared["minimum_observations_per_parameter"]) < 1:
+            raise ValueError(
+                "boundary_estimation.minimum_observations_per_parameter must be positive"
+            )
+        if not isinstance(declared["require_bracketing_per_stratum"], bool):
+            raise ValueError("boundary_estimation.require_bracketing_per_stratum must be boolean")
+        if int(declared["bootstrap_resamples"]) < 1000:
+            raise ValueError("boundary_estimation.bootstrap_resamples must be at least 1000")
+        int(declared["bootstrap_seed"])
 
     @property
     def checksum(self) -> str:
@@ -354,6 +419,11 @@ class CFValidationProtocol:
                     str(name): float(value)
                     for name, value in values["calibration_screening"].items()
                 }
+            ),
+            boundary_estimation=(
+                None
+                if values.get("boundary_estimation") is None
+                else dict(values["boundary_estimation"])
             ),
             calibration_source=(
                 None

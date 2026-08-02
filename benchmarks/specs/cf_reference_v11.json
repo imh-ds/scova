@@ -1,4 +1,20 @@
 {
+ "boundary_estimation": {
+  "adoption": "report-only",
+  "bootstrap_resamples": 2000,
+  "bootstrap_seed": 20260802,
+  "interval_method": "cell-percentile-bootstrap",
+  "minimum_distinct_densities_per_stratum": 3,
+  "minimum_observations_per_parameter": 5,
+  "model": "logistic-common-slope-per-stratum-intercept",
+  "outcome": "calibration-screening-cell-gate",
+  "pass_probability_target": "metrics.minimum_strong_cell_pass_fraction",
+  "predictor": "log10-arm-units-per-covariate",
+  "require_bracketing_per_stratum": true,
+  "strata": "n_groups-by-learner-within-claimed-scope",
+  "target": "minimum_arm_units_per_covariate",
+  "unit_of_observation": "cell"
+ },
  "calibration_candidate_retention_fraction": 0.85,
  "calibration_enrichment_screening": true,
  "calibration_fit_fraction": 0.6,

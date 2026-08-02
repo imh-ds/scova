@@ -40,6 +40,52 @@ from scripts.generate_cf_v10_design import (
 PROTOCOL_ID = "cf-observational-continuous-aipw-unnormalized-v11"
 SELECTION_METHOD = "v11-observational-reserved-eligibility-then-pairwise-coverage"
 
+# Pre-specified before any v11 evidence exists, which is the only time a
+# procedure like this can be specified honestly. v10 asserted an arm-density
+# bound of 10.0 and then ran a lane that could not inform it: every eligible
+# cell sat at or above the bound and five sat exactly on it.
+#
+# Every choice below is fixed here rather than left to the analyst:
+#
+# * The unit of observation is the CELL. Replications inside a cell share a
+#   design point, so they sharpen that point's pass rate; they do not tell you
+#   where the boundary is. Treating them as independent would inflate the
+#   effective sample by ~250x and produce an interval that means nothing.
+# * The outcome is the calibration screening gate that already decides whether
+#   a cell is supported. A second definition of "supported" is how the r4 cycle
+#   was lost, when a fix landed in one of two enrichment implementations.
+# * The support set deliberately INCLUDES cells below the declared bound, and
+#   excludes cells below the absolute arm-count floor. Below that floor the
+#   count term binds rather than density, so such a cell would attribute a
+#   count failure to density.
+# * A common slope with per-stratum intercepts. Per-stratum slopes are not
+#   identifiable on this grid -- (k=3, linear) carries three distinct densities,
+#   leaving one residual degree of freedom -- while per-stratum intercepts still
+#   let k=3 sit at a different boundary from k=2, which is the whole open
+#   question.
+# * report-only adoption. The estimate goes into the evidence and the report;
+#   moving `reference_profile.minimum_arm_units_per_covariate` stays a human
+#   decision needing a new freeze. A campaign that can rescope itself to the
+#   cells that passed is the v8 trap with extra arithmetic.
+BOUNDARY_ESTIMATION: dict[str, Any] = {
+    "target": "minimum_arm_units_per_covariate",
+    "unit_of_observation": "cell",
+    "outcome": "calibration-screening-cell-gate",
+    "predictor": "log10-arm-units-per-covariate",
+    "model": "logistic-common-slope-per-stratum-intercept",
+    "strata": "n_groups-by-learner-within-claimed-scope",
+    # Named rather than copied, so it cannot drift away from the gate that
+    # actually defines a passing cell.
+    "pass_probability_target": "metrics.minimum_strong_cell_pass_fraction",
+    "minimum_distinct_densities_per_stratum": 3,
+    "minimum_observations_per_parameter": 5,
+    "require_bracketing_per_stratum": True,
+    "interval_method": "cell-percentile-bootstrap",
+    "bootstrap_resamples": 2000,
+    "bootstrap_seed": 20260802,
+    "adoption": "report-only",
+}
+
 # The strata the reference profile claims. maximum_group_count is 3, so k=5 is
 # outside the claim and is covered by the pairwise fill rather than reserved.
 CLAIMED_STRATA = tuple(
@@ -126,6 +172,7 @@ def build_spec() -> dict[str, Any]:
     spec["protocol_id"] = PROTOCOL_ID
     spec["retained_cells"] = retained
     spec["design_selection"] = provenance
+    spec["boundary_estimation"] = dict(BOUNDARY_ESTIMATION)
     return spec
 
 

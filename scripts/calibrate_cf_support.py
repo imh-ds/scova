@@ -501,20 +501,45 @@ def _strong(
     k = int(cell["n_groups"])
     if maximum_group_count is not None and k > maximum_group_count:
         return False
-    allocation = str(cell["allocation"])
-    if allocation == "balanced":
-        weights = np.ones(k)
-    elif allocation == "moderate":
-        weights = np.geomspace(1.0, 0.35, k)
-    elif allocation == "rare":
-        weights = np.geomspace(1.0, 0.08, k)
-    else:
+    expected_minimum = expected_smallest_arm(cell)
+    if expected_minimum is None:
         return False
-    expected_minimum = int(cell["n_per_group"]) * k * float(weights.min() / weights.sum())
     if expected_minimum < minimum_expected_arm_count:
         return False
-    density = expected_minimum / _cell_covariate_count(cell, kind)
-    return density >= minimum_arm_units_per_covariate
+    return arm_density(cell, kind) >= minimum_arm_units_per_covariate
+
+
+def _allocation_weights(allocation: str, k: int) -> np.ndarray | None:
+    if allocation == "balanced":
+        return np.ones(k)
+    if allocation == "moderate":
+        return np.geomspace(1.0, 0.35, k)
+    if allocation == "rare":
+        return np.geomspace(1.0, 0.08, k)
+    return None
+
+
+def expected_smallest_arm(cell: dict[str, Any]) -> float | None:
+    """Expected units in the smallest arm, or None for an unknown allocation.
+
+    Extracted so the boundary procedure measures the same quantity eligibility
+    is decided on. Two implementations of this would be the r4 failure again,
+    where a fix landed in the enrichment function the tests called rather than
+    the one `calibrate()` called and changed nothing about the run.
+    """
+    k = int(cell["n_groups"])
+    weights = _allocation_weights(str(cell["allocation"]), k)
+    if weights is None:
+        return None
+    return int(cell["n_per_group"]) * k * float(weights.min() / weights.sum())
+
+
+def arm_density(cell: dict[str, Any], kind: str) -> float:
+    """Expected units in the smallest arm per covariate."""
+    smallest = expected_smallest_arm(cell)
+    if smallest is None:
+        return 0.0
+    return smallest / _cell_covariate_count(cell, kind)
 
 
 def _profile_scope(protocol: CFValidationProtocol) -> tuple[float, int | None, float]:

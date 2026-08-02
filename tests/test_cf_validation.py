@@ -1,6 +1,7 @@
 import gzip
 import json
 import sys
+import warnings
 from dataclasses import replace
 from pathlib import Path
 
@@ -1924,3 +1925,164 @@ def test_v11_brackets_the_density_bound_it_is_meant_to_estimate() -> None:
     for groups in (2, 3):
         below = [cell for cell in isolating if int(cell["n_groups"]) == groups]
         assert below, f"k={groups} has no sub-boundary density cell"
+
+
+def _v10_with_boundary_block() -> dict[str, object]:
+    v10 = json.loads(V10_SPEC.read_text(encoding="utf-8"))
+    v11 = json.loads(V11_SPEC.read_text(encoding="utf-8"))
+    return {**v10, "boundary_estimation": v11["boundary_estimation"]}
+
+
+def test_boundary_procedure_is_identifiable_on_v11_and_not_on_v10() -> None:
+    """Gate 4's check: parameter count against effective observations.
+
+    One slope shared across strata plus one intercept per stratum is five
+    parameters. v10 offers 19 admissible cells and an entirely empty (k=3,
+    linear) stratum; v11 offers 28 and populates all four. Running this before
+    dispatching is the point -- a design that cannot identify the procedure it
+    declares still calibrates, still passes every gate, and still emits a
+    boundary that is an artifact of the parameterization.
+    """
+    from scripts.estimate_support_boundary import identifiability_report
+
+    v11 = identifiability_report(CFValidationProtocol.load(V11_SPEC))
+    v10 = identifiability_report(CFValidationProtocol.from_dict(_v10_with_boundary_block()))
+
+    assert v11["identifiable"], v11["failures"]
+    assert v11["parameters"] == 5
+    assert v11["effective_observations"] == 28
+    assert v11["observations_per_parameter"] >= 5
+    for stratum in v11["strata"].values():
+        assert stratum["distinct_densities"] >= 3
+        assert stratum["below_declared_bound"] >= 1
+        assert stratum["at_or_above_declared_bound"] >= 1
+
+    assert not v10["identifiable"]
+    assert any("n_groups=3, learner=linear" in failure for failure in v10["failures"])
+
+
+def test_boundary_support_set_excludes_cells_below_the_arm_count_floor() -> None:
+    """Below the count floor the count term binds, not density.
+
+    Including such a cell would charge a failure caused by having too few units
+    outright against the density boundary, biasing it upward -- toward claiming
+    the method needs more data per covariate than it does.
+    """
+    from scripts.calibrate_cf_support import _profile_scope, expected_smallest_arm
+    from scripts.estimate_support_boundary import boundary_support_set
+
+    protocol = CFValidationProtocol.load(V11_SPEC)
+    floor, maximum, bound = _profile_scope(protocol)
+    rows = boundary_support_set(protocol)
+
+    for row in rows:
+        cells = protocol.retained_cells if row["kind"] == "simulated" else protocol.plasmode_cells
+        cell = dict(cells[row["cell_index"]])
+        assert expected_smallest_arm(cell) >= floor
+        assert int(cell["n_groups"]) <= int(maximum)
+    # And it must keep the sub-boundary cells, or there is nothing to locate.
+    assert [row for row in rows if row["density"] < bound]
+
+
+def test_boundary_procedure_recovers_a_boundary_it_was_given() -> None:
+    """A dry run on outcomes with a known answer, before any real evidence.
+
+    Cells pass exactly when density clears 8.0, which is below the declared
+    10.0. Each stratum's estimate must land in that stratum's gap between the
+    highest failing density and the lowest passing one -- the property any
+    monotone fit has to satisfy, asserted instead of a fitted constant so the
+    test does not pin numerical noise.
+    """
+    from scripts.estimate_support_boundary import boundary_support_set, estimate_boundary
+
+    protocol = CFValidationProtocol.load(V11_SPEC)
+    rows = boundary_support_set(protocol)
+    outcomes = {(row["kind"], row["cell_index"]): row["density"] >= 8.0 for row in rows}
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        result = estimate_boundary(protocol, outcomes)
+
+    assert result["status"] == "complete"
+    assert result["adoption"] == "report-only"
+    assert result["log10_density_slope"] > 0
+    for name, values in result["strata"].items():
+        groups, learner = name.removeprefix("k=").split(",")
+        stratum = (int(groups), learner)
+        densities = {row["density"] for row in rows if row["stratum"] == stratum}
+        highest_failing = max(value for value in densities if value < 8.0)
+        lowest_passing = min(value for value in densities if value >= 8.0)
+        assert highest_failing < values["estimated_boundary"] < lowest_passing
+    # The thinnest stratum must report the widest interval; an estimate that
+    # hides how little it rests on is worse than no estimate.
+    widths = {
+        name: values["interval"][1] - values["interval"][0]
+        for name, values in result["strata"].items()
+    }
+    assert max(widths, key=widths.__getitem__) == "k=3,linear"
+
+
+def test_boundary_procedure_refuses_a_non_positive_density_effect() -> None:
+    """A boundary is only meaningful if support improves with density.
+
+    Inverting the outcomes gives a negative slope. Solving for the crossing
+    anyway returns a finite number with the wrong sense entirely, so the
+    procedure refuses instead.
+    """
+    from scripts.estimate_support_boundary import boundary_support_set, estimate_boundary
+
+    protocol = CFValidationProtocol.load(V11_SPEC)
+    rows = boundary_support_set(protocol)
+    outcomes = {(row["kind"], row["cell_index"]): row["density"] < 8.0 for row in rows}
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        result = estimate_boundary(protocol, outcomes)
+
+    assert result["status"] == "refused/non-positive-density-effect"
+    assert "estimated_boundary" not in json.dumps(result)
+
+
+def test_boundary_procedure_refuses_an_unidentifiable_design_before_fitting() -> None:
+    from scripts.estimate_support_boundary import estimate_boundary
+
+    protocol = CFValidationProtocol.from_dict(_v10_with_boundary_block())
+    result = estimate_boundary(protocol, {})
+
+    assert result["status"] == "refused/unidentifiable"
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ({"adoption": "adopt"}, "adoption"),
+        ({"model": "linear-probability"}, "model"),
+        ({"unit_of_observation": "replication"}, "unit_of_observation"),
+        ({"pass_probability_target": 0.8}, "pass_probability_target"),
+        ({"minimum_distinct_densities_per_stratum": 2}, "at least 3"),
+        ({"bootstrap_resamples": 100}, "at least 1000"),
+    ],
+)
+def test_boundary_declaration_rejects_valid_json_with_wrong_content(
+    mutation: dict[str, object], message: str
+) -> None:
+    """The recurring failure is a block that parses and means the wrong thing.
+
+    `threshold_quantiles` in the wrong shape and a `software` map naming three
+    of seven packages both survived a freeze and a full calibration before
+    dying downstream. A pre-specified procedure that can drift into an
+    unrecognized string is worth less than no procedure at all.
+    """
+    values = json.loads(V11_SPEC.read_text(encoding="utf-8"))
+    values["boundary_estimation"] = {**values["boundary_estimation"], **mutation}
+
+    with pytest.raises(ValueError, match=message):
+        CFValidationProtocol.from_dict(values)
+
+
+def test_boundary_declaration_is_absent_from_earlier_protocols() -> None:
+    """Optional, so v3-v10 checksums cannot move."""
+    for spec_path in (SPEC, V9_SPEC, V10_SPEC):
+        assert CFValidationProtocol.load(spec_path).boundary_estimation is None
+    v10 = CFValidationProtocol.load(V10_SPEC)
+    assert v10.checksum == "a1c54a76e1fb8401f8d1b7eea50c16ccd77cd9e0e1f0afdb08fe28594c6caccb"
