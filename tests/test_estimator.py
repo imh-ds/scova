@@ -171,3 +171,113 @@ def test_small_group_is_rejected() -> None:
     )
     with pytest.raises(ValueError, match="n_splits"):
         SCOVA().fit(data, declaration())
+
+
+def _propensity_rmse(fitted: np.ndarray, truth: np.ndarray) -> float:
+    return float(np.sqrt(np.mean(np.square(fitted - truth))))
+
+
+def test_two_arm_propensity_is_bit_identical_under_either_parameterization() -> None:
+    """The acceptance condition for the parameterization change.
+
+    At two arms one-vs-rest and 2-class multinomial are the same estimator, so
+    switching must not perturb a single bit -- not "agree to 1e-14", which is
+    what refitting as two separate binary problems would actually give, since a
+    solver run on `y` and on `1 - y` need not return exactly negated
+    coefficients. Two-arm output is therefore left on the multiclass fit, and
+    this test is what holds that decision in place.
+    """
+    simulation = generate_data("observational", n=400, n_groups=2, seed=5)
+    multiclass = SCOVA().fit(simulation.data, declaration())
+    one_vs_rest = SCOVA(propensity_parameterization="one-vs-rest").fit(
+        simulation.data, declaration()
+    )
+
+    assert (
+        multiclass.propensity_predictions.tobytes()
+        == one_vs_rest.propensity_predictions.tobytes()
+    )
+    assert multiclass.group_means.tobytes() == one_vs_rest.group_means.tobytes()
+    assert one_vs_rest.nuisance_metadata["propensity_parameterization"] == "multiclass"
+
+
+def test_one_vs_rest_propensity_is_closer_to_truth_at_three_arms() -> None:
+    """The reason the change exists, measured against the true per-unit propensity.
+
+    AIPW's arm-`a` equation contains only `e_hat_a`, so the simplex constraint
+    is a property of the true propensity rather than a requirement of the
+    estimator. Buying it forces finite-sample estimation error to be shared
+    across arms, and on confounded data with a flexible learner that costs
+    accuracy.
+    """
+    simulation = generate_data("observational", n=600, n_groups=3, seed=7)
+    multiclass = SCOVA().fit(simulation.data, declaration())
+    one_vs_rest = SCOVA(propensity_parameterization="one-vs-rest").fit(
+        simulation.data, declaration()
+    )
+
+    assert _propensity_rmse(
+        one_vs_rest.propensity_predictions, simulation.propensity
+    ) < _propensity_rmse(multiclass.propensity_predictions, simulation.propensity)
+    assert one_vs_rest.nuisance_metadata["propensity_parameterization"] == "one-vs-rest"
+    # Unnormalized by construction, and that is the point -- normalizing would
+    # reintroduce exactly the coupling the change removes.
+    assert not np.allclose(one_vs_rest.propensity_predictions.sum(axis=1), 1.0)
+
+
+def test_default_parameterization_keeps_the_propensity_on_the_simplex() -> None:
+    """`bounded_pairwise_anchor` scores `one_hot - propensity`.
+
+    That is the multinomial score residual, and it is only a residual on the
+    simplex. `design.py` feeds it a genuinely fitted propensity, so the default
+    must stay multiclass until that score is derived again for unnormalized
+    columns.
+    """
+    simulation = generate_data("observational", n=400, n_groups=3, seed=9)
+    fitted = SCOVA().fit(simulation.data, declaration())
+
+    assert SCOVA().propensity_parameterization == "multiclass"
+    np.testing.assert_allclose(fitted.propensity_predictions.sum(axis=1), 1.0)
+    assert fitted.nuisance_metadata["propensity_parameterization"] == "multiclass"
+
+
+def test_one_vs_rest_uses_the_declared_learner_family() -> None:
+    """Each arm model must be cloned from the spec the cell declares.
+
+    An earlier throwaway harness hardcoded the flexible classifier regardless of
+    the declared learner, so a linear cell compared LogisticRegression
+    multiclass against boosted one-vs-rest and reported a spurious result. That
+    is a comparison of learners wearing the costume of a comparison of
+    parameterizations. Reconstructing the columns from the result's own folds
+    proves the family and the fold structure both carried through.
+    """
+    simulation = generate_data("observational", n=400, n_groups=3, seed=13)
+    fitted = SCOVA(
+        propensity_model=LogisticRegression(max_iter=2000),
+        outcome_model=Ridge(alpha=1.0),
+        nuisance_strategy="custom",
+        propensity_parameterization="one-vs-rest",
+    ).fit(simulation.data, declaration())
+
+    x = simulation.data.loc[:, ("x1", "x2", "x3")].to_numpy(dtype=float)
+    codes = (
+        simulation.data["group"]
+        .map({label: code for code, label in enumerate(fitted.group_labels)})
+        .to_numpy()
+    )
+    expected = np.empty_like(fitted.propensity_predictions)
+    for fold in np.unique(fitted.fold_assignments):
+        test = fitted.fold_assignments == fold
+        train = ~test
+        for code in range(len(fitted.group_labels)):
+            arm = LogisticRegression(max_iter=2000)
+            arm.fit(x[train], (codes[train] == code).astype(int))
+            positive = int(np.flatnonzero(np.asarray(arm.classes_, dtype=int) == 1)[0])
+            expected[test, code] = arm.predict_proba(x[test])[:, positive]
+
+    np.testing.assert_allclose(fitted.propensity_predictions, expected, rtol=0, atol=1e-12)
+
+
+def test_unknown_parameterization_is_rejected() -> None:
+    with pytest.raises(ValueError, match="propensity_parameterization"):
+        SCOVA(propensity_parameterization="ovr")  # type: ignore[arg-type]
