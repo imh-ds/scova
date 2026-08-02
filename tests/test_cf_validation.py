@@ -1764,3 +1764,84 @@ def test_arm_density_is_screened_and_separates_the_failing_cells() -> None:
     assert not isinstance(result, SCOVACFRefusal)
     density = _support_features(result)["minimum_arm_units_per_covariate"]
     assert density < 3.0, density   # ~55 rows against 30 covariates
+
+
+def _eligible_cell(n_groups: int, learner: str, n_per_group: int = 50) -> dict[str, object]:
+    """A cell that clears every profile-eligibility term with no slack to spare.
+
+    Balanced allocation puts 1/k of the sample in each arm, so n_per_group=50
+    expects exactly 50 units in the smallest arm -- the `minimum_group_count`
+    floor -- and 5 covariates put that at exactly the 10.0 density bound.
+    """
+    return {
+        "allocation": "balanced",
+        "confounding": "moderate",
+        "confounding_form": "linear",
+        "effect": "constant",
+        "learner": learner,
+        "n_covariates": 5,
+        "n_groups": n_groups,
+        "n_per_group": n_per_group,
+        "noise": "normal",
+        "overlap": "full",
+        "support": "strong",
+        "surface": "linear",
+    }
+
+
+def test_design_coverage_audit_flags_the_frozen_eligibility_gaps() -> None:
+    """The v10 grid reached a full calibration with an empty claimed stratum.
+
+    11 of 60 cells are profile-eligible and they fall 9 / 1 / 0 / 1 across
+    (k, learner). The zero is (k=3, linear): no gate in the campaign could have
+    detected a multi-arm defect under a linear learner, because eligibility is
+    what decides the calibration denominator. This is the check that was
+    missing, pinned against the design that needed it.
+    """
+    from scripts.generate_cf_v10_design import (
+        design_coverage_failures,
+        eligible_cells_by_stratum,
+    )
+
+    spec = json.loads(V10_SPEC.read_text(encoding="utf-8"))
+    counts = eligible_cells_by_stratum(spec)
+
+    assert counts == {(2, "linear"): 9, (2, "adaptive"): 1, (3, "linear"): 0, (3, "adaptive"): 1}
+    # k=5 is outside maximum_group_count, so it is not a claimed stratum and
+    # must not be scored as a gap.
+    assert not [stratum for stratum in counts if stratum[0] == 5]
+    failures = design_coverage_failures(spec)
+    assert any("n_groups=3, learner=linear" in failure for failure in failures)
+    assert all("pairwise" not in failure for failure in failures)
+
+
+def test_design_coverage_audit_passes_when_every_claimed_stratum_is_populated() -> None:
+    """The audit must be satisfiable, or it is only a way of always refusing."""
+    from scripts.generate_cf_v10_design import design_coverage_failures
+
+    spec = json.loads(V10_SPEC.read_text(encoding="utf-8"))
+    retained = list(spec["retained_cells"])
+    # Replace rather than append: the cell budget is part of the frozen schema.
+    # Two distinct cells per claimed stratum, which is what the minimum asks for.
+    retained[:8] = [
+        _eligible_cell(groups, learner, n_per_group)
+        for groups in (2, 3)
+        for learner in ("linear", "adaptive")
+        for n_per_group in (50, 80)
+    ]
+    spec["retained_cells"] = retained
+
+    assert design_coverage_failures(spec) == []
+
+
+def test_design_coverage_audit_requires_complete_pairwise_coverage() -> None:
+    """The selection records its own coverage; nothing checked the claim held."""
+    from scripts.generate_cf_v10_design import design_coverage_failures
+
+    spec = json.loads(V10_SPEC.read_text(encoding="utf-8"))
+    spec["design_selection"] = {
+        **spec["design_selection"],
+        "pairwise_pairs_covered": spec["design_selection"]["pairwise_pairs_total"] - 1,
+    }
+
+    assert any("pairwise coverage" in failure for failure in design_coverage_failures(spec))
