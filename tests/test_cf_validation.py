@@ -1,6 +1,7 @@
 import gzip
 import json
 import sys
+import warnings
 from dataclasses import replace
 from pathlib import Path
 
@@ -1201,6 +1202,7 @@ def test_overlap_factor_is_the_only_lever_on_common_support() -> None:
 
 
 V10_SPEC = Path("benchmarks/specs/cf_reference_v10.json")
+V11_SPEC = Path("benchmarks/specs/cf_reference_v11.json")
 
 
 def test_v10_is_a_wholly_observational_protocol_reusing_no_evidence() -> None:
@@ -1376,132 +1378,147 @@ def test_comparators_only_get_a_known_propensity_when_the_design_supplies_one(
         assert all(len(set(np.asarray(value).ravel().tolist())) >= 1 for value in seen)
 
 
-def _differences(*groups: tuple[int, int, float]) -> tuple[list[float], list[int]]:
-    """Build (signed, cell_index) pairs of a given magnitude, mean-zero signed.
+def _records(*groups: tuple[int, str, int, float]) -> list[dict[str, object]]:
+    """Build (cell, repetition) records whose per-unit mean is the given size.
 
-    Alternating signs keep the signed mean at exactly zero so these fixtures
-    isolate the absolute-difference gate, which is the one the r9 pooling
-    artifact defeated.
+    Signs alternate across repetitions so the offset averages to zero: these
+    fixtures represent two implementations that differ only by fold noise,
+    which is what independent splits produce when both are correct.
     """
-    signed: list[float] = []
-    cells: list[int] = []
-    for cell_index, count, magnitude in groups:
-        signed.extend(magnitude if position % 2 else -magnitude for position in range(count))
-        cells.extend([cell_index] * count)
-    return signed, cells
+    records: list[dict[str, object]] = []
+    for cell_index, stratum, count, magnitude in groups:
+        for repetition in range(count):
+            sign = 1.0 if repetition % 2 else -1.0
+            records.append(
+                {
+                    "cell_index": cell_index,
+                    "repetition": repetition,
+                    "stratum": stratum,
+                    "differences": [sign * magnitude, sign * magnitude],
+                }
+            )
+    return records
 
 
-def test_end_to_end_refuses_a_comparator_that_only_reproduces_scova() -> None:
-    """A comparator agreeing to 1e-14 has stopped being an independent measurement.
+def test_offset_z_ignores_fold_noise_but_catches_a_systematic_shift() -> None:
+    """The statistic independent folds require.
 
-    r9's EconML lane was reported `complete` at 2.5e-15 mean. `econml_drlearner`
-    already replicates SCOVA's outcome policy and is handed SCOVA's own fold
-    assignments; once it also fits the same propensity class, every nuisance is
-    deterministically identical and it recomputes SCOVA's own AIPW through a
-    second API. That duplicates `shared_score`, which already certifies the
-    arithmetic at 1e-13 -- it is not corroboration from an outside estimator.
+    Under different splits an individual difference carries fold noise even
+    when both implementations are right -- scatter alone was measured at a
+    pooled mean |d| of 0.6324 against the old 0.25 tolerance. Random noise
+    averages out across replications; a systematic offset does not.
+    """
+    from benchmarks.cf_external_agreement import _offset_z
+
+    rng = np.random.default_rng(0)
+    noise = rng.normal(0.0, 0.63, size=50).tolist()
+    assert abs(_offset_z(noise)) < 3.0
+    shifted = [value + 0.5 for value in noise]
+    assert abs(_offset_z(shifted)) > 3.0
+    # Unestimable rather than infinite when there is nothing to average.
+    assert _offset_z([0.4]) is None
+    assert _offset_z([0.4, 0.4, 0.4]) is None
+
+
+def test_end_to_end_passes_on_fold_noise_and_fails_on_an_offset() -> None:
+    """Scatter alone must not fail the lane, and a real shift must."""
+    from benchmarks.cf_external_agreement import _summary
+
+    noisy = _records((0, "k=2,linear", 40, 0.63), (1, "k=3,adaptive", 40, 0.63))
+    passing = _summary(
+        "DoubleMLAPOS", noisy, [], lane_complete=True, critical_z=3.0,
+        minimum_informative_fraction=1.0,
+    )
+    assert passing["status"] == "complete"
+    assert passing["maximum_absolute_offset_z"] < 3.0
+    # The old gate scored |difference| against 0.25 and would have refused this.
+    assert all(
+        abs(value) > 0.25
+        for record in noisy
+        for value in record["differences"]  # type: ignore[attr-defined]
+    )
+
+    shifted = [
+        {**record, "differences": [value + 0.5 for value in record["differences"]]}
+        for record in noisy
+    ]
+    failing = _summary(
+        "DoubleMLAPOS", shifted, [], lane_complete=True, critical_z=3.0,
+        minimum_informative_fraction=1.0,
+    )
+    assert failing["status"] == "blocked/agreement-tolerance"
+    assert failing["breaching_strata"] == ["k=2,linear", "k=3,adaptive"]
+
+
+def test_end_to_end_requires_every_cell_to_be_informative() -> None:
+    """Under independent folds there is no legitimate route to identity.
+
+    A degenerate cell therefore means the fold independence did not take
+    effect, which is the silent-harness failure this lane has produced twice --
+    once with a constant propensity handed to both comparators, once when the
+    one-vs-rest estimator change made SCOVA and DoubleMLAPOS the same fit.
     """
     from benchmarks.cf_external_agreement import _summary
 
-    signed, cells = _differences(*((index, 100, 2.5e-15) for index in range(8)))
-    summary = _summary("EconML.DRLearner", signed, cells, [], lane_complete=True)
+    records = _records((0, "k=2,linear", 40, 0.63), (1, "k=3,adaptive", 40, 1e-15))
+    summary = _summary(
+        "DoubleMLAPOS", records, [], lane_complete=True, critical_z=3.0,
+        minimum_informative_fraction=1.0,
+    )
 
-    # Every tolerance is satisfied, which is exactly why the old gate passed it.
-    assert float(np.abs(signed).mean()) <= 0.25
     assert summary["status"] == "blocked/lane-degenerate"
-    assert summary["informative_cell_count"] == 0
-    assert summary["degenerate_cell_count"] == 8
-    assert summary["scored_comparison_count"] == 0
-    assert summary["total_comparison_count"] == 800
-    # No statistic may be reported for a lane that could not disagree.
-    assert summary["mean_absolute_difference_in_scova_se"] is None
-
-
-def test_end_to_end_scores_only_the_cells_that_could_disagree() -> None:
-    """Degenerate cells must not dilute the tolerance means.
-
-    This is r9's DoubleML lane to the reported decimals. DoubleMLAPOS fits a
-    one-vs-rest binary propensity per level while SCOVA fits one multi-class
-    model; at k=2 those are the same estimator, so its five k=2 cells agreed at
-    2.3e-14 while the three k=3 cells carried real disagreement. Averaging 500
-    machine-precision zeros into 450 genuine differences reported 0.1244 and
-    passed 0.25. Scored on the informative half it is 0.2626 and fails.
-    """
-    from benchmarks.cf_external_agreement import _summary
-
-    signed, cells = _differences(
-        # k=2: 5 cells x 50 replications x 2 arms, degenerate by construction.
-        *((index, 100, 2.3e-14) for index in (0, 1, 2, 3, 7)),
-        # k=3: 3 cells x 50 replications x 3 arms, genuinely informative.
-        *((index, 150, 0.2626) for index in (4, 5, 6)),
+    assert summary["informative_cell_fraction"] == 0.5
+    assert summary["degenerate_cell_count"] == 1
+    # Still not judged that way on a truncated smoke run.
+    truncated = _summary(
+        "DoubleMLAPOS", records, [], lane_complete=False, critical_z=3.0,
+        minimum_informative_fraction=1.0,
     )
-    summary = _summary("DoubleMLAPOS", signed, cells, [], lane_complete=True)
-
-    # The artifact this check exists to remove.
-    assert round(float(np.abs(signed).mean()), 4) == 0.1244
-    assert summary["status"] == "blocked/agreement-tolerance"
-    assert summary["informative_cell_count"] == 3
-    assert summary["degenerate_cell_count"] == 5
-    assert summary["scored_comparison_count"] == 450
-    assert summary["total_comparison_count"] == 950
-    assert round(summary["mean_absolute_difference_in_scova_se"], 4) == 0.2626
-    # Excluding the zeros can only raise the mean, never lower it.
-    assert summary["mean_absolute_difference_in_scova_se"] > float(np.abs(signed).mean())
-    degenerate = {row["cell_index"] for row in summary["cells"] if row["degenerate"]}
-    assert degenerate == {0, 1, 2, 3, 7}
-
-
-def test_end_to_end_still_completes_when_every_cell_is_informative() -> None:
-    """The passing path is unchanged for a lane that genuinely agrees.
-
-    Without this the check could be satisfied by refusing everything, which
-    would be a different way of learning nothing.
-    """
-    from benchmarks.cf_external_agreement import _summary
-
-    signed, cells = _differences(*((index, 100, 0.2) for index in range(8)))
-    summary = _summary("DoubleMLAPOS", signed, cells, [], lane_complete=True)
-
-    assert summary["status"] == "complete"
-    assert summary["informative_cell_count"] == 8
-    assert summary["degenerate_cell_count"] == 0
-    assert summary["scored_comparison_count"] == summary["total_comparison_count"] == 800
-    # A blocked replication still refuses the lane, as before.
-    assert (
-        _summary(
-            "DoubleMLAPOS", signed, cells, ["cell=0 rep=0: boom"], lane_complete=True
-        )["status"]
-        == "blocked/agreement-tolerance"
-    )
-
-
-def test_informativeness_is_not_judged_on_a_truncated_smoke_lane() -> None:
-    """`external_smoke` must survive the degeneracy check.
-
-    The smoke tier runs one replication of one cell to prove the lane executes
-    at all -- it caught the r7 software block in two minutes and is the cheapest
-    check in the campaign. The frozen lane's first cell is k=2, where
-    DoubleMLAPOS is degenerate by construction, so judging a one-cell prefix for
-    informativeness would refuse every smoke run for a reason that says nothing
-    about the run. Informativeness is a property of the whole frozen lane.
-    """
-    from benchmarks.cf_external_agreement import (
-        SMOKE_ADMISSIBLE_STATUSES,
-        _summary,
-    )
-
-    signed, cells = _differences((0, 2, 2.3e-14))
-    truncated = _summary("DoubleMLAPOS", signed, cells, [], lane_complete=False)
-    frozen = _summary("DoubleMLAPOS", signed, cells, [], lane_complete=True)
-
     assert truncated["status"] == "incomplete/degenerate-subset"
-    assert frozen["status"] == "blocked/lane-degenerate"
-    assert truncated["degenerate_cell_count"] == 1
-    # The smoke tier exits zero on this; the frozen lane must not.
-    assert truncated["status"] in SMOKE_ADMISSIBLE_STATUSES
-    assert frozen["status"] not in SMOKE_ADMISSIBLE_STATUSES
-    # And it may never be mistaken for agreement.
-    assert truncated["status"] != "complete"
+
+
+def test_comparator_folds_are_independent_of_scova_folds() -> None:
+    """Different splits, same group-stratified guarantee.
+
+    A comparator handed a training fold missing an arm cannot fit a propensity
+    for it, so the independence has to come from the same construction under a
+    different seed rather than from an arbitrary reshuffle.
+    """
+    from benchmarks.cf_external_agreement import _agreement_policy, _comparator_folds
+    from benchmarks.cf_reference_campaign import _declaration, simulate_reference_cell
+    from scova.cf import SCOVACF
+
+    protocol = CFValidationProtocol.load(V11_SPEC)
+    agreement = _agreement_policy(protocol)
+    assert agreement["comparator_folds"] == "independent"
+
+    cell = dict(protocol.external_cells[4])
+    generated = simulate_reference_cell(cell, seed=1_600_000_004)
+    declaration = _declaration(generated, cell, include_stability=False)
+    result = SCOVACF().analyze(generated.data, declaration)
+    codes = np.array(
+        [result.group_labels.index(value) for value in generated.data["group"]]
+    )
+    folds = _comparator_folds(generated.data, declaration, codes, agreement)
+
+    assert not np.array_equal(folds, result.fold_assignments)
+    assert set(np.unique(folds)) == set(np.unique(result.fold_assignments))
+    # Every fold must still contain every arm on both sides of the split.
+    for fold in np.unique(folds):
+        assert set(np.unique(codes[folds != fold])) == set(np.unique(codes))
+
+
+def test_earlier_protocols_keep_shared_folds_and_their_checksums() -> None:
+    """v3-v10 sealed their evidence under shared folds; that must not move."""
+    from benchmarks.cf_external_agreement import _agreement_policy
+
+    for spec_path in (SPEC, V9_SPEC, V10_SPEC):
+        protocol = CFValidationProtocol.load(spec_path)
+        assert protocol.external_agreement is None
+        assert _agreement_policy(protocol)["comparator_folds"] == "scova"
+    assert CFValidationProtocol.load(V10_SPEC).checksum == (
+        "a1c54a76e1fb8401f8d1b7eea50c16ccd77cd9e0e1f0afdb08fe28594c6caccb"
+    )
 
 
 def test_end_to_end_differences_stay_bound_to_the_cell_they_came_from(
@@ -1537,13 +1554,16 @@ def test_end_to_end_differences_stay_bound_to_the_cell_they_came_from(
     evidence = agreement.run_external_agreement(protocol, replications=2, max_cells=3)
 
     for summary in evidence["end_to_end"]["implementations"]:
-        assert summary["total_comparison_count"] == sum(
-            row["comparison_count"] for row in summary["cells"]
-        )
+        assert summary["total_unit_count"] == 3 * 2
         assert [row["cell_index"] for row in summary["cells"]] == [0, 1, 2]
         # Every cell got the same number of replications, so a drifting index
         # would show up as an uneven split.
         assert len({row["comparison_count"] for row in summary["cells"]}) == 1
+        # Strata are read off the cell, so they must match the design.
+        assert set(summary["strata"]) == {
+            f"k={int(dict(cell)['n_groups'])},{dict(cell)['learner']}"
+            for cell in protocol.external_cells[:3]
+        }
 
 
 @pytest.mark.parametrize(
@@ -1764,3 +1784,367 @@ def test_arm_density_is_screened_and_separates_the_failing_cells() -> None:
     assert not isinstance(result, SCOVACFRefusal)
     density = _support_features(result)["minimum_arm_units_per_covariate"]
     assert density < 3.0, density   # ~55 rows against 30 covariates
+
+
+def _eligible_cell(n_groups: int, learner: str, n_per_group: int = 50) -> dict[str, object]:
+    """A cell that clears every profile-eligibility term with no slack to spare.
+
+    Balanced allocation puts 1/k of the sample in each arm, so n_per_group=50
+    expects exactly 50 units in the smallest arm -- the `minimum_group_count`
+    floor -- and 5 covariates put that at exactly the 10.0 density bound.
+    """
+    return {
+        "allocation": "balanced",
+        "confounding": "moderate",
+        "confounding_form": "linear",
+        "effect": "constant",
+        "learner": learner,
+        "n_covariates": 5,
+        "n_groups": n_groups,
+        "n_per_group": n_per_group,
+        "noise": "normal",
+        "overlap": "full",
+        "support": "strong",
+        "surface": "linear",
+    }
+
+
+def test_design_coverage_audit_flags_the_frozen_eligibility_gaps() -> None:
+    """The v10 grid reached a full calibration with an empty claimed stratum.
+
+    11 of 60 cells are profile-eligible and they fall 9 / 1 / 0 / 1 across
+    (k, learner). The zero is (k=3, linear): no gate in the campaign could have
+    detected a multi-arm defect under a linear learner, because eligibility is
+    what decides the calibration denominator. This is the check that was
+    missing, pinned against the design that needed it.
+    """
+    from scripts.generate_cf_v10_design import (
+        design_coverage_failures,
+        eligible_cells_by_stratum,
+    )
+
+    spec = json.loads(V10_SPEC.read_text(encoding="utf-8"))
+    counts = eligible_cells_by_stratum(spec)
+
+    assert counts == {(2, "linear"): 9, (2, "adaptive"): 1, (3, "linear"): 0, (3, "adaptive"): 1}
+    # k=5 is outside maximum_group_count, so it is not a claimed stratum and
+    # must not be scored as a gap.
+    assert not [stratum for stratum in counts if stratum[0] == 5]
+    failures = design_coverage_failures(spec)
+    assert any("n_groups=3, learner=linear" in failure for failure in failures)
+    assert all("pairwise" not in failure for failure in failures)
+
+
+def test_design_coverage_audit_passes_when_every_claimed_stratum_is_populated() -> None:
+    """The audit must be satisfiable, or it is only a way of always refusing."""
+    from scripts.generate_cf_v10_design import design_coverage_failures
+
+    spec = json.loads(V10_SPEC.read_text(encoding="utf-8"))
+    retained = list(spec["retained_cells"])
+    # Replace rather than append: the cell budget is part of the frozen schema.
+    # Two distinct cells per claimed stratum, which is what the minimum asks for.
+    retained[:8] = [
+        _eligible_cell(groups, learner, n_per_group)
+        for groups in (2, 3)
+        for learner in ("linear", "adaptive")
+        for n_per_group in (50, 80)
+    ]
+    spec["retained_cells"] = retained
+
+    assert design_coverage_failures(spec) == []
+
+
+def test_design_coverage_audit_requires_complete_pairwise_coverage() -> None:
+    """The selection records its own coverage; nothing checked the claim held."""
+    from scripts.generate_cf_v10_design import design_coverage_failures
+
+    spec = json.loads(V10_SPEC.read_text(encoding="utf-8"))
+    spec["design_selection"] = {
+        **spec["design_selection"],
+        "pairwise_pairs_covered": spec["design_selection"]["pairwise_pairs_total"] - 1,
+    }
+
+    assert any("pairwise coverage" in failure for failure in design_coverage_failures(spec))
+
+
+def test_v11_grid_satisfies_the_coverage_audit_that_v10_fails() -> None:
+    """The point of the rebuild, stated as the gate it has to pass.
+
+    v10's eligible cells fell 9 / 1 / 0 / 1 across the claimed (n_groups,
+    learner) strata because pairwise coverage optimizes marginals while
+    eligibility is a conjunction, so eligible cells only ever arose by
+    accident. v11 reserves the region first and spends what is left on
+    coverage.
+    """
+    from scripts.generate_cf_v10_design import (
+        MINIMUM_ELIGIBLE_CELLS_PER_STRATUM,
+        design_coverage_failures,
+        eligible_cells_by_stratum,
+    )
+
+    v11 = json.loads(V11_SPEC.read_text(encoding="utf-8"))
+    v10 = json.loads(V10_SPEC.read_text(encoding="utf-8"))
+
+    assert design_coverage_failures(v11) == []
+    assert design_coverage_failures(v10), "v10 must still fail, or the audit proves nothing"
+    counts = eligible_cells_by_stratum(v11)
+    assert set(counts) == {(2, "linear"), (2, "adaptive"), (3, "linear"), (3, "adaptive")}
+    assert min(counts.values()) >= MINIMUM_ELIGIBLE_CELLS_PER_STRATUM
+    # The stratum that was empty is the one worth naming.
+    assert counts[(3, "linear")] >= MINIMUM_ELIGIBLE_CELLS_PER_STRATUM
+
+
+def test_v11_is_reproducible_and_collapses_no_factor() -> None:
+    """Rebuilding the grid must not buy eligibility by narrowing the design.
+
+    A cheap way to populate every stratum is to drop the factors that make
+    cells hard to populate. That would trade a coverage gap for a blind spot,
+    so the factor space and the pairwise claim both have to survive intact.
+    """
+    from scripts.generate_cf_v11_design import build_spec
+
+    protocol = CFValidationProtocol.load(V11_SPEC)
+    v10 = CFValidationProtocol.load(V10_SPEC)
+    regenerated = build_spec()
+
+    assert regenerated["retained_cells"] == [dict(cell) for cell in protocol.retained_cells]
+    assert dict(protocol.factors) == dict(v10.factors)
+    assert dict(protocol.metrics) == dict(v10.metrics)
+    provenance = regenerated["design_selection"]
+    assert provenance["pairwise_pairs_covered"] == provenance["pairwise_pairs_total"]
+    assert len(protocol.retained_cells) == 48
+    assert protocol.protocol_id.endswith("v11")
+    assert protocol.checksum != v10.checksum
+
+
+def test_v11_brackets_the_density_bound_it_is_meant_to_estimate() -> None:
+    """v10 could not inform its own arm-density bound.
+
+    Every eligible cell sat at or above 10.0 and five sat exactly on it, so the
+    lane the bound was fitted on held nothing on the other side of it. Cells
+    that clear the absolute count floor but fail on density alone are what
+    separate the two terms.
+    """
+    from scripts.generate_cf_v10_design import expected_smallest_arm
+
+    protocol = CFValidationProtocol.load(V11_SPEC)
+    bound = float(protocol.reference_profile["minimum_arm_units_per_covariate"])
+    floor = float(protocol.reference_profile["minimum_group_count"])
+
+    isolating = [
+        cell
+        for cell in protocol.retained_cells
+        if cell["support"] == "strong"
+        and int(cell["n_groups"]) <= int(protocol.reference_profile["maximum_group_count"])
+        and expected_smallest_arm(dict(cell)) >= floor
+        and expected_smallest_arm(dict(cell)) / int(cell["n_covariates"]) < bound
+    ]
+    assert isolating, "no cell fails on density alone; the bound stays unidentified"
+    for groups in (2, 3):
+        below = [cell for cell in isolating if int(cell["n_groups"]) == groups]
+        assert below, f"k={groups} has no sub-boundary density cell"
+
+
+def _v10_with_boundary_block() -> dict[str, object]:
+    v10 = json.loads(V10_SPEC.read_text(encoding="utf-8"))
+    v11 = json.loads(V11_SPEC.read_text(encoding="utf-8"))
+    return {**v10, "boundary_estimation": v11["boundary_estimation"]}
+
+
+def test_boundary_procedure_is_identifiable_on_v11_and_not_on_v10() -> None:
+    """Gate 4's check: parameter count against effective observations.
+
+    One slope shared across strata plus one intercept per stratum is five
+    parameters. v10 offers 19 admissible cells and an entirely empty (k=3,
+    linear) stratum; v11 offers 28 and populates all four. Running this before
+    dispatching is the point -- a design that cannot identify the procedure it
+    declares still calibrates, still passes every gate, and still emits a
+    boundary that is an artifact of the parameterization.
+    """
+    from scripts.estimate_support_boundary import identifiability_report
+
+    v11 = identifiability_report(CFValidationProtocol.load(V11_SPEC))
+    v10 = identifiability_report(CFValidationProtocol.from_dict(_v10_with_boundary_block()))
+
+    assert v11["identifiable"], v11["failures"]
+    assert v11["parameters"] == 5
+    assert v11["effective_observations"] == 28
+    assert v11["observations_per_parameter"] >= 5
+    for stratum in v11["strata"].values():
+        assert stratum["distinct_densities"] >= 3
+        assert stratum["below_declared_bound"] >= 1
+        assert stratum["at_or_above_declared_bound"] >= 1
+
+    assert not v10["identifiable"]
+    assert any("n_groups=3, learner=linear" in failure for failure in v10["failures"])
+
+
+def test_boundary_support_set_excludes_cells_below_the_arm_count_floor() -> None:
+    """Below the count floor the count term binds, not density.
+
+    Including such a cell would charge a failure caused by having too few units
+    outright against the density boundary, biasing it upward -- toward claiming
+    the method needs more data per covariate than it does.
+    """
+    from scripts.calibrate_cf_support import _profile_scope, expected_smallest_arm
+    from scripts.estimate_support_boundary import boundary_support_set
+
+    protocol = CFValidationProtocol.load(V11_SPEC)
+    floor, maximum, bound = _profile_scope(protocol)
+    rows = boundary_support_set(protocol)
+
+    for row in rows:
+        cells = protocol.retained_cells if row["kind"] == "simulated" else protocol.plasmode_cells
+        cell = dict(cells[row["cell_index"]])
+        assert expected_smallest_arm(cell) >= floor
+        assert int(cell["n_groups"]) <= int(maximum)
+    # And it must keep the sub-boundary cells, or there is nothing to locate.
+    assert [row for row in rows if row["density"] < bound]
+
+
+def test_boundary_procedure_recovers_a_boundary_it_was_given() -> None:
+    """A dry run on outcomes with a known answer, before any real evidence.
+
+    Cells pass exactly when density clears 8.0, which is below the declared
+    10.0. Each stratum's estimate must land in that stratum's gap between the
+    highest failing density and the lowest passing one -- the property any
+    monotone fit has to satisfy, asserted instead of a fitted constant so the
+    test does not pin numerical noise.
+    """
+    from scripts.estimate_support_boundary import boundary_support_set, estimate_boundary
+
+    protocol = CFValidationProtocol.load(V11_SPEC)
+    rows = boundary_support_set(protocol)
+    outcomes = {(row["kind"], row["cell_index"]): row["density"] >= 8.0 for row in rows}
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        result = estimate_boundary(protocol, outcomes)
+
+    assert result["status"] == "complete"
+    assert result["adoption"] == "report-only"
+    assert result["log10_density_slope"] > 0
+    for name, values in result["strata"].items():
+        groups, learner = name.removeprefix("k=").split(",")
+        stratum = (int(groups), learner)
+        densities = {row["density"] for row in rows if row["stratum"] == stratum}
+        highest_failing = max(value for value in densities if value < 8.0)
+        lowest_passing = min(value for value in densities if value >= 8.0)
+        assert highest_failing < values["estimated_boundary"] < lowest_passing
+    # The thinnest stratum must report the widest interval; an estimate that
+    # hides how little it rests on is worse than no estimate.
+    widths = {
+        name: values["interval"][1] - values["interval"][0]
+        for name, values in result["strata"].items()
+    }
+    assert max(widths, key=widths.__getitem__) == "k=3,linear"
+
+
+def test_boundary_procedure_refuses_a_non_positive_density_effect() -> None:
+    """A boundary is only meaningful if support improves with density.
+
+    Inverting the outcomes gives a negative slope. Solving for the crossing
+    anyway returns a finite number with the wrong sense entirely, so the
+    procedure refuses instead.
+    """
+    from scripts.estimate_support_boundary import boundary_support_set, estimate_boundary
+
+    protocol = CFValidationProtocol.load(V11_SPEC)
+    rows = boundary_support_set(protocol)
+    outcomes = {(row["kind"], row["cell_index"]): row["density"] < 8.0 for row in rows}
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        result = estimate_boundary(protocol, outcomes)
+
+    assert result["status"] == "refused/non-positive-density-effect"
+    assert "estimated_boundary" not in json.dumps(result)
+
+
+def test_boundary_procedure_refuses_an_unidentifiable_design_before_fitting() -> None:
+    from scripts.estimate_support_boundary import estimate_boundary
+
+    protocol = CFValidationProtocol.from_dict(_v10_with_boundary_block())
+    result = estimate_boundary(protocol, {})
+
+    assert result["status"] == "refused/unidentifiable"
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ({"adoption": "adopt"}, "adoption"),
+        ({"model": "linear-probability"}, "model"),
+        ({"unit_of_observation": "replication"}, "unit_of_observation"),
+        ({"pass_probability_target": 0.8}, "pass_probability_target"),
+        ({"minimum_distinct_densities_per_stratum": 2}, "at least 3"),
+        ({"bootstrap_resamples": 100}, "at least 1000"),
+        ({"minimum_observations_per_parameter": 0}, "must be positive"),
+        ({"require_bracketing_per_stratum": "yes"}, "must be boolean"),
+    ],
+)
+def test_boundary_declaration_rejects_valid_json_with_wrong_content(
+    mutation: dict[str, object], message: str
+) -> None:
+    """The recurring failure is a block that parses and means the wrong thing.
+
+    `threshold_quantiles` in the wrong shape and a `software` map naming three
+    of seven packages both survived a freeze and a full calibration before
+    dying downstream. A pre-specified procedure that can drift into an
+    unrecognized string is worth less than no procedure at all.
+    """
+    values = json.loads(V11_SPEC.read_text(encoding="utf-8"))
+    values["boundary_estimation"] = {**values["boundary_estimation"], **mutation}
+
+    with pytest.raises(ValueError, match=message):
+        CFValidationProtocol.from_dict(values)
+
+
+def test_boundary_declaration_is_absent_from_earlier_protocols() -> None:
+    """Optional, so v3-v10 checksums cannot move."""
+    for spec_path in (SPEC, V9_SPEC, V10_SPEC):
+        assert CFValidationProtocol.load(spec_path).boundary_estimation is None
+    v10 = CFValidationProtocol.load(V10_SPEC)
+    assert v10.checksum == "a1c54a76e1fb8401f8d1b7eea50c16ccd77cd9e0e1f0afdb08fe28594c6caccb"
+
+
+@pytest.mark.parametrize(
+    ("block", "dropped"),
+    [("boundary_estimation", "bootstrap_seed"), ("external_agreement", "family_wise_error")],
+)
+def test_preregistered_blocks_reject_a_missing_key(block: str, dropped: str) -> None:
+    """A silently absent key is a procedure that was never fully declared."""
+    values = json.loads(V11_SPEC.read_text(encoding="utf-8"))
+    values[block] = {k: v for k, v in values[block].items() if k != dropped}
+
+    with pytest.raises(ValueError, match="must declare exactly"):
+        CFValidationProtocol.from_dict(values)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ({"comparator_folds": "scova"}, "comparator_folds"),
+        ({"statistic": "absolute-difference-in-scova-se"}, "statistic"),
+        ({"unit_of_observation": "arm"}, "unit_of_observation"),
+        ({"strata": "cell"}, "strata"),
+        ({"comparator_fold_seed_offset": 0}, "non-zero"),
+        ({"family_wise_error": 0.0}, "family_wise_error"),
+        ({"minimum_informative_cell_fraction": 0.0}, "minimum_informative_cell_fraction"),
+        ({"degenerate_difference_in_scova_se": 0.0}, "degenerate_difference_in_scova_se"),
+    ],
+)
+def test_external_agreement_declaration_rejects_wrong_content(
+    mutation: dict[str, object], message: str
+) -> None:
+    """Every degree of freedom in the lane policy has to be a declared one.
+
+    `comparator_fold_seed_offset = 0` is the one worth naming: it parses, it
+    validates as an integer, and it silently hands the comparators SCOVA's own
+    folds again -- restoring the exact degeneracy the policy exists to prevent.
+    """
+    values = json.loads(V11_SPEC.read_text(encoding="utf-8"))
+    values["external_agreement"] = {**values["external_agreement"], **mutation}
+
+    with pytest.raises(ValueError, match=message):
+        CFValidationProtocol.from_dict(values)

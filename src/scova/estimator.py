@@ -89,9 +89,14 @@ class SCOVA:
         propensity_model: BaseEstimator | None = None,
         outcome_model: BaseEstimator | None = None,
         nuisance_strategy: Literal["adaptive", "linear", "custom"] = "adaptive",
+        propensity_parameterization: Literal["multiclass", "one-vs-rest"] = "multiclass",
     ) -> None:
         if nuisance_strategy not in {"adaptive", "linear", "custom"}:
             raise ValueError("nuisance_strategy must be 'adaptive', 'linear', or 'custom'")
+        if propensity_parameterization not in {"multiclass", "one-vs-rest"}:
+            raise ValueError(
+                "propensity_parameterization must be 'multiclass' or 'one-vs-rest'"
+            )
         if (propensity_model is None) != (outcome_model is None):
             raise ValueError("propensity_model and outcome_model must be supplied together")
         if nuisance_strategy == "custom" and propensity_model is None:
@@ -103,6 +108,13 @@ class SCOVA:
         self.nuisance_strategy = nuisance_strategy
         self.propensity_model = propensity_model
         self.outcome_model = outcome_model
+        # Default stays "multiclass" deliberately. One-vs-rest columns do not
+        # sum to one, and not every consumer of a fitted propensity is an AIPW
+        # arm equation: `bounded_pairwise_anchor` scores `one_hot - propensity`,
+        # the multinomial score residual, which is only a residual on the
+        # simplex. SCOVA-CF opts in because its arm equations qualify; the
+        # anchor path must not be switched without deriving its score again.
+        self.propensity_parameterization = propensity_parameterization
 
     @staticmethod
     def _linear_propensity_model() -> BaseEstimator:
@@ -273,7 +285,26 @@ class SCOVA:
             elif known_propensity is None:
                 assert self.propensity_model is not None
                 propensity_model = clone(self.propensity_model)
-            if known_propensity is None:
+            if known_propensity is None and self._fits_one_vs_rest(n_groups):
+                # One binary model per arm, each cloned from the SAME spec the
+                # multiclass path would have used -- matching the declared
+                # learner family is not optional. Fitting one-vs-rest with a
+                # different family than the cell declares produces a comparison
+                # of learners masquerading as a comparison of parameterizations.
+                for code in range(n_groups):
+                    membership = (group_codes[train] == code).astype(int)
+                    if membership.min() == membership.max():
+                        raise ValueError(
+                            "Every propensity training fold must contain every group"
+                        )
+                    arm_model = clone(propensity_model)
+                    arm_model.fit(x[train], membership)
+                    arm_classes = np.asarray(arm_model.classes_, dtype=int)
+                    positive = int(np.flatnonzero(arm_classes == 1)[0])
+                    propensity[test, code] = np.asarray(
+                        arm_model.predict_proba(x[test]), dtype=float
+                    )[:, positive]
+            elif known_propensity is None:
                 propensity_model.fit(x[train], group_codes[train])
                 raw_probability = np.asarray(propensity_model.predict_proba(x[test]), dtype=float)
                 classes = np.asarray(propensity_model.classes_, dtype=int)
@@ -312,6 +343,14 @@ class SCOVA:
                 else self._metadata_model_name("propensity")
             ),
             "outcome_model": self._metadata_model_name("outcome"),
+            # Recorded even when it did not bind, so a stored result says which
+            # parameterization produced it rather than leaving it to be inferred
+            # from the column sums.
+            "propensity_parameterization": (
+                "known-design"
+                if known_propensity is not None
+                else ("one-vs-rest" if self._fits_one_vs_rest(n_groups) else "multiclass")
+            ),
         }
         if self.nuisance_strategy == "adaptive":
             metadata["selection"] = {
@@ -327,6 +366,19 @@ class SCOVA:
                 "outcome": outcome_selected,
             }
         return propensity, outcome_regression, metadata
+
+    def _fits_one_vs_rest(self, n_groups: int) -> bool:
+        """One-vs-rest only bites at three or more arms.
+
+        At two arms the parameterizations are the same estimator, so there is
+        nothing to gain -- but refitting as two separate binary problems would
+        still perturb the last bits, because a solver run on ``y`` and on
+        ``1 - y`` need not return exactly negated coefficients. Keeping k=2 on
+        the single multiclass fit makes two-arm output BIT-identical rather
+        than merely equal to machine precision, which is what lets v3-v9's
+        two-arm numbers be checked rather than argued about.
+        """
+        return self.propensity_parameterization == "one-vs-rest" and n_groups > 2
 
     def _metadata_model_name(self, nuisance: Literal["propensity", "outcome"]) -> str:
         if self.nuisance_strategy == "adaptive":
@@ -369,7 +421,15 @@ class SCOVA:
                 "propensity_model": None,
                 "outcome_model": None,
             }
-        propensity = validate_probability_matrix(propensity, n, n_groups)
+        # Only columns this estimator fitted one-vs-rest are exempt from the
+        # simplex; supplied predictions carry no such key and stay strict.
+        propensity = validate_probability_matrix(
+            propensity,
+            n,
+            n_groups,
+            require_simplex=nuisance_metadata.get("propensity_parameterization")
+            != "one-vs-rest",
+        )
         means, influence, covariance = assemble_aipw(
             outcome, group_codes, propensity, outcome_regression
         )

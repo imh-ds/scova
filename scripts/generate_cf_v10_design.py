@@ -47,6 +47,21 @@ FACTORS: dict[str, tuple[Any, ...]] = {
 RETAINED_CELLS = 48
 NAMES = tuple(FACTORS)
 
+# How many PROFILE-ELIGIBLE cells every (n_groups, learner) stratum inside the
+# claimed scope must contain.
+#
+# Two, not one. A stratum represented by a single cell cannot separate a
+# cell-specific artifact from a property of the regime, and that is not a
+# hypothetical: the v10 calibration lane's profile-eligible region held exactly
+# one k=3 cell, which is why seven calibration rounds never saw the propensity
+# defect that the external lane found immediately. Eligibility is what decides
+# the calibration denominator, so a stratum thin THERE is invisible to every
+# gate downstream of it.
+#
+# This is a preregistration choice rather than a derived quantity. It is stated
+# here so that changing it is a visible decision.
+MINIMUM_ELIGIBLE_CELLS_PER_STRATUM = 2
+
 # A cell is infeasible when its smallest group is expected to be too small to
 # fit at all. The estimator needs n_splits (3) observations per group, so a
 # design point whose smallest arm is expected to hold ~3 units refuses on
@@ -162,7 +177,21 @@ def _grow_from_anchor(
     is a deterministic function of FACTORS alone -- no seed to record.
     """
     left_name, left_value, right_name, right_value = anchor
-    cell: dict[str, Any] = {left_name: left_value, right_name: right_value}
+    return _grow_from({left_name: left_value, right_name: right_value}, remaining)
+
+
+def _grow_from(
+    fixed: dict[str, Any], remaining: set[tuple[str, Any, str, Any]]
+) -> dict[str, Any]:
+    """Hold `fixed` and fill every remaining factor greedily.
+
+    Split out so a cell can be pinned on the factors that decide profile
+    eligibility -- support, arms, allocation, size, covariate count, learner --
+    while the six factors eligibility does not constrain are still chosen for
+    pairwise coverage. A mandatory cell that also fixed those six would spend
+    budget without earning any.
+    """
+    cell: dict[str, Any] = dict(fixed)
     for name in NAMES:
         if name in cell:
             continue
@@ -190,12 +219,34 @@ def _grow_from_anchor(
     return ordered
 
 
-def select_design() -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Greedy pairwise-covering construction; deterministic, no randomness."""
+def select_design(
+    mandatory: tuple[dict[str, Any], ...] = (),
+    *,
+    method: str = "v10-observational-greedy-pairwise-coverage-feasible",
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Greedy pairwise-covering construction; deterministic, no randomness.
+
+    `mandatory` cells are placed first and their pairs credited before the
+    greedy fill, so reserving a region costs less than its cell count. They are
+    empty by default, which leaves the v10 construction exactly as frozen.
+    """
     total = len(_all_pairs())
     remaining = _all_pairs()
     every_pair = _sorted_pairs(_all_pairs())
     chosen: list[dict[str, Any]] = []
+    for fixed in mandatory:
+        # Mandatory entries are PARTIAL cells: they pin only what the region
+        # being reserved depends on, and the rest is grown greedily so the cell
+        # still pays for its place in the budget with pairwise coverage.
+        ordered = _grow_from(dict(fixed), remaining)
+        if any(ordered[name] != value for name, value in fixed.items()):
+            # The feasibility repair moves n_per_group, which would silently
+            # relocate the very cell being reserved.
+            raise SystemExit(f"mandatory cell {fixed} was altered into {ordered}")
+        if ordered in chosen:
+            raise SystemExit(f"mandatory cell is duplicated: {ordered}")
+        chosen.append(ordered)
+        remaining -= _covered_by(ordered)
     filler = 0
     while len(chosen) < RETAINED_CELLS:
         if remaining:
@@ -211,7 +262,7 @@ def select_design() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         if cell not in chosen:
             chosen.append(cell)
     provenance = {
-        "method": "v10-observational-greedy-pairwise-coverage-feasible",
+        "method": method,
         "candidate_order": "declared-factor-level-order",
         "retained_cells": RETAINED_CELLS,
         "tie_break": "earliest-declared-level",
@@ -219,6 +270,8 @@ def select_design() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         "pairwise_pairs_covered": total - len(remaining),
         "minimum_expected_smallest_arm": MINIMUM_EXPECTED_ARM,
     }
+    if mandatory:
+        provenance["mandatory_cells"] = len(mandatory)
     return chosen, provenance
 
 
@@ -429,6 +482,74 @@ def build_spec() -> dict[str, Any]:
     }
 
 
+def eligible_cells_by_stratum(spec: dict[str, Any]) -> dict[tuple[int, str], int]:
+    """Count profile-eligible cells per (n_groups, learner), scope-limited.
+
+    Eligibility is decided by `calibrate_cf_support._profile_eligible`, imported
+    rather than reimplemented. A second copy of this rule is precisely the trap
+    that cost freeze r4: the enrichment fix landed in the function the tests
+    called and not in the one `calibrate()` called, and had zero effect on the
+    run. Whatever decides the calibration denominator must be the same object
+    that decides it here.
+
+    Only strata the profile actually claims are counted. `maximum_group_count`
+    is 3, so k=5 holding no eligible cells is the scope working as declared, not
+    a coverage gap.
+    """
+    from scova.cf import CFValidationProtocol
+    from scripts.calibrate_cf_support import _profile_eligible
+
+    protocol = CFValidationProtocol.from_dict(spec)
+    maximum = spec["reference_profile"].get("maximum_group_count")
+    claimed = [
+        groups
+        for groups in FACTORS["n_groups"]
+        if maximum is None or int(groups) <= int(maximum)
+    ]
+    counts = {
+        (int(groups), str(learner)): 0
+        for groups in claimed
+        for learner in FACTORS["learner"]
+    }
+    cells = [(cell, "simulated") for cell in protocol.retained_cells]
+    cells += [(cell, "plasmode") for cell in protocol.plasmode_cells]
+    for cell, kind in cells:
+        stratum = (int(cell["n_groups"]), str(cell["learner"]))
+        if stratum in counts and _profile_eligible(protocol, dict(cell), kind):
+            counts[stratum] += 1
+    return counts
+
+
+def design_coverage_failures(spec: dict[str, Any]) -> list[str]:
+    """Static assertions a design must satisfy before it can be frozen.
+
+    Both were absent when they were needed. Nothing checked that the retained
+    cells covered the factor pairs the selection claimed to cover, and nothing
+    checked that the region the profile CLAIMS to serve was actually populated
+    -- the v10 grid reached a full calibration with a (k=3, linear) stratum
+    holding zero eligible cells, so no gate in the campaign could have detected
+    a multi-arm defect under a linear learner.
+    """
+    failures: list[str] = []
+    provenance = spec["design_selection"]
+    covered = int(provenance["pairwise_pairs_covered"])
+    total = int(provenance["pairwise_pairs_total"])
+    if covered != total:
+        failures.append(
+            f"pairwise coverage is {covered}/{total}; the retained cells do not "
+            "cover every reachable factor pair"
+        )
+    for stratum, count in sorted(eligible_cells_by_stratum(spec).items()):
+        if count < MINIMUM_ELIGIBLE_CELLS_PER_STRATUM:
+            groups, learner = stratum
+            failures.append(
+                f"stratum (n_groups={groups}, learner={learner}) holds {count} "
+                f"profile-eligible cells, below the required "
+                f"{MINIMUM_ELIGIBLE_CELLS_PER_STRATUM}"
+            )
+    return failures
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--write", action="store_true")
@@ -445,9 +566,25 @@ def main() -> None:
     for name in FACTORS:
         used = {cell[name] for cell in spec["retained_cells"]}
         print(f"  {name:18} {len(used)}/{len(FACTORS[name])} levels used")
+    print("profile-eligible cells by (n_groups, learner):")
+    for (groups, learner), count in sorted(eligible_cells_by_stratum(spec).items()):
+        flag = "" if count >= MINIMUM_ELIGIBLE_CELLS_PER_STRATUM else "  <-- BELOW MINIMUM"
+        print(f"  k={groups} {learner:9} {count}{flag}")
+    failures = design_coverage_failures(spec)
+    for failure in failures:
+        print(f"COVERAGE FAILURE: {failure}")
+    if failures and args.write:
+        # Refusing to write is the whole point. A design that cannot populate
+        # the region its own profile claims will still calibrate, still pass
+        # every gate, and still say nothing about the regime it omitted.
+        raise SystemExit(
+            f"{len(failures)} coverage failure(s); refusing to write {args.output}"
+        )
     if args.write:
         args.output.write_text(json.dumps(spec, indent=1, sort_keys=True) + "\n", encoding="utf-8")
         print(f"wrote {args.output}")
+    if failures:
+        raise SystemExit(f"{len(failures)} coverage failure(s)")
 
 
 if __name__ == "__main__":

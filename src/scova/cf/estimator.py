@@ -366,10 +366,21 @@ class SCOVACF:
             if isinstance(assignment, KnownAssignment)
             else None
         )
+        # One-vs-rest, because SCOVA-CF's arm equations qualify and the
+        # multiclass fit is measurably the weaker component at three or more
+        # arms. AIPW's arm-`a` equation contains only `e_hat_a`, so the simplex
+        # constraint is a property of the TRUE propensity, never a requirement
+        # of the estimator; buying it forces finite-sample estimation error to
+        # be shared across arms. Measured against known truth: propensity RMSE
+        # 1.168x at k=3 and 1.149x at k=5, becoming a 1.50x AIPW error
+        # reduction at k=3, reproduced by the external lane, a local A/B inside
+        # SCOVA's own machinery, and a direct comparison against the true
+        # per-unit propensity. Inert at k=2 and under known assignment.
         model = SCOVA(
             propensity_model=self.propensity_model,
             outcome_model=self.outcome_model,
             nuisance_strategy=engine_strategy,
+            propensity_parameterization="one-vs-rest",
         )
         if nuisance_predictions is None:
             try:
@@ -416,7 +427,15 @@ class SCOVACF:
                 "outcome_model": "supplied",
             }
         try:
-            propensity = validate_probability_matrix(propensity, len(data), len(labels))
+            propensity = validate_probability_matrix(
+                propensity,
+                len(data),
+                len(labels),
+                # Supplied and known-design propensities carry no
+                # parameterization key and stay on the simplex.
+                require_simplex=nuisance_metadata.get("propensity_parameterization")
+                != "one-vs-rest",
+            )
         except ValueError as error:
             return self._refusal(
                 declaration,

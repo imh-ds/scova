@@ -5,8 +5,23 @@ from __future__ import annotations
 import numpy as np
 
 
-def validate_probability_matrix(probability: np.ndarray, n: int, k: int) -> np.ndarray:
-    """Validate and return a coherent, strictly positive probability matrix."""
+def validate_probability_matrix(
+    probability: np.ndarray, n: int, k: int, *, require_simplex: bool = True
+) -> np.ndarray:
+    """Validate and return a coherent, strictly positive probability matrix.
+
+    ``require_simplex`` stays on for everything a caller hands in -- a known
+    design's assignment probabilities and user-supplied nuisance predictions
+    both genuinely live on the simplex, and a row that does not sum to one
+    there is a defect worth refusing.
+
+    It is turned off only for columns SCOVA fitted itself one-vs-rest. AIPW's
+    arm-``a`` equation contains only ``e_hat_a``, so ``sum_k e_hat_k = 1`` is a
+    property of the TRUE propensity rather than a requirement of the estimator,
+    and it matches the declared ``aipw-unnormalized`` estimand. Positivity and
+    the upper bound still bind, because those are what the ``1 / e_hat``
+    weights actually need.
+    """
     values = np.asarray(probability, dtype=float)
     if values.shape != (n, k):
         raise ValueError(f"Propensity predictions must have shape {(n, k)}")
@@ -14,7 +29,7 @@ def validate_probability_matrix(probability: np.ndarray, n: int, k: int) -> np.n
         raise ValueError("Propensity predictions must be finite")
     if np.any(values <= 0) or np.any(values > 1):
         raise ValueError("Propensity predictions must be strictly positive and at most one")
-    if not np.allclose(values.sum(axis=1), 1.0, rtol=1e-7, atol=1e-10):
+    if require_simplex and not np.allclose(values.sum(axis=1), 1.0, rtol=1e-7, atol=1e-10):
         raise ValueError("Each propensity prediction row must sum to one")
     return values
 
