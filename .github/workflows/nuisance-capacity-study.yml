@@ -1,0 +1,123 @@
+name: Nuisance misspecification and capacity study
+
+# Methods study for the calibration bias gate. Three v11 cells breached it and
+# all three share one mechanism: AIPW's bias is the PRODUCT of the two nuisance
+# errors, so it is first-order only when both are misspecified at once.
+#
+# Runs in the pinned campaign environment on purpose. The question is what
+# scikit-learn's estimators can represent, so the scikit-learn version is part
+# of what is being measured; a local run on a different stack is suggestive
+# rather than comparable with the frozen CF evidence.
+#
+# This study produces no campaign evidence and needs no freeze tag. It reads
+# the v11 spec for its gate metrics and touches no file any evidence
+# fingerprint covers.
+on:
+  workflow_dispatch:
+    inputs:
+      design:
+        description: Which question to answer
+        required: true
+        type: choice
+        options:
+          - capacity
+          - misspecification
+          - cell2-ablation
+      reps:
+        description: Replications per variant
+        required: true
+        default: "300"
+      capacities:
+        description: Outcome-learner max_leaf_nodes sweep (capacity design only)
+        required: true
+        default: "15,31,63,127"
+      shard_count:
+        description: Number of parallel shards
+        required: true
+        default: "8"
+
+permissions:
+  contents: read
+
+env:
+  PYTHONHASHSEED: "0"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      shards: ${{ steps.matrix.outputs.shards }}
+    steps:
+      - id: matrix
+        env:
+          SHARD_COUNT: ${{ inputs.shard_count }}
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          print("shards=" + json.dumps(list(range(int(os.environ["SHARD_COUNT"])))))
+          PY
+
+  shard:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.prepare.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      # The same pinned stack the campaign tiers install. What a learner can
+      # represent is the object of study, so the version is not incidental.
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - run: |
+          python -m benchmarks.nuisance_capacity_study \
+            --design "${{ inputs.design }}" \
+            --reps "${{ inputs.reps }}" \
+            --capacities "${{ inputs.capacities }}" \
+            --shard-index "${{ matrix.shard }}" \
+            --shard-count "${{ inputs.shard_count }}" \
+            --results-dir cells
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: nuisance-study-cells-${{ matrix.shard }}
+          path: cells/
+          retention-days: 90
+
+  merge:
+    needs: shard
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: nuisance-study-cells-*
+          merge-multiple: true
+          path: cells
+      # --merge reports every planned variant, so a shard that timed out is
+      # visible as MISSING instead of silently narrowing the grid.
+      - run: |
+          python -m benchmarks.nuisance_capacity_study --merge \
+            --design "${{ inputs.design }}" \
+            --capacities "${{ inputs.capacities }}" \
+            --results-dir cells \
+            --out nuisance-study-summary.json | tee nuisance-study-report.txt
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: nuisance-study-summary
+          path: |
+            nuisance-study-summary.json
+            nuisance-study-report.txt
+          retention-days: 90
