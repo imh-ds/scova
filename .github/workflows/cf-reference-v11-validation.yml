@@ -315,6 +315,26 @@ jobs:
           --output "artifacts/${LANE}-${{ matrix.shard }}.ndjson.gz"
           --shard-index ${{ matrix.shard }} --shard-count 128 --resume
           ${{ inputs.tier == 'validation' && '--candidate-profile candidate/cf-reference-candidate-profile.json' || '' }}
+      - name: Verify checkpoint replay is byte-stable
+        # The pilot lane has carried this since v3; the lanes that actually
+        # take hours did not. A shard replayed against its own completed
+        # checkpoint must reproduce itself exactly, or `--resume` cannot be
+        # trusted to recover a lost runner -- and at 128 shards of tens of
+        # minutes each, losing one is routine rather than hypothetical.
+        # Cheap: --resume skips every completed record, so this re-reads the
+        # checkpoint rather than recomputing the shard.
+        shell: bash
+        env:
+          LANE: ${{ inputs.tier }}
+        run: |
+          artifact="artifacts/${LANE}-${{ matrix.shard }}.ndjson.gz"
+          before=$(sha256sum "$artifact" | cut -d' ' -f1)
+          python -m benchmarks.cf_reference_campaign --spec "$SPEC" --lane "$LANE" \
+            --output "$artifact" \
+            --shard-index ${{ matrix.shard }} --shard-count 128 --resume \
+            ${{ inputs.tier == 'validation' && '--candidate-profile candidate/cf-reference-candidate-profile.json' || '' }}
+          after=$(sha256sum "$artifact" | cut -d' ' -f1)
+          test "$before" = "$after"
       - uses: actions/upload-artifact@v6
         if: always()
         with:

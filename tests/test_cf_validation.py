@@ -2214,3 +2214,86 @@ def test_external_agreement_declaration_rejects_wrong_content(
 
     with pytest.raises(ValueError, match=message):
         CFValidationProtocol.from_dict(values)
+
+
+def test_resuming_a_partial_shard_reproduces_an_uninterrupted_run(tmp_path: Path) -> None:
+    """Gate 5: recovery, not replay.
+
+    Existing coverage only re-ran a COMPLETED shard and checked the bytes did
+    not move. That exercises the no-op path. What a lost runner actually needs
+    is for a shard to finish work another invocation started and land exactly
+    where an uninterrupted run would have -- and calibration is 128 shards at
+    tens of minutes each, so losing one is routine rather than hypothetical.
+
+    The first call completes one cell and leaves its checkpoint. The second
+    picks that checkpoint up, computes only the cell it does not have, and must
+    equal a run that did both from scratch.
+    """
+    protocol = CFValidationProtocol.load(SPEC)
+    recovered = tmp_path / "recovered" / "pilot-0.ndjson.gz"
+    reference = tmp_path / "reference" / "pilot-0.ndjson.gz"
+    common = {
+        "lane": "pilot",
+        "shard_index": 0,
+        "shard_count": 1,
+        "replications_override": 1,
+        "include_stability": False,
+    }
+
+    run_shard(protocol, output=recovered, resume=False, max_cells=1, **common)
+    partial = recovered.with_suffix(recovered.suffix + ".partial.ndjson")
+    assert partial.exists(), "no checkpoint was left to recover from"
+    interrupted = len(partial.read_text(encoding="utf-8").splitlines())
+
+    run_shard(protocol, output=recovered, resume=True, max_cells=2, **common)
+    run_shard(protocol, output=reference, resume=False, max_cells=2, **common)
+
+    assert recovered.read_bytes() == reference.read_bytes()
+    # The recovery must actually have carried work forward rather than redoing
+    # everything, or this passes for the wrong reason.
+    completed = len(partial.read_text(encoding="utf-8").splitlines())
+    assert 0 < interrupted < completed
+
+
+def test_a_checkpoint_from_another_shard_is_refused(tmp_path: Path) -> None:
+    """Recovery must fail closed when the checkpoint is not this shard's.
+
+    Silently accepting a foreign checkpoint would let a resumed run inherit
+    records computed under a different configuration, which is worse than
+    losing the shard.
+    """
+    protocol = CFValidationProtocol.load(SPEC)
+    output = tmp_path / "pilot-0.ndjson.gz"
+    run_shard(
+        protocol,
+        lane="pilot",
+        output=output,
+        shard_index=0,
+        shard_count=1,
+        resume=False,
+        replications_override=1,
+        max_cells=2,
+        include_stability=False,
+    )
+    partial = output.with_suffix(output.suffix + ".partial.ndjson")
+    tampered = [
+        json.loads(line) for line in partial.read_text(encoding="utf-8").splitlines()
+    ]
+    tampered[0]["seed"] += 1
+    partial.write_text(
+        "\n".join(json.dumps(row, sort_keys=True) for row in tampered) + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="does not belong to this protocol shard"):
+        run_shard(
+            protocol,
+            lane="pilot",
+            output=output,
+            shard_index=0,
+            shard_count=1,
+            resume=True,
+            replications_override=1,
+            max_cells=2,
+            include_stability=False,
+        )
