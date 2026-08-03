@@ -9,6 +9,10 @@ population counterfactual means. It builds on SCOVA's nonlinear nuisance
 learning and multi-group AIPW machinery without changing base SCOVA's role as
 an alternative to ordinary ANOVA/ANCOVA mean-comparison workflows.
 
+The normative definition of this target, the assumptions needed for each
+analysis mode, and the limits of diagnostics and validation evidence are in the
+[SCOVA-CF methodological contract](scova_cf_methodological_contract.md).
+
 For group (g), the first SCOVA-CF estimand is
 
 \[
@@ -21,10 +25,10 @@ identify individual treatment effects, recreate within-person covariance, or
 turn model predictions into repeated measurements. No paired-test or
 individual-potential-outcome API is provided.
 
-The randomized continuous reference estimator remains nonconfirmatory while
-the frozen calibration and held-out campaign is pending. The validation
-protocol, locked-seed diagnostic, and fail-closed release process are described
-in `docs/cf_reference_validation.md`.
+The promoted v9 randomized profile remains distinct from the observational v11
+campaign. The latter is not promoted and is not evidence about the randomized
+profile. The validation protocol, locked-seed diagnostic, and fail-closed
+release process are described in `docs/cf_reference_validation.md`.
 
 ## Current reference slice
 
@@ -34,7 +38,7 @@ The current implementation provides:
 - randomized, observational-causal, and standardized-associational modes with
   mode-derived claim labels;
 - known constant or design-stratum-specific randomization probabilities;
-- coherent cross-fitted multinomial propensities for nonrandomized modes;
+- cross-fitted propensity estimates for nonrandomized modes;
 - the unnormalized multi-group AIPW reference estimator for continuous outcomes;
 - deterministic outcome-free design locks and group/stratum-aware folds;
 - outcome-blind support, weight, ESS, balance, and calibration diagnostics;
@@ -101,10 +105,13 @@ else:
   remain nonconfirmatory unless an eligible promoted packaged policy is selected.
 - `observational-causal` results are assumption-dependent and require a
   prespecified quantitative unmeasured-confounding sensitivity analysis before
-  eventual promotion.
+  eventual promotion; the software cannot test conditional exchangeability.
 - `standardized-associational` results never use causal-effect language.
-- Prediction loss, balance, or propensity calibration cannot upgrade the
-  declared mode or claim class.
+- Prediction loss, balance, propensity calibration, and support diagnostics
+  cannot upgrade the declared mode, claim class, or nuisance-model assumptions.
+- For observational analyses, only the default `adaptive` nuisance strategy is
+  eligible for any future validated-operating-regime label. `linear` and
+  `custom` strategies remain assumption-conditional.
 - SCOVA-CF never silently trims rows, clips weights, changes targets, selects a
   more favorable estimator, or uses a generalized inverse to hide a singular
   omnibus problem.

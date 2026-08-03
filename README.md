@@ -10,9 +10,11 @@ for continuous outcomes with simultaneous finite-family inference.
 SCOVA-CF is a distinct, opt-in feature under `scova.cf`. It builds on the base
 SCOVA engine to estimate governed population counterfactual means for a common
 declared population; it does not replace base SCOVA or identify person-specific
-missing outcomes. The randomized continuous-outcome reference slice, its
-current limitations, and a full example are documented in
-[`docs/scova_cf.md`](docs/scova_cf.md).
+missing outcomes. Its target, analysis-mode assumptions, and the distinction
+between assumption-conditional output and future evidence-qualified claims are
+defined in the [SCOVA-CF methodological contract](docs/scova_cf_methodological_contract.md).
+The randomized continuous-outcome reference slice, current limitations, and a
+full example are documented in [`docs/scova_cf.md`](docs/scova_cf.md).
 
 The `0.5.0` source tree also contains an experimental finite-grid smooth
 overlap path. It remains experimental pending the frozen directional calibration,
