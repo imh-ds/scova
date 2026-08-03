@@ -174,6 +174,7 @@ class SupportPolicy:
     # rather than assuming a single supported regime.
     profile_mode: str | None = None
     profile_assignment: str | None = None
+    profile_nuisance_strategy: str | None = None
 
     def __post_init__(self) -> None:
         if self.min_group_count < 2:
@@ -240,6 +241,15 @@ class SupportPolicy:
                 f"mode {regime[0]!r} with assignment {regime[1]!r} is not a "
                 "regime this release can govern"
             )
+        nuisance_strategy = compatibility.get("nuisance_strategy")
+        if regime[0] == AnalysisMode.OBSERVATIONAL_CAUSAL.value:
+            if nuisance_strategy != "adaptive":
+                raise ValueError(
+                    "Observational packaged profiles require "
+                    "compatibility nuisance_strategy='adaptive'"
+                )
+        elif nuisance_strategy is not None:
+            raise ValueError("Randomized packaged profiles must not lock a nuisance strategy")
         thresholds = profile.thresholds
         return cls(
             min_group_count=int(compatibility.get("minimum_group_count", 20)),
@@ -278,6 +288,9 @@ class SupportPolicy:
             profile_checksum=profile.checksum,
             profile_mode=regime[0],
             profile_assignment=regime[1],
+            profile_nuisance_strategy=(
+                None if nuisance_strategy is None else str(nuisance_strategy)
+            ),
         )
 
     def governs(
@@ -302,6 +315,15 @@ class SupportPolicy:
             return (
                 f"The packaged reference profile validates {self.profile_assignment} "
                 f"assignment; this declaration uses {actual}"
+            )
+        if (
+            mode is AnalysisMode.OBSERVATIONAL_CAUSAL
+            and isinstance(assignment, EstimatedAssignment)
+            and self.profile_nuisance_strategy != assignment.nuisance_strategy
+        ):
+            return (
+                f"The packaged reference profile validates {self.profile_nuisance_strategy} "
+                f"nuisance learning; this declaration uses {assignment.nuisance_strategy}"
             )
         return None
 
@@ -328,6 +350,9 @@ class SupportPolicy:
             "version": self.version,
             "profile_id": self.profile_id,
             "profile_checksum": self.profile_checksum,
+            "profile_mode": self.profile_mode,
+            "profile_assignment": self.profile_assignment,
+            "profile_nuisance_strategy": self.profile_nuisance_strategy,
         }
 
 

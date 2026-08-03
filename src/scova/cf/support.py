@@ -10,7 +10,7 @@ import numpy as np
 from ..declaration import JsonLabel
 from ..diagnostics import _multinomial_calibration
 from .declaration import SupportPolicy
-from .status import SCOVACFStatus, SupportStatus
+from .status import QualificationStatus, SCOVACFStatus, SupportStatus
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,14 +145,16 @@ def assess_support(
             support=SupportStatus.UNSTABLE,
             code="limited/unstable-support",
             reason="; ".join(warnings),
-            confirmatory=False,
+            qualification_status=QualificationStatus.UNQUALIFIED,
+            qualification_reason="Support checks did not pass under the selected policy",
         )
     else:
         status = SCOVACFStatus(
             support=SupportStatus.SUPPORTED,
             code="supported",
             reason=f"All calibrated support checks passed under {policy.version}",
-            confirmatory=True,
+            qualification_status=QualificationStatus.UNQUALIFIED,
+            qualification_reason="Qualification has not yet been evaluated for this declaration",
         )
     diagnostics = {
         "outcome_blind": True,

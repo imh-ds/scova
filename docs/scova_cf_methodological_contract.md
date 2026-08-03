@@ -106,6 +106,24 @@ does not establish its adequacy. Predictive loss, balance, propensity
 calibration, and support diagnostics cannot upgrade either strategy into a
 validated structural model.
 
+## Output classes
+
+Every SCOVA-CF artifact reports a `qualification_status` and
+`qualification_reason` in addition to its analysis mode, claim class, and
+support status. `confirmatory` is retained only as a compatibility alias for
+`qualification_status == "qualified"`.
+
+| Status | Meaning | Prohibited interpretation |
+| --- | --- | --- |
+| `qualified` | A causal-capable analysis passed all matching promoted-profile, support, and applicability gates. | Proof that exchangeability or positivity holds in the applied data. |
+| `unqualified` | A causal-capable numerical analysis is available, but a required promoted profile or gate is absent, provisional, or failed. | A validated-operating-regime claim. |
+| `ineligible` | A numerical analysis is available but cannot qualify under this contract, including associational analyses and observational `linear`/`custom` strategies. | A causal qualification claim. |
+| `unavailable` | A typed refusal prevented a numerical result. | That an estimate or interval was produced. |
+
+Unqualified and ineligible outputs retain their declared estimand, estimates,
+diagnostics, and available intervals. The taxonomy changes interpretation, not
+the numerical target or the data used to estimate it.
+
 ## Explicit non-claims
 
 SCOVA-CF does not:

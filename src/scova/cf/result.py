@@ -15,10 +15,10 @@ from .._version import __version__
 from ..declaration import JsonLabel
 from ..inference import SimultaneousInferenceResult, run_simultaneous_inference
 from .declaration import AnalysisMode, ClaimClass, claim_class_for_mode
-from .status import SCOVACFStatus, SupportStatus
+from .status import QualificationStatus, SCOVACFStatus, SupportStatus
 
 CF_ARTIFACT_TYPE = "scova-cf-result"
-CF_SCHEMA_VERSION = 2
+CF_SCHEMA_VERSION = 3
 
 
 def _json_float(value: float) -> float | None:
@@ -27,6 +27,25 @@ def _json_float(value: float) -> float | None:
 
 def _loaded_float(value: Any) -> float:
     return np.nan if value is None else float(value)
+
+
+def _legacy_qualification(
+    metadata: Mapping[str, Any], status_values: Mapping[str, Any]
+) -> tuple[QualificationStatus, str]:
+    """Derive v1/v2 output semantics from their retained declaration metadata."""
+    if bool(status_values.get("confirmatory", False)):
+        return QualificationStatus.QUALIFIED, "Derived from legacy confirmatory status"
+    mode = AnalysisMode(metadata["mode"])
+    if mode is AnalysisMode.STANDARDIZED_ASSOCIATIONAL:
+        return QualificationStatus.INELIGIBLE, "Associational analyses are not causally qualified"
+    declaration = metadata.get("declaration", {})
+    assignment = declaration.get("assignment", {})
+    if mode is AnalysisMode.OBSERVATIONAL_CAUSAL and (
+        assignment.get("nuisance_strategy") in {"linear", "custom"}
+        or declaration.get("outcome_nuisance_strategy") in {"linear", "custom"}
+    ):
+        return QualificationStatus.INELIGIBLE, "Legacy non-adaptive observational strategy"
+    return QualificationStatus.UNQUALIFIED, "Derived from legacy nonconfirmatory status"
 
 
 @dataclass(frozen=True, slots=True)
@@ -152,7 +171,14 @@ class SCOVACFContrastEstimate:
     contrast_scale: str
     support_status: SupportStatus
     interval_type: str = "pointwise-wald"
+    qualification_status: QualificationStatus = QualificationStatus.UNQUALIFIED
+    qualification_reason: str = ""
     confirmatory: bool = False
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "confirmatory", self.qualification_status is QualificationStatus.QUALIFIED
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -169,6 +195,8 @@ class SCOVACFContrastEstimate:
             "target_population": self.target_population,
             "contrast_scale": self.contrast_scale,
             "support_status": self.support_status.value,
+            "qualification_status": self.qualification_status.value,
+            "qualification_reason": self.qualification_reason,
             "interval_type": self.interval_type,
             "confirmatory": self.confirmatory,
         }
@@ -185,7 +213,14 @@ class SCOVACFOmnibusResult:
     mode: AnalysisMode
     claim_class: ClaimClass
     support_status: SupportStatus
+    qualification_status: QualificationStatus
+    qualification_reason: str
     confirmatory: bool
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "confirmatory", self.qualification_status is QualificationStatus.QUALIFIED
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -198,6 +233,8 @@ class SCOVACFOmnibusResult:
             "mode": self.mode.value,
             "claim_class": self.claim_class.value,
             "support_status": self.support_status.value,
+            "qualification_status": self.qualification_status.value,
+            "qualification_reason": self.qualification_reason,
             "confirmatory": self.confirmatory,
         }
 
@@ -211,7 +248,14 @@ class SCOVACFInferenceResult:
     target_population: str
     contrast_scale: str
     support_status: SupportStatus
+    qualification_status: QualificationStatus
+    qualification_reason: str
     confirmatory: bool
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "confirmatory", self.qualification_status is QualificationStatus.QUALIFIED
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -222,6 +266,8 @@ class SCOVACFInferenceResult:
             "target_population": self.target_population,
             "contrast_scale": self.contrast_scale,
             "support_status": self.support_status.value,
+            "qualification_status": self.qualification_status.value,
+            "qualification_reason": self.qualification_reason,
             "interval_type": "simultaneous-max-t",
             "confirmatory": self.confirmatory,
         }
@@ -253,6 +299,8 @@ def guarded_omnibus(
             mode=mode,
             claim_class=claim_class,
             support_status=status.support,
+            qualification_status=status.qualification_status,
+            qualification_reason=status.qualification_reason,
             confirmatory=False,
         )
     effect = contrast @ means
@@ -271,6 +319,8 @@ def guarded_omnibus(
         mode=mode,
         claim_class=claim_class,
         support_status=status.support,
+        qualification_status=status.qualification_status,
+        qualification_reason=status.qualification_reason,
         confirmatory=status.confirmatory,
     )
 
@@ -374,6 +424,8 @@ class SCOVACFResult:
             target_population=self.target_population,
             contrast_scale=f"mean-difference ({self.outcome_units})",
             support_status=self.status.support,
+            qualification_status=self.status.qualification_status,
+            qualification_reason=self.status.qualification_reason,
             confirmatory=self.status.confirmatory,
         )
         self.contrasts[name] = result
@@ -421,6 +473,8 @@ class SCOVACFResult:
             target_population=self.target_population,
             contrast_scale=f"mean-difference ({self.outcome_units})",
             support_status=self.status.support,
+            qualification_status=self.status.qualification_status,
+            qualification_reason=self.status.qualification_reason,
             confirmatory=self.status.confirmatory,
         )
         self.inferences[core.configuration_key] = result
@@ -436,6 +490,8 @@ class SCOVACFResult:
             "mode": self.mode.value,
             "claim_class": self.claim_class.value,
             "status": self.status.to_dict(),
+            "qualification_status": self.status.qualification_status.value,
+            "qualification_reason": self.status.qualification_reason,
             "estimand_id": self.estimand_id,
             "target_population": self.target_population,
             "outcome_units": self.outcome_units,
@@ -486,18 +542,25 @@ class SCOVACFResult:
             if metadata.get("artifact_type") != CF_ARTIFACT_TYPE:
                 raise ValueError("Artifact is not a SCOVA-CF result")
             schema_version = int(metadata["schema_version"])
-            if schema_version not in {1, CF_SCHEMA_VERSION}:
+            if schema_version not in {1, 2, CF_SCHEMA_VERSION}:
                 raise ValueError("Unsupported SCOVA-CF artifact schema")
             mode = AnalysisMode(metadata["mode"])
             claim_class = ClaimClass(metadata["claim_class"])
             if claim_class is not claim_class_for_mode(mode):
                 raise ValueError("SCOVA-CF artifact claim class does not match its analysis mode")
             status_values = metadata["status"]
+            qualification_status, qualification_reason = (
+                (QualificationStatus(status_values["qualification_status"]),
+                 str(status_values["qualification_reason"]))
+                if "qualification_status" in status_values
+                else _legacy_qualification(metadata, status_values)
+            )
             status = SCOVACFStatus(
                 support=SupportStatus(status_values["support"]),
                 code=str(status_values["code"]),
                 reason=str(status_values["reason"]),
-                confirmatory=bool(status_values["confirmatory"]),
+                qualification_status=qualification_status,
+                qualification_reason=qualification_reason,
             )
             lock_values = metadata["design_lock"]
             lock = CFDesignLock(
@@ -519,6 +582,12 @@ class SCOVACFResult:
                 mode=AnalysisMode(omnibus_values["mode"]),
                 claim_class=ClaimClass(omnibus_values["claim_class"]),
                 support_status=SupportStatus(omnibus_values["support_status"]),
+                qualification_status=QualificationStatus(
+                    omnibus_values.get("qualification_status", qualification_status.value)
+                ),
+                qualification_reason=str(
+                    omnibus_values.get("qualification_reason", qualification_reason)
+                ),
                 confirmatory=bool(omnibus_values["confirmatory"]),
             )
             result = cls(
@@ -570,6 +639,12 @@ class SCOVACFResult:
                     contrast_scale=str(values["contrast_scale"]),
                     support_status=SupportStatus(values["support_status"]),
                     interval_type=str(values["interval_type"]),
+                    qualification_status=QualificationStatus(
+                        values.get("qualification_status", qualification_status.value)
+                    ),
+                    qualification_reason=str(
+                        values.get("qualification_reason", qualification_reason)
+                    ),
                     confirmatory=bool(values["confirmatory"]),
                 )
             for key, values in metadata.get("inferences", {}).items():
@@ -584,6 +659,12 @@ class SCOVACFResult:
                     target_population=str(values["target_population"]),
                     contrast_scale=str(values["contrast_scale"]),
                     support_status=SupportStatus(values["support_status"]),
+                    qualification_status=QualificationStatus(
+                        values.get("qualification_status", qualification_status.value)
+                    ),
+                    qualification_reason=str(
+                        values.get("qualification_reason", qualification_reason)
+                    ),
                     confirmatory=bool(values["confirmatory"]),
                 )
         return result

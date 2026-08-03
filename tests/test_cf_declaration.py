@@ -148,9 +148,10 @@ def test_packaged_arm_density_enforces_the_declared_scope_not_only_the_threshold
         "mode": "observational-causal",
         "outcome_type": "continuous",
         "estimator": "aipw-unnormalized",
-        "estimand_id": "study-population-standardized-means",
-        "assignment": "estimated",
-        "independent_unit": "row",
+            "estimand_id": "study-population-standardized-means",
+            "assignment": "estimated",
+            "nuisance_strategy": "adaptive",
+            "independent_unit": "row",
         "minimum_group_count": 50,
         "minimum_arm_units_per_covariate": 10.0,
     }
@@ -397,6 +398,11 @@ def _profile(mode: str, assignment: str, profile_id: str = "regime-test") -> CFS
             "estimand_id": "study-population-standardized-means",
             "assignment": assignment,
             "independent_unit": "row",
+            **(
+                {"nuisance_strategy": "adaptive"}
+                if mode == "observational-causal"
+                else {}
+            ),
         },
         state="promoted",
     )
@@ -418,6 +424,28 @@ def test_packaged_policy_accepts_an_observational_regime(
         "observational-causal",
         "estimated",
     )
+    assert policy.profile_nuisance_strategy == "adaptive"
+
+
+def test_observational_packaged_profile_requires_an_adaptive_nuisance_lock(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile = _profile("observational-causal", "estimated")
+    values = profile.to_dict()
+    values["compatibility"].pop("nuisance_strategy")
+    # Rebuild after mutation so the fixture remains checksum-valid.
+    missing = CFSupportProfile(
+        profile_id=profile.profile_id,
+        protocol_checksum=profile.protocol_checksum,
+        calibration_evidence_checksum=profile.calibration_evidence_checksum,
+        validation_evidence_checksum=profile.validation_evidence_checksum,
+        thresholds=profile.thresholds,
+        compatibility=values["compatibility"],
+        state="promoted",
+    )
+    _install(monkeypatch, missing)
+    with pytest.raises(ValueError, match="nuisance_strategy='adaptive'"):
+        SupportPolicy.packaged("regime-test")
 
 
 def test_packaged_policy_refuses_a_regime_the_release_cannot_govern(

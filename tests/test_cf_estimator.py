@@ -1,3 +1,4 @@
+import json
 from dataclasses import replace
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from scova.cf import (
     SCOVACFNuisancePredictions,
     SCOVACFRefusal,
     SCOVACFResult,
+    QualificationStatus,
     SupportPolicy,
     SupportStatus,
 )
@@ -113,6 +115,7 @@ def test_randomized_cf_oracle_matches_base_numerical_engine() -> None:
     assert cf.mode is AnalysisMode.RANDOMIZED
     assert cf.claim_class is ClaimClass.RANDOMIZATION_SUPPORTED
     assert cf.status.support is SupportStatus.UNSTABLE
+    assert cf.status.qualification_status is QualificationStatus.UNQUALIFIED
     assert cf.status.confirmatory is False
     np.testing.assert_allclose(cf.propensity_predictions, 1 / 3)
 
@@ -134,10 +137,12 @@ def test_associational_and_observational_claim_gates() -> None:
     associational = oracle_result(AnalysisMode.STANDARDIZED_ASSOCIATIONAL)
     assert associational.claim_class is ClaimClass.ASSOCIATIONAL
     assert associational.evidence_card["claim_class"] == "associational"
+    assert associational.status.qualification_status is QualificationStatus.INELIGIBLE
     observational = oracle_result(AnalysisMode.OBSERVATIONAL_CAUSAL)
     assert observational.claim_class is ClaimClass.ASSUMPTION_DEPENDENT_CAUSAL
     assert observational.status.code == "limited/required-sensitivity-analysis"
     assert observational.status.confirmatory is False
+    assert observational.status.qualification_status is QualificationStatus.INELIGIBLE
 
 
 def test_labelled_inference_and_cf_artifact_round_trip(tmp_path: Path) -> None:
@@ -173,11 +178,43 @@ def test_labelled_inference_and_cf_artifact_round_trip(tmp_path: Path) -> None:
         SCOVACFResult.load(base_path)
 
 
+@pytest.mark.parametrize("schema_version", [1, 2])
+def test_legacy_artifacts_derive_qualification_status(
+    tmp_path: Path, schema_version: int
+) -> None:
+    result = oracle_result()
+    path = tmp_path / "current.scova-cf"
+    result.save(path)
+    with np.load(path, allow_pickle=False) as archive:
+        arrays = {name: archive[name].copy() for name in archive.files}
+    metadata = json.loads(str(arrays["metadata"].item()))
+    metadata["schema_version"] = schema_version
+    metadata["status"].pop("qualification_status")
+    metadata["status"].pop("qualification_reason")
+    metadata.pop("qualification_status")
+    metadata.pop("qualification_reason")
+    metadata["omnibus"].pop("qualification_status")
+    metadata["omnibus"].pop("qualification_reason")
+    for contrast in metadata["contrasts"].values():
+        contrast.pop("qualification_status")
+        contrast.pop("qualification_reason")
+    arrays["metadata"] = np.array(json.dumps(metadata, sort_keys=True, allow_nan=False))
+    legacy = tmp_path / f"legacy-v{schema_version}.scova-cf"
+    with legacy.open("wb") as stream:
+        np.savez_compressed(stream, **arrays)
+
+    loaded = SCOVACFResult.load(legacy)
+    assert loaded.status.qualification_status is QualificationStatus.UNQUALIFIED
+    assert loaded.status.confirmatory is False
+
+
 def test_typed_refusals_and_no_individual_counterfactual_api() -> None:
     simulation = generate_data("randomized", n=180, seed=7)
     post_treatment = replace(declaration(), post_treatment_covariates=("x1",))
     refused = SCOVACF().analyze(simulation.data, post_treatment)
     assert isinstance(refused, SCOVACFRefusal)
+    assert refused.status.qualification_status is QualificationStatus.UNAVAILABLE
+    assert refused.to_dict()["qualification_status"] == "unavailable"
     assert refused.status.code == "refused/post-treatment-covariate"
 
     missing = simulation.data.copy()

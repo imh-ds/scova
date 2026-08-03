@@ -22,7 +22,7 @@ from .declaration import (
     SCOVACFDeclaration,
 )
 from .result import CFDesignLock, SCOVACFResult, SeedStabilityResult, guarded_omnibus
-from .status import SCOVACFRefusal, SCOVACFStatus, SupportStatus
+from .status import QualificationStatus, SCOVACFRefusal, SCOVACFStatus, SupportStatus
 from .support import assess_support, influence_concentration
 
 
@@ -66,7 +66,8 @@ class SCOVACF:
                 support=support,
                 code=code,
                 reason=reason,
-                confirmatory=False,
+                qualification_status=QualificationStatus.UNAVAILABLE,
+                qualification_reason="No numerical SCOVA-CF result was produced",
             ),
             details={} if details is None else details,
         )
@@ -88,6 +89,50 @@ class SCOVACF:
         if isinstance(value, (int, float)):
             return (1, float(value))
         return (2, value)
+
+    @staticmethod
+    def _qualify_status(
+        declaration: SCOVACFDeclaration, status: SCOVACFStatus
+    ) -> SCOVACFStatus:
+        """Attach the contract's output class without changing numerical output."""
+        if declaration.mode is AnalysisMode.STANDARDIZED_ASSOCIATIONAL:
+            return replace(
+                status,
+                qualification_status=QualificationStatus.INELIGIBLE,
+                qualification_reason="Standardized-associational analyses never receive causal qualification",
+            )
+        if declaration.mode is AnalysisMode.OBSERVATIONAL_CAUSAL:
+            assignment = declaration.assignment
+            if (
+                not isinstance(assignment, EstimatedAssignment)
+                or assignment.nuisance_strategy != "adaptive"
+                or declaration.outcome_nuisance_strategy != "adaptive"
+            ):
+                return replace(
+                    status,
+                    qualification_status=QualificationStatus.INELIGIBLE,
+                    qualification_reason=(
+                        "Only the default adaptive nuisance strategy is eligible for "
+                        "observational qualification"
+                    ),
+                )
+        if not declaration.support_policy.calibrated:
+            return replace(
+                status,
+                qualification_status=QualificationStatus.UNQUALIFIED,
+                qualification_reason="No matching promoted support profile was selected",
+            )
+        if status.support is not SupportStatus.SUPPORTED:
+            return replace(
+                status,
+                qualification_status=QualificationStatus.UNQUALIFIED,
+                qualification_reason=status.reason,
+            )
+        return replace(
+            status,
+            qualification_status=QualificationStatus.QUALIFIED,
+            qualification_reason="All declared applicability and support gates passed",
+        )
 
     @staticmethod
     def _known_probability_matrix(
@@ -464,8 +509,10 @@ class SCOVACF:
                     f"{status.reason}; observational-causal promotion requires a prespecified "
                     "quantitative sensitivity analysis"
                 ),
-                confirmatory=False,
+                qualification_status=QualificationStatus.UNQUALIFIED,
+                qualification_reason="A required observational sensitivity analysis was not declared",
             )
+        status = self._qualify_status(declaration, status)
         try:
             means, influence, covariance = assemble_aipw(
                 outcome, group_codes, propensity, outcome_regression
@@ -510,6 +557,8 @@ class SCOVACF:
             },
             "contrasts": [contrast.to_dict() for contrast in declaration.contrasts],
             "support_status": status.to_dict(),
+            "qualification_status": status.qualification_status.value,
+            "qualification_reason": status.qualification_reason,
             "independent_unit": "row",
             "estimator": declaration.estimator,
             "missingness": declaration.missing_outcome_policy,
@@ -595,12 +644,16 @@ class SCOVACF:
                 support=SupportStatus.UNSTABLE,
                 code="limited/unstable-support",
                 reason="; ".join(warnings),
-                confirmatory=False,
+                qualification_status=QualificationStatus.UNQUALIFIED,
+                qualification_reason="A packaged-profile reliability gate failed",
             )
+        result.status = SCOVACF._qualify_status(declaration, result.status)
         result.contrasts = {
             name: replace(
                 contrast,
                 support_status=result.status.support,
+                qualification_status=result.status.qualification_status,
+                qualification_reason=result.status.qualification_reason,
                 confirmatory=result.status.confirmatory,
             )
             for name, contrast in result.contrasts.items()
@@ -613,6 +666,8 @@ class SCOVACF:
             status=result.status,
         )
         result.evidence_card["support_status"] = result.status.to_dict()
+        result.evidence_card["qualification_status"] = result.status.qualification_status.value
+        result.evidence_card["qualification_reason"] = result.status.qualification_reason
 
     def _seed_stability_diagnostic(
         self,

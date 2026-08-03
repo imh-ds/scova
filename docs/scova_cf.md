@@ -101,6 +101,12 @@ else:
 
 ## Interpretation rules
 
+Each result and refusal carries `qualification_status` and
+`qualification_reason`. `qualified` means the result is covered by the
+approved operating regime; it does not test exchangeability, prove positivity,
+or establish causal validity in an individual dataset. See the output-class
+table in the [methodological contract](scova_cf_methodological_contract.md).
+
 - `randomized` results receive the `randomization-supported` claim class, but
   remain nonconfirmatory unless an eligible promoted packaged policy is selected.
 - `observational-causal` results are assumption-dependent and require a

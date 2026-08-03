@@ -15,18 +15,35 @@ class SupportStatus(str, Enum):
     UNSUPPORTED = "unsupported"
 
 
+class QualificationStatus(str, Enum):
+    """Whether an artifact is covered by an approved operating regime."""
+
+    QUALIFIED = "qualified"
+    UNQUALIFIED = "unqualified"
+    INELIGIBLE = "ineligible"
+    UNAVAILABLE = "unavailable"
+
+
 @dataclass(frozen=True, slots=True)
 class SCOVACFStatus:
     support: SupportStatus
     code: str
     reason: str
-    confirmatory: bool
+    qualification_status: QualificationStatus
+    qualification_reason: str
+
+    @property
+    def confirmatory(self) -> bool:
+        """Backward-compatible alias for a qualified operating regime."""
+        return self.qualification_status is QualificationStatus.QUALIFIED
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "support": self.support.value,
             "code": self.code,
             "reason": self.reason,
+            "qualification_status": self.qualification_status.value,
+            "qualification_reason": self.qualification_reason,
             "confirmatory": self.confirmatory,
         }
 
@@ -48,5 +65,7 @@ class SCOVACFRefusal:
             "mode": self.mode.value,
             "claim_class": self.claim_class.value,
             "status": self.status.to_dict(),
+            "qualification_status": self.status.qualification_status.value,
+            "qualification_reason": self.status.qualification_reason,
             "details": self.details,
         }

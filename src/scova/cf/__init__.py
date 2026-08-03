@@ -18,7 +18,7 @@ from .result import (
     SCOVACFResult,
     SeedStabilityResult,
 )
-from .status import SCOVACFRefusal, SCOVACFStatus, SupportStatus
+from .status import QualificationStatus, SCOVACFRefusal, SCOVACFStatus, SupportStatus
 from .validation import (
     CFSupportProfile,
     CFValidationProtocol,
@@ -35,6 +35,7 @@ __all__ = [
     "DeclarationAmendment",
     "EstimatedAssignment",
     "KnownAssignment",
+    "QualificationStatus",
     "SCOVACF",
     "SCOVACFContrastEstimate",
     "SCOVACFDeclaration",
