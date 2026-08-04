@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "matrices": [
+    {
+      "matrix_id": "cf-observational-provisional-v1",
+      "state": "provisional",
+      "mode": "observational-causal",
+      "source_protocol": "cf-observational-continuous-aipw-unnormalized-v11",
+      "candidate_qualification_envelope": {
+        "assignment": "estimated",
+        "nuisance_strategy": "adaptive",
+        "n_groups": [2, 3],
+        "maximum_covariate_count": 5
+      },
+      "classifications": {
+        "in-scope": [],
+        "known-limitation": [
+          {
+            "entry_id": "v11-adaptive-cell-2",
+            "statement": "The adaptive estimator failed the calibration screening gate in a poor-overlap, 50-per-arm, nonlinear-confounding interaction scenario.",
+            "runtime_checkable": false,
+            "evidence": {
+              "calibration_run_id": "30781945289",
+              "methods_run_id": "30843098640",
+              "cell": {
+                "n_groups": 2,
+                "n_covariates": 5,
+                "n_per_group": 50,
+                "learner": "adaptive",
+                "confounding_form": "nonlinear",
+                "surface": "interaction",
+                "overlap": "poor",
+                "noise": "heavy-tailed"
+              }
+            }
+          },
+          {
+            "entry_id": "nonadaptive-observational-strategies",
+            "statement": "Linear and custom observational nuisance strategies are contract-ineligible for qualification.",
+            "runtime_checkable": true,
+            "evidence": {
+              "contract_version": "1.0.0"
+            }
+          }
+        ],
+        "untested": [
+          {
+            "entry_id": "predictor-count-above-five",
+            "statement": "Observational qualification above five declared covariates lacks direct supporting evidence.",
+            "runtime_checkable": true,
+            "evidence": {
+              "protocol": "benchmarks/specs/cf_reference_v11.json",
+              "reason": "No profile-eligible simulated scenario uses 20 or 50 covariates."
+            }
+          },
+          {
+            "entry_id": "no-promoted-observational-profile",
+            "statement": "No observational support profile is promoted; the candidate envelope is not an in-scope claim.",
+            "runtime_checkable": true,
+            "evidence": {
+              "calibration_run_id": "30832054953"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

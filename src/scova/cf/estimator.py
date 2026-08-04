@@ -15,6 +15,7 @@ from .._version import __version__
 from ..declaration import JsonLabel
 from ..estimator import SCOVA
 from .benchmarks import lin_interacted_benchmark, unadjusted_benchmark
+from .applicability import assess_observational_applicability
 from .declaration import (
     AnalysisMode,
     EstimatedAssignment,
@@ -528,6 +529,15 @@ class SCOVACF:
             "influence_concentration": influence_concentration(influence, labels),
             "design_stratified_folds": design_stratified,
         }
+        applicability = (
+            None
+            if declaration.mode is not AnalysisMode.OBSERVATIONAL_CAUSAL
+            else assess_observational_applicability(
+                n_groups=len(labels),
+                n_covariates=len(declaration.covariates),
+                nuisance_strategy=declaration.outcome_nuisance_strategy,
+            ).to_dict()
+        )
         benchmarks = {
             "unadjusted": unadjusted_benchmark(outcome, group_codes, labels),
             "lin_interacted": lin_interacted_benchmark(outcome, x, group_codes, labels),
@@ -559,6 +569,7 @@ class SCOVACF:
             "support_status": status.to_dict(),
             "qualification_status": status.qualification_status.value,
             "qualification_reason": status.qualification_reason,
+            "applicability_matrix": applicability,
             "independent_unit": "row",
             "estimator": declaration.estimator,
             "missingness": declaration.missing_outcome_policy,

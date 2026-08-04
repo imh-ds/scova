@@ -124,6 +124,34 @@ Unqualified and ineligible outputs retain their declared estimand, estimates,
 diagnostics, and available intervals. The taxonomy changes interpretation, not
 the numerical target or the data used to estimate it.
 
+## Provisional observational applicability matrix
+
+`cf-observational-provisional-v1` is a machine-readable governance matrix, not
+a promoted support profile. It has no observational `in-scope` entries, so it
+cannot make an observational result `qualified`. Its candidate qualification
+envelope is limited to estimated assignment, adaptive nuisance learning, two or
+three groups, and at most five declared covariates.
+
+| Condition | Current classification | Evidence | Runtime-checkable |
+| --- | --- | --- | --- |
+| Randomized known-constant, promoted v9 profile | In scope for its separate randomized regime | v9 promoted profile | Yes |
+| Observational adaptive, 2–3 groups, ≤5 covariates | Untested candidate envelope | v11 calibration `30781945289` has no candidate profile | Yes |
+| Observational >5 covariates | Untested | v11 has no profile-eligible simulated 20/50-covariate scenario | Yes |
+| Adaptive cell-2 configuration | Known limitation | calibration `30781945289`; ablation `30843098640` | No — its nuisance truth is not observable before analysis |
+| Linear/custom observational nuisances | Contract-ineligible | this contract, § Nuisance-model policy | Yes |
+| Overlap, outcome surface, confounding, and noise | No observational qualification boundary | v11 calibration and misspecification study `30848263665` do not identify a user-observable boundary | Partly/No |
+| Plasmode sources (10 and 30 covariates) | Partially represented, not a dimensional qualification | v11 calibration design | No |
+
+The 10-units-per-covariate quantity is a calibration feature and support
+diagnostic. It is not a universal dimension rule or evidence that a
+high-dimensional observational analysis is qualified. A future observational
+profile must declare an explicit maximum covariate count and may not exceed five
+until direct evidence is approved.
+
+Moving an `untested` or `known-limitation` entry to `in-scope` requires a new
+matrix/contract version, an approved protocol freeze, and direct qualification
+evidence. It cannot be changed by interpreting a passing subset after the fact.
+
 ## Explicit non-claims
 
 SCOVA-CF does not:

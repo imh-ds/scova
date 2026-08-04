@@ -9,6 +9,13 @@ from .declaration import (
     SCOVACFDeclaration,
     SupportPolicy,
 )
+from .applicability import (
+    ApplicabilityAssessment,
+    ApplicabilityClassification,
+    ApplicabilityMatrix,
+    assess_observational_applicability,
+    observational_applicability_matrix,
+)
 from .estimator import SCOVACF, SCOVACFNuisancePredictions
 from .result import (
     CFDesignLock,
@@ -28,6 +35,9 @@ from .validation import (
 
 __all__ = [
     "AnalysisMode",
+    "ApplicabilityAssessment",
+    "ApplicabilityClassification",
+    "ApplicabilityMatrix",
     "CFDesignLock",
     "CFSupportProfile",
     "CFValidationProtocol",
@@ -50,4 +60,6 @@ __all__ = [
     "SupportPolicy",
     "SupportStatus",
     "canonical_checksum",
+    "assess_observational_applicability",
+    "observational_applicability_matrix",
 ]

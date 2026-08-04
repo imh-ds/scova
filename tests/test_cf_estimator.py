@@ -143,6 +143,9 @@ def test_associational_and_observational_claim_gates() -> None:
     assert observational.status.code == "limited/required-sensitivity-analysis"
     assert observational.status.confirmatory is False
     assert observational.status.qualification_status is QualificationStatus.INELIGIBLE
+    applicability = observational.evidence_card["applicability_matrix"]
+    assert applicability["matrix_id"] == "cf-observational-provisional-v1"
+    assert applicability["classification"] == "known-limitation"
 
 
 def test_labelled_inference_and_cf_artifact_round_trip(tmp_path: Path) -> None:

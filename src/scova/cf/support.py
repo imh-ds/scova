@@ -49,6 +49,15 @@ def assess_support(
             f"number of groups {n_groups} exceeds the calibrated maximum "
             f"{policy.maximum_group_count}"
         )
+    if (
+        policy.maximum_covariate_count is not None
+        and x.shape[1] > policy.maximum_covariate_count
+    ):
+        warnings.append(
+            f"outside validated predictor scope: declared covariate count {x.shape[1]} exceeds "
+            "the calibrated maximum "
+            f"{policy.maximum_covariate_count}"
+        )
     group_diagnostics: dict[str, Any] = {}
     for code, label in enumerate(group_labels):
         observed = group_codes == code

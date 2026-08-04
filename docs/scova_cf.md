@@ -12,6 +12,9 @@ an alternative to ordinary ANOVA/ANCOVA mean-comparison workflows.
 The normative definition of this target, the assumptions needed for each
 analysis mode, and the limits of diagnostics and validation evidence are in the
 [SCOVA-CF methodological contract](scova_cf_methodological_contract.md).
+The provisional observational applicability matrix is deliberately not a
+promoted profile: adaptive analyses with more than five covariates are explicitly
+untested, and no observational result is currently qualified.
 
 For group (g), the first SCOVA-CF estimand is
 

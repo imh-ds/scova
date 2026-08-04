@@ -165,6 +165,7 @@ class SupportPolicy:
     max_influence_top_one_percent_share: float = 1.0
     max_seed_standardized_departure: float = 1e9
     maximum_group_count: int | None = None
+    maximum_covariate_count: int | None = None
     calibrated: bool = False
     version: str = "cf-provisional-1"
     profile_id: str | None = None
@@ -195,6 +196,8 @@ class SupportPolicy:
             raise ValueError("max_seed_standardized_departure must be positive")
         if self.maximum_group_count is not None and self.maximum_group_count < 2:
             raise ValueError("maximum_group_count must be at least two when supplied")
+        if self.maximum_covariate_count is not None and self.maximum_covariate_count < 1:
+            raise ValueError("maximum_covariate_count must be positive when supplied")
         if not self.version:
             raise ValueError("Support policy version must not be empty")
         if self.calibrated:
@@ -248,8 +251,20 @@ class SupportPolicy:
                     "Observational packaged profiles require "
                     "compatibility nuisance_strategy='adaptive'"
                 )
+            maximum_covariate_count = compatibility.get("maximum_covariate_count")
+            if (
+                isinstance(maximum_covariate_count, bool)
+                or not isinstance(maximum_covariate_count, int)
+                or not 1 <= maximum_covariate_count <= 5
+            ):
+                raise ValueError(
+                    "Observational packaged profiles require an integer "
+                    "maximum_covariate_count from 1 through 5"
+                )
         elif nuisance_strategy is not None:
             raise ValueError("Randomized packaged profiles must not lock a nuisance strategy")
+        else:
+            maximum_covariate_count = None
         thresholds = profile.thresholds
         return cls(
             min_group_count=int(compatibility.get("minimum_group_count", 20)),
@@ -290,6 +305,9 @@ class SupportPolicy:
             profile_assignment=regime[1],
             profile_nuisance_strategy=(
                 None if nuisance_strategy is None else str(nuisance_strategy)
+            ),
+            maximum_covariate_count=(
+                None if maximum_covariate_count is None else int(maximum_covariate_count)
             ),
         )
 
@@ -345,6 +363,11 @@ class SupportPolicy:
                 {}
                 if self.maximum_group_count is None
                 else {"maximum_group_count": self.maximum_group_count}
+            ),
+            **(
+                {}
+                if self.maximum_covariate_count is None
+                else {"maximum_covariate_count": self.maximum_covariate_count}
             ),
             "calibrated": self.calibrated,
             "version": self.version,

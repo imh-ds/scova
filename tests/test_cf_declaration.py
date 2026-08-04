@@ -149,8 +149,9 @@ def test_packaged_arm_density_enforces_the_declared_scope_not_only_the_threshold
         "outcome_type": "continuous",
         "estimator": "aipw-unnormalized",
             "estimand_id": "study-population-standardized-means",
-            "assignment": "estimated",
-            "nuisance_strategy": "adaptive",
+        "assignment": "estimated",
+        "nuisance_strategy": "adaptive",
+        "maximum_covariate_count": 5,
             "independent_unit": "row",
         "minimum_group_count": 50,
         "minimum_arm_units_per_covariate": 10.0,
@@ -403,6 +404,11 @@ def _profile(mode: str, assignment: str, profile_id: str = "regime-test") -> CFS
                 if mode == "observational-causal"
                 else {}
             ),
+            **(
+                {"maximum_covariate_count": 5}
+                if mode == "observational-causal"
+                else {}
+            ),
         },
         state="promoted",
     )
@@ -445,6 +451,22 @@ def test_observational_packaged_profile_requires_an_adaptive_nuisance_lock(
     )
     _install(monkeypatch, missing)
     with pytest.raises(ValueError, match="nuisance_strategy='adaptive'"):
+        SupportPolicy.packaged("regime-test")
+
+
+@pytest.mark.parametrize("maximum_covariate_count", [None, 0, 6])
+def test_observational_packaged_profile_requires_a_conservative_predictor_cap(
+    monkeypatch: pytest.MonkeyPatch, maximum_covariate_count: int | None
+) -> None:
+    profile = _profile("observational-causal", "estimated")
+    compatibility = dict(profile.compatibility or {})
+    if maximum_covariate_count is None:
+        compatibility.pop("maximum_covariate_count")
+    else:
+        compatibility["maximum_covariate_count"] = maximum_covariate_count
+    capped = replace(profile, compatibility=compatibility)
+    _install(monkeypatch, capped)
+    with pytest.raises(ValueError, match="maximum_covariate_count"):
         SupportPolicy.packaged("regime-test")
 
 
