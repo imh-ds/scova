@@ -104,6 +104,12 @@ else:
 
 ## Interpretation rules
 
+Prospective adaptive-only qualification simulations are separate from factorial
+methods studies. Qualification evidence is frozen before it runs; methods
+evidence reports simulation behaviour with Monte-Carlo uncertainty but cannot
+create or promote a support profile. The formal program definitions and human
+approval requirement are in the [methodological contract](scova_cf_methodological_contract.md).
+
 Each result and refusal carries `qualification_status` and
 `qualification_reason`. `qualified` means the result is covered by the
 approved operating regime; it does not test exchangeability, prove positivity,

@@ -26,6 +26,17 @@ from .result import (
     SeedStabilityResult,
 )
 from .status import QualificationStatus, SCOVACFRefusal, SCOVACFStatus, SupportStatus
+from .studies import (
+    ARTIFACT_SCHEMA_VERSION,
+    METHODS_STUDY_ID,
+    QUALIFICATION_PROTOCOL_ID,
+    StudyProgram,
+    assert_program_artifact,
+    factorial_cells,
+    methods_design,
+    qualification_cells,
+    qualification_design,
+)
 from .validation import (
     CFSupportProfile,
     CFValidationProtocol,
@@ -35,6 +46,7 @@ from .validation import (
 
 __all__ = [
     "AnalysisMode",
+    "ARTIFACT_SCHEMA_VERSION",
     "ApplicabilityAssessment",
     "ApplicabilityClassification",
     "ApplicabilityMatrix",
@@ -45,6 +57,8 @@ __all__ = [
     "DeclarationAmendment",
     "EstimatedAssignment",
     "KnownAssignment",
+    "METHODS_STUDY_ID",
+    "QUALIFICATION_PROTOCOL_ID",
     "QualificationStatus",
     "SCOVACF",
     "SCOVACFContrastEstimate",
@@ -59,7 +73,13 @@ __all__ = [
     "SeedPartition",
     "SupportPolicy",
     "SupportStatus",
+    "StudyProgram",
+    "assert_program_artifact",
     "canonical_checksum",
     "assess_observational_applicability",
+    "factorial_cells",
+    "methods_design",
     "observational_applicability_matrix",
+    "qualification_cells",
+    "qualification_design",
 ]

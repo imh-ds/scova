@@ -1,9 +1,9 @@
-"""Methods study: what makes SCOVA-CF's calibration bias gate breach?
+"""Legacy diagnostic follow-up to v11, not qualification evidence.
 
-Three v11 calibration cells failed the bias gate and all three turned out to
-share one mechanism -- AIPW's bias is the PRODUCT of the two nuisance errors,
-so it is first-order only when BOTH nuisances are misspecified at once. What
-differs between them is which misspecification the fitted learner can absorb.
+The v11 cells motivate hypotheses about nuisance error and estimator behaviour;
+they do not establish one mechanism. This harness reproduces named historical
+experiments only. New factorial methods evidence belongs in
+``benchmarks.cf_methods_study`` and cannot qualify a support profile.
 
 This runs in the pinned campaign environment on purpose. The question is about
 what scikit-learn's estimators can represent, so the scikit-learn version is
@@ -14,16 +14,13 @@ Three designs, all scored through `_screening_cell_gate` on records built by
 the same simulate/fit path a campaign shard uses. Nothing here reimplements
 bias, coverage, or the gate.
 
-* `misspecification` -- crosses propensity misspecification (confounding_form)
-  against outcome misspecification (surface) against learner, everything else
-  benign. Separates "nonlinear confounding" from "both nuisances wrong", which
-  the campaign grid cannot do because the two only ever co-occur there.
+* `misspecification` -- explores propensity and outcome misspecification under
+  otherwise benign settings. It estimates associations within these DGPs; it
+  does not identify an applied-data failure mechanism.
 * `cell2-ablation` -- starts from the failing adaptive cell verbatim and
-  restores one factor at a time. Whichever restoration collapses the bias is
-  the mechanism.
+  restores one factor at a time as a hypothesis-generating ablation.
 * `capacity` -- sweeps the adaptive outcome learner's capacity on that same
-  cell. The flexible learner absorbs a smooth-nonlinear surface but not an
-  interaction one; this asks whether that is a hyperparameter or structural.
+  cell to describe the observed sensitivity to this implementation setting.
 """
 from __future__ import annotations
 

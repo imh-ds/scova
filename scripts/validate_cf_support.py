@@ -74,6 +74,9 @@ def validate(
     inference_evidence: dict[str, Any] | None = None,
     external_evidence: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], CFSupportProfile | None]:
+    program_type = campaign.get("program_type")
+    if program_type is not None and program_type != "qualification":
+        raise ValueError("Methods-study evidence cannot validate or promote a support profile")
     _verify_evidence(campaign)
     if campaign["lane"] != "validation" or not campaign["complete_frozen_lane"]:
         raise ValueError("Only the complete frozen held-out lane can promote a profile")

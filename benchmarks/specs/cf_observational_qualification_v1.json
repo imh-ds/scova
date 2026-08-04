@@ -1,0 +1,15 @@
+{
+  "artifact_schema_version": 1,
+  "program_type": "qualification",
+  "protocol_id": "cf-observational-adaptive-qualification-v1",
+  "design_source": "scova.cf.studies.qualification_design",
+  "materializer": "python -m benchmarks.cf_qualification_program --write-spec <path>",
+  "nuisance_strategy": "adaptive",
+  "group_counts": [2, 3],
+  "maximum_covariate_count": 5,
+  "replications_per_cell": 2000,
+  "cell_count": 48,
+  "boundary_estimation": null,
+  "promotion_rule": "independent-held-out-validation-and-human-approval",
+  "status": "prospective-unpromoted"
+}

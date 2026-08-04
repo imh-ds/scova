@@ -648,6 +648,12 @@ def _candidate_usefulness(
 def calibrate(
     protocol: CFValidationProtocol, evidence: dict[str, Any]
 ) -> dict[str, Any]:
+    # Legacy reference evidence predates explicit program provenance.  New
+    # artifacts must declare qualification; methods studies are never a source
+    # of support thresholds or a candidate profile.
+    program_type = evidence.get("program_type")
+    if program_type is not None and program_type != "qualification":
+        raise ValueError("Methods-study evidence cannot create a support profile")
     _verify_evidence(evidence)
     source = protocol.calibration_source
     source_lane = "calibration" if source is None else source.get("lane", "calibration")

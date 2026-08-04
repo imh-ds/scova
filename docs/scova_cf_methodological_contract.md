@@ -152,6 +152,29 @@ Moving an `untested` or `known-limitation` entry to `in-scope` requires a new
 matrix/contract version, an approved protocol freeze, and direct qualification
 evidence. It cannot be changed by interpreting a passing subset after the fact.
 
+## Simulation-program separation
+
+`cf-observational-adaptive-qualification-v1` is a prospective, frozen,
+adaptive-only qualification program. It covers two or three groups and at most
+five covariates, uses 2,000 replications per cell, retains its difficult
+small-arm, poor-overlap, nonlinear, and heavy-tailed scenarios, and begins
+unpromoted. Its evidence may create a candidate profile only; promotion still
+requires independent held-out validation plus recorded owner and independent
+human-reviewer approval.
+
+`cf-observational-factorial-methods-v1` is a separate 64-cell resolution-VII
+fractional factorial methods program with 1,000 replications per cell. Its
+primary interaction-surface block and supplemental smooth-nonlinear and
+threshold blocks report continuous performance summaries and Monte-Carlo
+uncertainty. Methods evidence explains behaviour only within its simulated
+DGPs. It cannot alter a qualification denominator, create a support profile,
+or establish a mechanism in applied data.
+
+Every artifact declares its program type, design checksum, dependency-lock
+checksum, frozen commit, planned/completed replications, and source evidence
+identifiers. Qualification consumers reject methods artifacts, and methods
+reports must not present qualification conclusions.
+
 ## Explicit non-claims
 
 SCOVA-CF does not:

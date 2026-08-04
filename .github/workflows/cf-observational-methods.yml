@@ -1,0 +1,39 @@
+name: SCOVA-CF observational factorial methods study
+
+# Methods artifacts are intentionally isolated from qualification calibration
+# and promotion.  This workflow can be dispatched without a campaign freeze.
+on:
+  workflow_dispatch:
+    inputs:
+      surface_family:
+        description: Separately reported outcome-surface family
+        required: true
+        type: choice
+        options: [interaction, smooth-nonlinear, threshold]
+
+permissions:
+  contents: read
+
+jobs:
+  methods:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - run: >-
+          python -m benchmarks.cf_methods_study --surface-family '${{ inputs.surface_family }}'
+          --output evidence/cf-observational-methods-${{ inputs.surface_family }}.json
+      - run: >-
+          python -m scripts.render_cf_study_report
+          --artifact evidence/cf-observational-methods-${{ inputs.surface_family }}.json
+          --output evidence/cf-observational-methods-${{ inputs.surface_family }}.md
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cf-observational-methods-${{ inputs.surface_family }}
+          path: evidence/
+          retention-days: 90
