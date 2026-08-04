@@ -198,6 +198,29 @@ or allowed interpretation additionally requires a new contract version. An
 observational applicability classification or envelope change additionally
 requires a new matrix version.
 
+## Verification-lane roles and limits
+
+| Lane | Permitted claim | Prohibited claim |
+| --- | --- | --- |
+| Calibration | Selects a predeclared candidate policy in development simulations. | Validation or causal identification. |
+| Boundary diagnostic | Describes post-candidate density information. | Changing scope, thresholds, or promotion. |
+| External agreement | Detects systematic implementation divergence under independent folds. | Exchangeability, positivity, or causal validity. |
+| Simultaneous inference | Evaluates family-wise inferential behavior in frozen simulations. | Causal assumptions or applied-data nuisance adequacy. |
+| Held-out validation | Evaluates the frozen qualification claim on untouched simulations. | Causal validity beyond the simulated designs. |
+| Aggregate | Checks whether required frozen evidence is present and passing. | Turning diagnostic completion into identification evidence. |
+
+The external smoke lane is an execution canary only: one replication cannot
+estimate a systematic offset. A full external lane requires every frozen cell
+to be informative under independent comparator folds; degeneracy, incomplete
+cells, or missing artifacts fail closed. Comparator agreement cannot test
+exchangeability, positivity in an applied population, or nuisance-model
+adequacy beyond the frozen simulated designs.
+
+The prospective boundary diagnostic requires a candidate profile and separately
+records design adequacy and realized-fit adequacy. It is informative only when
+its 95% log10 density interval is no wider than a factor of two. It remains
+report-only even when informative.
+
 ## Explicit non-claims
 
 SCOVA-CF does not:

@@ -194,7 +194,7 @@ def run_shard(
 
 
 def aggregate(
-    paths: list[Path], *, protocol: CFValidationProtocol
+    paths: list[Path], *, protocol: CFValidationProtocol, decision_manifest_checksum: str | None = None
 ) -> dict[str, Any]:
     assert protocol.inference is not None
     records = []
@@ -329,6 +329,18 @@ def aggregate(
         "all_inference_gates_passed": all_passed,
         "audit": audits,
     }
+    if protocol.verification_lanes is not None:
+        lane = protocol.verification_lanes["inference"]
+        complete = len(records) == len(protocol.inference_cells) * protocol.inference.count
+        evidence.update({
+            "program_type": "qualification", "verification_lane": "inference",
+            "verification_role": lane["role"], "permitted_claim": lane["permitted_claim"],
+            "prohibited_claim": lane["prohibited_claim"], "promotion_required": lane["promotion_required"],
+            "design_checksum": str((protocol.design_selection or {}).get("design_checksum", "")),
+            "decision_manifest_checksum": decision_manifest_checksum,
+            "planned_replications": len(protocol.inference_cells) * protocol.inference.count,
+            "completed_replications": len(records), "informative": bool(complete and all_passed),
+        })
     evidence["evidence_checksum"] = canonical_checksum(evidence)
     return evidence
 
@@ -342,10 +354,15 @@ def main() -> None:
     parser.add_argument("--replications", type=int)
     parser.add_argument("--aggregate", type=Path, nargs="+")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--decision-manifest", type=Path)
     args = parser.parse_args()
     protocol = CFValidationProtocol.load(args.spec)
     if args.aggregate:
-        evidence = aggregate(args.aggregate, protocol=protocol)
+        manifest = None if args.decision_manifest is None else json.loads(args.decision_manifest.read_text(encoding="utf-8"))
+        evidence = aggregate(
+            args.aggregate, protocol=protocol,
+            decision_manifest_checksum=None if manifest is None else manifest.get("manifest_checksum"),
+        )
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(evidence, indent=2, sort_keys=True), encoding="utf-8")
     else:

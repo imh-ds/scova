@@ -38,6 +38,13 @@ def render(artifact: dict[str, Any]) -> str:
             "record documents governance; it does not prove exchangeability, positivity, "
             "or causal validity in an applied dataset.",
         ])
+        if artifact.get("verification_lane"):
+            lines.extend([
+                "", "## Verification-lane limits", "",
+                f"- Lane: `{artifact['verification_lane']}`",
+                f"- Permitted claim: {artifact.get('permitted_claim', 'not recorded')}",
+                f"- Prohibited claim: {artifact.get('prohibited_claim', 'not recorded')}",
+            ])
     else:
         lines.extend([
             "## Interpretation",

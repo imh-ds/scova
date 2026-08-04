@@ -292,6 +292,7 @@ def run_external_agreement(
     *,
     replications: int | None = None,
     max_cells: int | None = None,
+    decision_manifest_checksum: str | None = None,
 ) -> dict[str, object]:
     partition = protocol.external
     if partition is None:
@@ -558,6 +559,18 @@ def run_external_agreement(
             and all(row["status"] == "complete" for row in summaries)
         ),
     }
+    if protocol.verification_lanes is not None:
+        lane = protocol.verification_lanes["external"]
+        evidence.update({
+            "program_type": "qualification", "verification_lane": "external",
+            "verification_role": lane["role"], "permitted_claim": lane["permitted_claim"],
+            "prohibited_claim": lane["prohibited_claim"], "promotion_required": lane["promotion_required"],
+            "design_checksum": str((protocol.design_selection or {}).get("design_checksum", "")),
+            "decision_manifest_checksum": decision_manifest_checksum,
+            "planned_replications": len(protocol.external_cells) * protocol.external.count,
+            "completed_replications": len(cells) * count,
+            "informative": bool(complete and all(row["status"] == "complete" for row in summaries)),
+        })
     evidence["evidence_checksum"] = canonical_checksum(evidence)
     return evidence
 
@@ -568,16 +581,19 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--replications", type=int)
     parser.add_argument("--max-cells", type=int)
+    parser.add_argument("--decision-manifest", type=Path)
     parser.add_argument(
         "--allow-incomplete",
         action="store_true",
         help="Write a non-authoritative smoke artifact without requiring the full frozen lane.",
     )
     args = parser.parse_args()
+    manifest = None if args.decision_manifest is None else json.loads(args.decision_manifest.read_text(encoding="utf-8"))
     evidence = run_external_agreement(
         CFValidationProtocol.load(args.spec),
         replications=args.replications,
         max_cells=args.max_cells,
+        decision_manifest_checksum=None if manifest is None else manifest.get("manifest_checksum"),
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(

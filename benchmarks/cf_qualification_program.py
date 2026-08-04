@@ -39,15 +39,46 @@ _METRICS = {
 }
 
 
+def _verification_cells() -> tuple[tuple[dict[str, Any], ...], tuple[dict[str, Any], ...]]:
+    """Freeze external/inference stress cells independently of run results."""
+    external: list[dict[str, Any]] = []
+    inference: list[dict[str, Any]] = []
+    for groups in (2, 3):
+        common = {"n_groups": groups, "learner": "adaptive", "support": "strong"}
+        external.extend([
+            {**common, "allocation": "balanced", "confounding": "moderate", "confounding_form": "linear", "effect": "null", "n_covariates": 3, "n_per_group": 150, "noise": "normal", "overlap": "full", "surface": "linear"},
+            {**common, "allocation": "balanced", "confounding": "strong", "confounding_form": "nonlinear", "effect": "heterogeneous", "n_covariates": 5, "n_per_group": 50, "noise": "heavy-tailed", "overlap": "poor", "surface": "interaction"},
+            {**common, "allocation": "moderate", "confounding": "strong", "confounding_form": "nonlinear", "effect": "null", "n_covariates": 5, "n_per_group": 150, "noise": "normal", "overlap": "poor", "surface": "smooth-nonlinear"},
+            {**common, "allocation": "moderate", "confounding": "strong", "confounding_form": "nonlinear", "effect": "heterogeneous", "n_covariates": 3, "n_per_group": 50, "noise": "heavy-tailed", "overlap": "full", "surface": "threshold"},
+        ])
+        inference.extend([
+            {**common, "allocation": "balanced", "confounding": "moderate", "confounding_form": "linear", "effect": "null", "n_covariates": 3, "n_per_group": 150, "noise": "normal", "overlap": "full", "surface": "linear"},
+            {**common, "allocation": "balanced", "confounding": "strong", "confounding_form": "nonlinear", "effect": "null", "n_covariates": 5, "n_per_group": 50, "noise": "heavy-tailed", "overlap": "poor", "surface": "interaction"},
+            {**common, "allocation": "moderate", "confounding": "strong", "confounding_form": "nonlinear", "effect": "heterogeneous", "n_covariates": 5, "n_per_group": 150, "noise": "normal", "overlap": "poor", "surface": "threshold"},
+        ])
+    return tuple(external), tuple(inference)
+
+
+VERIFICATION_LANES = {
+    "calibration": {"role": "policy-selection", "permitted_claim": "Selects a predeclared candidate policy in development simulations.", "prohibited_claim": "Validation or causal identification.", "promotion_required": False},
+    "boundary": {"role": "report-only-density-diagnostic", "permitted_claim": "Describes post-candidate density information.", "prohibited_claim": "Scope, threshold, or promotion change.", "promotion_required": False},
+    "external": {"role": "software-agreement-diagnostic", "permitted_claim": "Detects systematic implementation divergence under independent folds.", "prohibited_claim": "Exchangeability, positivity, or causal validity.", "promotion_required": True},
+    "inference": {"role": "simultaneous-inference-check", "permitted_claim": "Evaluates family-wise inferential behavior in frozen simulations.", "prohibited_claim": "Causal assumptions or applied-data nuisance adequacy.", "promotion_required": True},
+    "validation": {"role": "held-out-qualification-check", "permitted_claim": "Evaluates the frozen qualification claim on untouched simulations.", "prohibited_claim": "Causal validity outside the simulated regimes.", "promotion_required": True},
+    "aggregate": {"role": "promotion-prerequisite-adjudication", "permitted_claim": "Determines whether frozen prerequisites are present and passing.", "prohibited_claim": "Identification evidence from diagnostics.", "promotion_required": False},
+}
+
+
 def qualification_protocol() -> CFValidationProtocol:
     """Return the frozen engine protocol represented by the qualification design."""
     design = qualification_design()
+    external_cells, inference_cells = _verification_cells()
     cells = tuple(
         {name: value for name, value in cell.items() if name != "cell_id"}
         for cell in qualification_cells()
     )
     return CFValidationProtocol(
-        schema_version=1,
+        schema_version=3,
         frozen=True,
         protocol_id=QUALIFICATION_PROTOCOL_ID,
         reference_profile={
@@ -67,6 +98,10 @@ def qualification_protocol() -> CFValidationProtocol:
         pilot=SeedPartition(start=610_000_000, count=20),
         calibration=SeedPartition(start=611_000_000, count=2000),
         validation=SeedPartition(start=615_000_000, count=2000),
+        external=SeedPartition(start=619_000_000, count=50),
+        inference=SeedPartition(start=620_000_000, count=2000),
+        external_cells=external_cells,
+        inference_cells=tuple({"cell": cell} for cell in inference_cells),
         learners=("adaptive",),
         metrics=_METRICS,
         software={
@@ -87,6 +122,14 @@ def qualification_protocol() -> CFValidationProtocol:
         calibration_screening=_METRICS,
         calibration_enrichment_screening=True,
         calibration_candidate_retention_fraction=0.85,
+        external_agreement={
+            "comparator_folds": "independent", "comparator_fold_seed_offset": 811,
+            "statistic": "standardized-offset-z", "unit_of_observation": "cell-replication",
+            "strata": "n_groups-by-learner", "family_wise_error": 0.05,
+            "minimum_informative_cell_fraction": 1.0,
+            "degenerate_difference_in_scova_se": 1e-10,
+        },
+        verification_lanes=VERIFICATION_LANES,
     )
 
 
@@ -100,6 +143,12 @@ def qualification_spec() -> dict[str, Any]:
         "candidate_profile_state": "unpromoted",
         "promotion_rule": "independent-held-out-validation-and-human-approval",
         "boundary_estimation": None,
+        "boundary_diagnostic": {
+            "role": "report-only", "requires_candidate_profile": True,
+            "interval_scale": "log10-arm-units-per-covariate", "maximum_95_interval_width": 0.3010299956639812,
+            "scope_effect": "none", "promotion_effect": "none",
+        },
+        "verification_lanes": VERIFICATION_LANES,
         "source_evidence_ids": [],
     }
 

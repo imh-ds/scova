@@ -69,6 +69,7 @@ class CFValidationProtocol:
     calibration_screening: Mapping[str, float] | None = None
     boundary_estimation: Mapping[str, Any] | None = None
     external_agreement: Mapping[str, Any] | None = None
+    verification_lanes: Mapping[str, Mapping[str, Any]] | None = None
     calibration_enrichment_screening: bool = False
     calibration_candidate_retention_fraction: float = 1.0
     calibration_source: Mapping[str, str] | None = None
@@ -86,7 +87,7 @@ class CFValidationProtocol:
             raise ValueError("Every campaign factor must contain at least one level")
         if not self.retained_cells:
             raise ValueError("The protocol must freeze at least one retained design cell")
-        if self.schema_version >= 2:
+        if self.schema_version == 2:
             if not self.frozen:
                 raise ValueError("Version-2 validation protocols must be frozen")
             if len(self.retained_cells) != 48:
@@ -109,6 +110,18 @@ class CFValidationProtocol:
                 raise ValueError("Version-2 protocols require a dependency-lock checksum")
             if not self.design_selection:
                 raise ValueError("Version-2 protocols require pairwise-design provenance")
+        if self.verification_lanes is not None:
+            if not self.frozen or len(self.retained_cells) != 48:
+                raise ValueError("Version-3 qualification protocols require a frozen 48-cell design")
+            if len(self.inference_cells) != 6 or len(self.external_cells) != 8:
+                raise ValueError("Version-3 qualification protocols require six inference and eight external cells")
+            if self.external is None or self.inference is None:
+                raise ValueError("Version-3 qualification protocols require external and inference seeds")
+            if self.external.count != 50 or self.inference.count != 2000:
+                raise ValueError("Version-3 verification lane replication counts are fixed")
+            if not self.dependency_lock_checksum or not self.design_selection:
+                raise ValueError("Version-3 qualification protocols require dependency and design identities")
+            self._validate_verification_lanes()
         if not 0 < self.calibration_fit_fraction < 1:
             raise ValueError("calibration_fit_fraction must lie in (0, 1)")
         if not 0 < self.calibration_candidate_retention_fraction <= 1:
@@ -312,6 +325,11 @@ class CFValidationProtocol:
                 if self.external_agreement is None
                 else {"external_agreement": dict(self.external_agreement)}
             ),
+            **(
+                {}
+                if self.verification_lanes is None
+                else {"verification_lanes": {name: dict(value) for name, value in self.verification_lanes.items()}}
+            ),
         }
 
     _BOUNDARY_ESTIMATION_SCHEMA: ClassVar[Mapping[str, Any]] = {
@@ -349,6 +367,7 @@ class CFValidationProtocol:
                 "boundary_estimation must declare exactly "
                 f"{sorted(expected)}; got {sorted(declared)}"
             )
+
         for name, allowed in self._BOUNDARY_ESTIMATION_SCHEMA.items():
             if declared[name] not in allowed:
                 raise ValueError(
@@ -370,6 +389,23 @@ class CFValidationProtocol:
         if int(declared["bootstrap_resamples"]) < 1000:
             raise ValueError("boundary_estimation.bootstrap_resamples must be at least 1000")
         int(declared["bootstrap_seed"])
+
+    def _validate_verification_lanes(self) -> None:
+        lanes = self.verification_lanes
+        required = {"calibration", "boundary", "external", "inference", "validation", "aggregate"}
+        if lanes is None or set(lanes) != required:
+            raise ValueError("Version-3 qualification protocols require every verification lane")
+        for name, lane in lanes.items():
+            if set(lane) != {"role", "permitted_claim", "prohibited_claim", "promotion_required"}:
+                raise ValueError(f"Verification lane {name} has an invalid schema")
+            if not all(isinstance(lane[field], str) and lane[field] for field in ("role", "permitted_claim", "prohibited_claim")):
+                raise ValueError(f"Verification lane {name} must describe its claims")
+            if not isinstance(lane["promotion_required"], bool):
+                raise ValueError(f"Verification lane {name} must declare promotion_required")
+        if lanes["boundary"]["promotion_required"]:
+            raise ValueError("The boundary diagnostic must remain report-only")
+        if not all(lanes[name]["promotion_required"] for name in ("external", "inference", "validation")):
+            raise ValueError("External, inference, and validation evidence must gate promotion")
 
     _EXTERNAL_AGREEMENT_SCHEMA: ClassVar[Mapping[str, Any]] = {
         "comparator_folds": {"independent"},
@@ -479,6 +515,11 @@ class CFValidationProtocol:
                 None
                 if values.get("external_agreement") is None
                 else dict(values["external_agreement"])
+            ),
+            verification_lanes=(
+                None
+                if values.get("verification_lanes") is None
+                else {str(name): dict(value) for name, value in values["verification_lanes"].items()}
             ),
             calibration_source=(
                 None

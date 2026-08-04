@@ -182,6 +182,23 @@ def validate(
         and external_evidence.get("all_numerical_agreement_gates_passed", False)
         and _external_matches_protocol(protocol, external_evidence)
     )
+    if protocol.verification_lanes is not None:
+        manifest = campaign.get("decision_manifest_checksum")
+        lane_identity_ok = bool(
+            manifest
+            and inference_evidence
+            and external_evidence
+            and inference_evidence.get("program_type") == "qualification"
+            and external_evidence.get("program_type") == "qualification"
+            and inference_evidence.get("informative", False)
+            and external_evidence.get("informative", False)
+            and inference_evidence.get("decision_manifest_checksum") == manifest
+            and external_evidence.get("decision_manifest_checksum") == manifest
+            and inference_evidence.get("design_checksum") == campaign.get("design_checksum")
+            and external_evidence.get("design_checksum") == campaign.get("design_checksum")
+        )
+        inference_passed &= lane_identity_ok
+        external_passed &= lane_identity_ok
     all_passed &= inference_passed and external_passed
     result: dict[str, Any] = {
         "artifact_type": "scova-cf-support-validation",
@@ -212,9 +229,22 @@ def validate(
         "external_gate_passed": external_passed,
         "audit": audits,
     }
+    if protocol.verification_lanes is not None:
+        lane = protocol.verification_lanes["validation"]  # type: ignore[index]
+        result.update({
+            "program_type": "qualification", "verification_lane": "validation",
+            "verification_role": lane["role"], "permitted_claim": lane["permitted_claim"],
+            "prohibited_claim": lane["prohibited_claim"], "promotion_required": lane["promotion_required"],
+            "design_checksum": campaign.get("design_checksum"),
+            "dependency_lock_checksum": campaign.get("dependency_lock_checksum"),
+            "decision_manifest_checksum": campaign.get("decision_manifest_checksum"),
+            "planned_replications": campaign.get("planned_replications"),
+            "completed_replications": campaign.get("completed_replications"),
+            "informative": bool(campaign.get("complete_frozen_lane") and all_passed),
+        })
     result["evidence_checksum"] = canonical_checksum(result)
     promoted = None
-    if all_passed:
+    if all_passed and protocol.verification_lanes is None:
         promoted = CFSupportProfile(
             profile_id=protocol.protocol_id + "-promoted",
             protocol_checksum=protocol.checksum,
