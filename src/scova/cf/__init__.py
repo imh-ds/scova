@@ -26,6 +26,16 @@ from .result import (
     SeedStabilityResult,
 )
 from .status import QualificationStatus, SCOVACFRefusal, SCOVACFStatus, SupportStatus
+from .scope_governance import (
+    QUALIFICATION_REQUIRED_DECISION_IDS,
+    ScopeDecision,
+    applicability_matrix_checksum,
+    build_qualification_manifest,
+    scope_decision_registry,
+    validate_manifest,
+    validate_record,
+    validate_registry,
+)
 from .studies import (
     ARTIFACT_SCHEMA_VERSION,
     METHODS_STUDY_ID,
@@ -60,6 +70,7 @@ __all__ = [
     "METHODS_STUDY_ID",
     "QUALIFICATION_PROTOCOL_ID",
     "QualificationStatus",
+    "QUALIFICATION_REQUIRED_DECISION_IDS",
     "SCOVACF",
     "SCOVACFContrastEstimate",
     "SCOVACFDeclaration",
@@ -70,6 +81,7 @@ __all__ = [
     "SCOVACFResult",
     "SCOVACFStatus",
     "SeedStabilityResult",
+    "ScopeDecision",
     "SeedPartition",
     "SupportPolicy",
     "SupportStatus",
@@ -77,9 +89,15 @@ __all__ = [
     "assert_program_artifact",
     "canonical_checksum",
     "assess_observational_applicability",
+    "applicability_matrix_checksum",
+    "build_qualification_manifest",
     "factorial_cells",
     "methods_design",
     "observational_applicability_matrix",
     "qualification_cells",
     "qualification_design",
+    "scope_decision_registry",
+    "validate_manifest",
+    "validate_record",
+    "validate_registry",
 ]

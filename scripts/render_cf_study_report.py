@@ -22,6 +22,10 @@ def render(artifact: dict[str, Any]) -> str:
         f"- Planned replications: {artifact.get('planned_replications', 'not-recorded')}",
         f"- Completed replications: {artifact.get('completed_replications', 'not-recorded')}",
         f"- Source evidence IDs: {', '.join(artifact.get('source_evidence_ids', [])) or 'none'}",
+        *(
+            [] if artifact.get("decision_manifest_checksum") is None else
+            [f"- Scope-decision manifest: `{artifact['decision_manifest_checksum']}`"]
+        ),
         "",
     ]
     if program is StudyProgram.QUALIFICATION:
@@ -30,7 +34,9 @@ def render(artifact: dict[str, Any]) -> str:
             "",
             "This prospective evidence may create a candidate support profile only. "
             "It cannot promote a profile without independent held-out validation and "
-            "recorded human owner and independent-reviewer approval.",
+            "recorded human owner and independent-reviewer approval. A resolved decision "
+            "record documents governance; it does not prove exchangeability, positivity, "
+            "or causal validity in an applied dataset.",
         ])
     else:
         lines.extend([

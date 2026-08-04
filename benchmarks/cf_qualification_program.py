@@ -104,7 +104,9 @@ def qualification_spec() -> dict[str, Any]:
     }
 
 
-def qualification_evidence(*, lane: str, replications: int | None = None) -> dict[str, Any]:
+def qualification_evidence(
+    *, lane: str, replications: int | None = None, decision_manifest: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Produce a provenance-complete evidence artifact for a frozen lane."""
     protocol = qualification_protocol()
     evidence = run_campaign(protocol, lane=lane, replications=replications)
@@ -120,6 +122,13 @@ def qualification_evidence(*, lane: str, replications: int | None = None) -> dic
             "planned_replications": len(protocol.retained_cells) * getattr(protocol, lane).count,
             "completed_replications": len(evidence["records"]),
             "source_evidence_ids": [],
+            "decision_manifest_checksum": (
+                None if decision_manifest is None else decision_manifest.get("manifest_checksum")
+            ),
+            "required_decision_ids": (
+                [] if decision_manifest is None
+                else [entry["decision_id"] for entry in decision_manifest["required_decisions"]]
+            ),
             "promotion_decision": "unpromoted/requires-independent-validation-and-human-approval",
         }
     )
@@ -133,6 +142,7 @@ def main() -> None:
     parser.add_argument("--lane", choices=("pilot", "calibration", "validation"))
     parser.add_argument("--replications", type=int)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--decision-manifest", type=Path)
     args = parser.parse_args()
     if args.write_spec:
         args.write_spec.parent.mkdir(parents=True, exist_ok=True)
@@ -140,7 +150,13 @@ def main() -> None:
     if args.lane:
         if args.output is None:
             parser.error("--output is required with --lane")
-        artifact = qualification_evidence(lane=args.lane, replications=args.replications)
+        if args.decision_manifest is None:
+            parser.error("--decision-manifest is required with --lane")
+        artifact = qualification_evidence(
+            lane=args.lane,
+            replications=args.replications,
+            decision_manifest=json.loads(args.decision_manifest.read_text(encoding="utf-8")),
+        )
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(artifact, indent=2, sort_keys=True), encoding="utf-8")
     elif args.output is not None:

@@ -175,6 +175,29 @@ checksum, frozen commit, planned/completed replications, and source evidence
 identifiers. Qualification consumers reject methods artifacts, and methods
 reports must not present qualification conclusions.
 
+## Prospective scope-change decisions
+
+Material failures and contradictions are governed through the checksum-bound
+[scope-decision log](scova_cf_scope_decisions.md). A record must retain the
+evidence and competing explanations, state uncertainty, select one prospective
+path (improve the method, exclude through a pre-outcome observable rule, or
+retain a limitation), and state what prior evidence remains unable to claim.
+
+Every qualification freeze has a decision manifest binding its protocol and
+design checksums, this contract version, the applicability-matrix checksum, the
+dependency lock, and its required records. A dispatch fails unless each linked
+record is resolved and separately approved by the owner and independent human
+reviewer. A resolved record documents governance; it does not prove
+exchangeability, positivity, or causal validity in an applied dataset.
+
+Estimator, estimand/target, declaration semantics, nuisance eligibility,
+factor grid, gates/metrics/multiplicity, scope predicate, dependency stack, or
+artifact interpretation require a new protocol checksum and freeze. A change
+to the estimand, identification assumptions, nuisance-strategy qualification,
+or allowed interpretation additionally requires a new contract version. An
+observational applicability classification or envelope change additionally
+requires a new matrix version.
+
 ## Explicit non-claims
 
 SCOVA-CF does not:

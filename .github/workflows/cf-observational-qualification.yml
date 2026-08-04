@@ -1,7 +1,7 @@
 name: SCOVA-CF prospective observational qualification
 
-# This is intentionally undispatched.  A run requires the recorded owner and
-# independent-reviewer approval named in the methodological contract.
+# This is intentionally undispatched. A run fails closed unless the frozen
+# decision manifest links every material blocker to recorded independent review.
 on:
   workflow_dispatch:
     inputs:
@@ -10,22 +10,12 @@ on:
         required: true
         type: choice
         options: [pilot, calibration, validation]
-      approval_record:
-        description: Exact approval token after recorded human review
-        required: true
-        type: string
 
 permissions:
   contents: read
 
 jobs:
-  approval_gate:
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          test "${{ inputs.approval_record }}" = "owner-and-independent-reviewer-recorded"
   qualification:
-    needs: approval_gate
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
@@ -39,13 +29,29 @@ jobs:
           python -m benchmarks.cf_qualification_program
           --write-spec evidence/cf-observational-qualification-frozen-spec.json
       - run: >-
+          python -m scripts.write_cf_scope_manifest
+          --spec evidence/cf-observational-qualification-frozen-spec.json
+          --contract docs/scova_cf_methodological_contract.md
+          --output evidence/cf-observational-qualification-decisions.json
+      - run: >-
+          python -m scripts.render_cf_scope_decisions
+          --registry src/scova/cf/data/scope_decisions.json
+          --output evidence/cf-observational-scope-decisions.md
+      - run: >-
+          python -m scripts.check_cf_scope_decisions
+          --spec evidence/cf-observational-qualification-frozen-spec.json
+          --contract docs/scova_cf_methodological_contract.md
+          --manifest evidence/cf-observational-qualification-decisions.json
+      - run: >-
           python -m benchmarks.cf_qualification_program --lane '${{ inputs.lane }}'
+          --decision-manifest evidence/cf-observational-qualification-decisions.json
           --output evidence/cf-observational-qualification-${{ inputs.lane }}.json
       - run: >-
           python -m scripts.render_cf_study_report
           --artifact evidence/cf-observational-qualification-${{ inputs.lane }}.json
           --output evidence/cf-observational-qualification-${{ inputs.lane }}.md
       - uses: actions/upload-artifact@v6
+        if: always()
         with:
           name: cf-observational-qualification-${{ inputs.lane }}
           path: evidence/
