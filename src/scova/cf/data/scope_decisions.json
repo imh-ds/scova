@@ -93,15 +93,15 @@
       "affected_protocols": ["cf-observational-continuous-aipw-unnormalized-v11", "cf-observational-adaptive-qualification-v1"],
       "affected_artifacts": ["calibration"],
       "evidence_ids": ["campaign:30781945289"],
-      "competing_explanations": ["restricted learner library", "implementation anomaly", "small-sample condition"],
-      "uncertainty": "The cause of eight limited records has not been investigated.",
-      "path": "improve-method",
-      "rationale": "No qualification dispatch may proceed until this status is characterized and a reviewed decision is recorded.",
-      "prior_evidence_consequences": "The v11 calibration count is retained without reinterpretation.",
-      "change_consequences": {"new_protocol_freeze": true, "new_contract_version": false, "new_matrix_version": false},
+      "competing_explanations": ["rare-arm realization below the fold minimum", "restricted learner library", "implementation anomaly"],
+      "uncertainty": "The cause is identified, but the retained-limitation decision still requires owner and independent review.",
+      "path": "retain-limitation",
+      "rationale": "All eight records are v11 cell 25 with rare allocation; its rare arm realized one or two observations below the declared three-fold minimum. This is an expected feasibility refusal and the cell is outside the profile-eligible denominator.",
+      "prior_evidence_consequences": "The v11 calibration count is retained; the records are interpreted as expected feasibility refusals, not execution or learner failures.",
+      "change_consequences": {"new_protocol_freeze": false, "new_contract_version": false, "new_matrix_version": false},
       "exclusion_rule": null,
       "approvals": {"owner": null, "independent_reviewer": null},
-      "record_checksum": "ded91c20b8a546b38756c12c615f01ac80d8c465ef8878e29b046f2cc5e79578"
+      "record_checksum": "d67143bb5e3aea65344ed3e72bfaa2ebdbccb3a9d2b440aa993daa8675cf58e8"
     },
     {
       "decision_id": "v11-downstream-evidence-prerequisites",

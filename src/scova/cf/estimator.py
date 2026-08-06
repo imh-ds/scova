@@ -355,10 +355,16 @@ class SCOVACF:
                 declaration,
                 code="limited/small-sample-restricted-library",
                 reason=(
-                    "Every group needs at least n_splits observations for cross-fitting; "
-                    f"too small: {too_small}"
+                    "Realized assignment left at least one group below the cross-fitting "
+                    f"minimum of n_splits={declaration.n_splits}; too small: {too_small}"
                 ),
                 support=SupportStatus.UNSTABLE,
+                details={
+                    "realized_group_counts": {
+                        str(labels[code]): int(count) for code, count in enumerate(counts)
+                    },
+                    "required_cross_fit_observations_per_group": declaration.n_splits,
+                },
             )
         # Lock outcome-free design inputs and folds before inspecting outcome values.
         folds, design_stratified = self._design_folds(data, declaration, group_codes)

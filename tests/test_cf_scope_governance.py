@@ -5,6 +5,8 @@ from copy import deepcopy
 import pytest
 
 from benchmarks.cf_qualification_program import qualification_protocol
+from benchmarks.cf_reference_campaign import simulate_reference_cell
+from scova.cf import CFValidationProtocol
 from scova.cf import (
     QUALIFICATION_REQUIRED_DECISION_IDS,
     applicability_matrix_checksum,
@@ -154,3 +156,13 @@ def test_methods_evidence_cannot_alone_resolve_a_qualification_manifest() -> Non
             manifest, protocol, contract_version="1.0.0", matrix_id="cf-observational-provisional-v1",
             registry=registry,
         )
+
+
+def test_v11_limited_status_is_reproducible_rare_arm_feasibility_not_an_execution_error() -> None:
+    protocol = CFValidationProtocol.load("benchmarks/specs/cf_reference_v11.json")
+    cell = protocol.retained_cells[25]
+    assert cell["n_groups"] == 3 and cell["allocation"] == "rare"
+    for repetition in (534, 817, 865, 911, 1443, 1715, 1972, 1984):
+        seed = protocol.calibration.start + 25 * protocol.calibration.count + repetition
+        counts = simulate_reference_cell(cell, seed=seed).data["group"].value_counts()
+        assert int(counts.min()) < 3

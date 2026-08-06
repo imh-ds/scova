@@ -341,6 +341,7 @@ def test_estimator_input_refusals_are_typed() -> None:
     small_sample = SCOVACF().analyze(tiny, declaration())
     assert isinstance(small_sample, SCOVACFRefusal)
     assert small_sample.status.code == "limited/small-sample-restricted-library"
+    assert small_sample.details["required_cross_fit_observations_per_group"] == 3
 
 
 def test_nuisance_prediction_and_policy_refusals() -> None:
