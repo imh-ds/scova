@@ -18,6 +18,7 @@ from scova.cf import (
     SCOVACFNuisancePredictions,
     SCOVACFRefusal,
     SCOVACFResult,
+    SCOVACFStatus,
     SupportPolicy,
     SupportStatus,
 )
@@ -140,6 +141,46 @@ def test_associational_and_observational_claim_gates() -> None:
     applicability = observational.evidence_card["applicability_matrix"]
     assert applicability["matrix_id"] == "cf-observational-provisional-v1"
     assert applicability["classification"] == "known-limitation"
+
+
+def test_qualification_classification_covers_policy_support_and_nuisance_paths() -> None:
+    status = SCOVACFStatus(
+        support=SupportStatus.SUPPORTED,
+        code="supported",
+        reason="support passed",
+        qualification_status=QualificationStatus.UNQUALIFIED,
+        qualification_reason="not evaluated",
+    )
+    associational = declaration(mode=AnalysisMode.STANDARDIZED_ASSOCIATIONAL)
+    assert (
+        SCOVACF._qualify_status(associational, status).qualification_status
+        is QualificationStatus.INELIGIBLE
+    )
+
+    observational = replace(
+        declaration(mode=AnalysisMode.OBSERVATIONAL_CAUSAL, sensitivity_analysis="declared"),
+        assignment=EstimatedAssignment(nuisance_strategy="adaptive"),
+        outcome_nuisance_strategy="adaptive",
+    )
+    assert (
+        SCOVACF._qualify_status(observational, status).qualification_status
+        is QualificationStatus.UNQUALIFIED
+    )
+
+    packaged = replace(
+        declaration(),
+        support_policy=SupportPolicy.packaged(
+            "cf-randomized-continuous-aipw-unnormalized-v9-promoted"
+        ),
+    )
+    qualified = SCOVACF._qualify_status(packaged, status)
+    assert qualified.qualification_status is QualificationStatus.QUALIFIED
+    assert qualified.confirmatory is True
+
+    unsupported = replace(status, support=SupportStatus.UNSUPPORTED, reason="support failed")
+    unqualified = SCOVACF._qualify_status(packaged, unsupported)
+    assert unqualified.qualification_status is QualificationStatus.UNQUALIFIED
+    assert unqualified.qualification_reason == "support failed"
 
 
 def test_labelled_inference_and_cf_artifact_round_trip(tmp_path: Path) -> None:

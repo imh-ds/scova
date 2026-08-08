@@ -64,6 +64,12 @@ def _record(*, path: str = "retain-limitation", status: str = "resolved") -> dic
     return record
 
 
+def _resign(record: dict[str, object]) -> None:
+    record["record_checksum"] = canonical_checksum(
+        {key: value for key, value in record.items() if key != "record_checksum"}
+    )
+
+
 def test_scope_record_requires_checksum_and_owner_approval() -> None:
     record = _record()
     assert validate_record(record).status == "resolved"
@@ -93,6 +99,41 @@ def test_scope_record_requires_checksum_and_owner_approval() -> None:
         validate_record(incomplete)
 
 
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (lambda record: record.__setitem__("decision_id", ""), "stable id"),
+        (lambda record: record.__setitem__("status", "invalid"), "invalid status"),
+        (lambda record: record.__setitem__("affected_protocols", []), "nonempty string list"),
+        (lambda record: record.__setitem__("rationale", ""), "nonempty string"),
+        (lambda record: record.__setitem__("change_consequences", {}), "freeze consequences"),
+        (
+            lambda record: record.__setitem__("exclusion_rule", {"unexpected": True}),
+            "Only an exclusion",
+        ),
+    ],
+)
+def test_scope_record_rejects_invalid_core_fields(mutate, message: str) -> None:
+    record = _record()
+    mutate(record)
+    _resign(record)
+    with pytest.raises(ValueError, match=message):
+        validate_record(record)
+
+
+def test_scope_record_rejects_malformed_approval_and_open_partial_approval() -> None:
+    malformed = _record()
+    malformed["approvals"]["owner"] = "owner"  # type: ignore[index]
+    _resign(malformed)
+    with pytest.raises(ValueError, match="owner approval must be a record"):
+        validate_record(malformed)
+
+    open_record = _record(status="open")
+    _resign(open_record)
+    with pytest.raises(ValueError, match="partial approvals"):
+        validate_record(open_record)
+
+
 def test_scope_exclusions_must_be_observable_before_outcomes() -> None:
     record = _record(path="exclude-with-observable-rule")
     assert validate_record(record).path == "exclude-with-observable-rule"
@@ -103,6 +144,12 @@ def test_scope_exclusions_must_be_observable_before_outcomes() -> None:
     )
     with pytest.raises(ValueError, match="unobservable"):
         validate_record(invalid)
+
+    nonruntime = _record(path="exclude-with-observable-rule")
+    nonruntime["exclusion_rule"]["runtime_checkable"] = False  # type: ignore[index]
+    _resign(nonruntime)
+    with pytest.raises(ValueError, match="runtime-checkable"):
+        validate_record(nonruntime)
 
 
 def test_registry_has_unique_known_blockers_and_renders_for_review() -> None:
@@ -120,6 +167,11 @@ def test_registry_has_unique_known_blockers_and_renders_for_review() -> None:
     duplicate["records"].append(deepcopy(duplicate["records"][0]))
     with pytest.raises(ValueError, match="unique"):
         validate_registry(duplicate)
+
+    with pytest.raises(ValueError, match="Unsupported"):
+        validate_registry({"schema_version": 2, "records": []})
+    with pytest.raises(ValueError, match="records must be a list"):
+        validate_registry({"schema_version": 1, "records": {}})
 
 
 def test_current_qualification_manifest_is_context_bound_after_owner_resolutions() -> None:
@@ -147,6 +199,63 @@ def test_current_qualification_manifest_is_context_bound_after_owner_resolutions
             protocol,
             contract_version="1.0.0",
             matrix_id="cf-observational-provisional-v1",
+        )
+
+    with pytest.raises(ValueError, match="missing decisions"):
+        build_qualification_manifest(
+            protocol,
+            contract_version="1.0.0",
+            matrix_id="cf-observational-provisional-v1",
+            required_decision_ids=("missing",),
+        )
+
+
+def test_manifest_rejects_unresolved_stale_and_duplicate_decisions() -> None:
+    protocol = qualification_protocol()
+    unresolved = _record(status="open")
+    unresolved["approvals"] = {"owner": None, "independent_reviewer": None}
+    _resign(unresolved)
+    decision = validate_record(unresolved)
+    registry = {decision.decision_id: decision}
+    manifest = build_qualification_manifest(
+        protocol,
+        contract_version="1.0.0",
+        matrix_id="cf-observational-provisional-v1",
+        required_decision_ids=(decision.decision_id,),
+        registry=registry,
+    )
+    with pytest.raises(ValueError, match="unresolved"):
+        validate_manifest(
+            manifest,
+            protocol,
+            contract_version="1.0.0",
+            matrix_id="cf-observational-provisional-v1",
+            registry=registry,
+        )
+
+    resolved = validate_record(_record())
+    registry = {resolved.decision_id: resolved}
+    manifest = build_qualification_manifest(
+        protocol,
+        contract_version="1.0.0",
+        matrix_id="cf-observational-provisional-v1",
+        required_decision_ids=(resolved.decision_id,),
+        registry=registry,
+    )
+    stale = dict(manifest)
+    stale["required_decisions"] = [
+        {"decision_id": resolved.decision_id, "record_checksum": "stale"}
+    ]
+    stale["manifest_checksum"] = canonical_checksum(
+        {key: value for key, value in stale.items() if key != "manifest_checksum"}
+    )
+    with pytest.raises(ValueError, match="not bound"):
+        validate_manifest(
+            stale,
+            protocol,
+            contract_version="1.0.0",
+            matrix_id="cf-observational-provisional-v1",
+            registry=registry,
         )
 
 

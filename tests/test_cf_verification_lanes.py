@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
+import pytest
+
 from benchmarks.cf_qualification_program import (
     VERIFICATION_LANES,
     qualification_protocol,
@@ -33,6 +37,44 @@ def test_qualification_spec_declares_lane_claim_limits_without_reusing_boundary_
     assert spec["boundary_diagnostic"]["scope_effect"] == "none"
     assert spec["boundary_diagnostic"]["maximum_95_interval_width"] < 0.31
     assert spec["verification_lanes"]["external"]["prohibited_claim"]
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (
+            lambda protocol: replace(protocol, retained_cells=protocol.retained_cells[:-1]),
+            "48-cell",
+        ),
+        (
+            lambda protocol: replace(protocol, inference_cells=protocol.inference_cells[:-1]),
+            "six inference",
+        ),
+        (lambda protocol: replace(protocol, external=None), "external and inference seeds"),
+        (lambda protocol: replace(protocol, dependency_lock_checksum=""), "dependency and design"),
+    ],
+)
+def test_version_three_protocol_rejects_missing_frozen_identities(mutate, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        mutate(qualification_protocol())
+
+
+def test_version_three_protocol_rejects_invalid_lane_claim_contract() -> None:
+    protocol = qualification_protocol()
+    invalid_schema = {name: dict(value) for name, value in protocol.verification_lanes.items()}
+    invalid_schema["external"].pop("role")
+    with pytest.raises(ValueError, match="invalid schema"):
+        replace(protocol, verification_lanes=invalid_schema)
+
+    promotable_boundary = {name: dict(value) for name, value in protocol.verification_lanes.items()}
+    promotable_boundary["boundary"]["promotion_required"] = True
+    with pytest.raises(ValueError, match="report-only"):
+        replace(protocol, verification_lanes=promotable_boundary)
+
+    missing_gate = {name: dict(value) for name, value in protocol.verification_lanes.items()}
+    missing_gate["inference"]["promotion_required"] = False
+    with pytest.raises(ValueError, match="must gate promotion"):
+        replace(protocol, verification_lanes=missing_gate)
 
 
 def test_boundary_diagnostic_refuses_without_candidate_and_cannot_promote() -> None:
