@@ -27,9 +27,7 @@ _CORE_NUMERICAL_PATHS = (
     "src/scova/cf/support.py",
 )
 
-_CORE_NUMERICAL_DATA_PATHS = (
-    "src/scova/cf/data/support_profiles.json",
-)
+_CORE_NUMERICAL_DATA_PATHS = ("src/scova/cf/data/support_profiles.json",)
 
 _EXTERNAL_NUMERICAL_PATHS = (
     "benchmarks/cf_external_agreement.py",
@@ -76,12 +74,8 @@ _KIND_NUMERICAL_PATHS: dict[EvidenceKind, tuple[str, ...]] = {
 }
 
 _MIXED_NUMERICAL_SOURCES: dict[EvidenceKind, tuple[tuple[str, tuple[str, ...]], ...]] = {
-    "campaign": (
-        ("benchmarks/cf_reference_campaign.py", _CAMPAIGN_NUMERICAL_SYMBOLS),
-    ),
-    "external": (
-        ("benchmarks/cf_reference_campaign.py", _CAMPAIGN_NUMERICAL_SYMBOLS[:7]),
-    ),
+    "campaign": (("benchmarks/cf_reference_campaign.py", _CAMPAIGN_NUMERICAL_SYMBOLS),),
+    "external": (("benchmarks/cf_reference_campaign.py", _CAMPAIGN_NUMERICAL_SYMBOLS[:7]),),
     "inference": (
         ("benchmarks/cf_reference_campaign.py", _CAMPAIGN_NUMERICAL_SYMBOLS),
         ("benchmarks/cf_inference_campaign.py", _INFERENCE_NUMERICAL_SYMBOLS),
@@ -171,9 +165,7 @@ def cf_numerical_fingerprint(commit: str, kind: EvidenceKind) -> str:
     return digest.hexdigest()
 
 
-def same_cf_numerical_implementation(
-    left: str, right: str, kind: EvidenceKind
-) -> bool:
+def same_cf_numerical_implementation(left: str, right: str, kind: EvidenceKind) -> bool:
     """Fail closed if either commit or any required numerical source is unavailable."""
     try:
         return cf_numerical_fingerprint(left, kind) == cf_numerical_fingerprint(right, kind)

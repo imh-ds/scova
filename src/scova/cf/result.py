@@ -145,9 +145,7 @@ class SeedStabilityResult:
             group_standard_errors=np.asarray(values["group_standard_errors"], dtype=float),
             contrast_names=tuple(str(value) for value in values["contrast_names"]),
             contrast_estimates=np.asarray(values["contrast_estimates"], dtype=float),
-            contrast_standard_errors=np.asarray(
-                values["contrast_standard_errors"], dtype=float
-            ),
+            contrast_standard_errors=np.asarray(values["contrast_standard_errors"], dtype=float),
             source=str(values["source"]),
             promotion_eligible=bool(values["promotion_eligible"]),
             failures=tuple((int(seed), str(reason)) for seed, reason in values["failures"]),
@@ -369,9 +367,7 @@ class SCOVACFResult:
         margin = critical * self.group_standard_errors
         return np.column_stack((self.group_means - margin, self.group_means + margin))
 
-    def _weight_array(
-        self, weights: Mapping[JsonLabel, float] | Sequence[float]
-    ) -> np.ndarray:
+    def _weight_array(self, weights: Mapping[JsonLabel, float] | Sequence[float]) -> np.ndarray:
         if isinstance(weights, Mapping):
             unknown = set(weights).difference(self.group_labels)
             if unknown:
@@ -550,8 +546,10 @@ class SCOVACFResult:
                 raise ValueError("SCOVA-CF artifact claim class does not match its analysis mode")
             status_values = metadata["status"]
             qualification_status, qualification_reason = (
-                (QualificationStatus(status_values["qualification_status"]),
-                 str(status_values["qualification_reason"]))
+                (
+                    QualificationStatus(status_values["qualification_status"]),
+                    str(status_values["qualification_reason"]),
+                )
                 if "qualification_status" in status_values
                 else _legacy_qualification(metadata, status_values)
             )

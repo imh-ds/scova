@@ -6,9 +6,9 @@ import pytest
 
 from benchmarks.cf_qualification_program import qualification_protocol
 from benchmarks.cf_reference_campaign import simulate_reference_cell
-from scova.cf import CFValidationProtocol
 from scova.cf import (
     QUALIFICATION_REQUIRED_DECISION_IDS,
+    CFValidationProtocol,
     applicability_matrix_checksum,
     build_qualification_manifest,
     canonical_checksum,
@@ -17,7 +17,6 @@ from scova.cf import (
     validate_record,
     validate_registry,
 )
-from scova.cf.scope_governance import ScopeDecision
 from scripts.render_cf_scope_decisions import render
 
 
@@ -42,10 +41,14 @@ def _record(*, path: str = "retain-limitation", status: str = "resolved") -> dic
         "exclusion_rule": None,
         "approvals": {
             "owner": {
-                "name": "Owner", "approved_at": "2026-08-03T00:00:00Z", "review_reference": "review:1",
+                "name": "Owner",
+                "approved_at": "2026-08-03T00:00:00Z",
+                "review_reference": "review:1",
             },
             "independent_reviewer": {
-                "name": "Reviewer", "approved_at": "2026-08-03T00:01:00Z", "review_reference": "review:2",
+                "name": "Reviewer",
+                "approved_at": "2026-08-03T00:01:00Z",
+                "review_reference": "review:2",
             },
         },
     }
@@ -106,7 +109,12 @@ def test_registry_has_unique_known_blockers_and_renders_for_review() -> None:
     registry = scope_decision_registry()
     assert set(QUALIFICATION_REQUIRED_DECISION_IDS).issubset(registry)
     assert "v11-downstream-evidence-prerequisites" in registry
-    raw = {"schema_version": 1, "records": [dict(item.payload, record_checksum=item.checksum) for item in registry.values()]}
+    raw = {
+        "schema_version": 1,
+        "records": [
+            dict(item.payload, record_checksum=item.checksum) for item in registry.values()
+        ],
+    }
     assert "v11-limited-small-sample-status" in render(raw)
     duplicate = deepcopy(raw)
     duplicate["records"].append(deepcopy(duplicate["records"][0]))
@@ -117,7 +125,9 @@ def test_registry_has_unique_known_blockers_and_renders_for_review() -> None:
 def test_current_qualification_manifest_is_context_bound_after_owner_resolutions() -> None:
     protocol = qualification_protocol()
     manifest = build_qualification_manifest(
-        protocol, contract_version="1.0.0", matrix_id="cf-observational-provisional-v1",
+        protocol,
+        contract_version="1.0.0",
+        matrix_id="cf-observational-provisional-v1",
         required_decision_ids=QUALIFICATION_REQUIRED_DECISION_IDS,
     )
     assert manifest["matrix_checksum"] == applicability_matrix_checksum()
@@ -125,14 +135,19 @@ def test_current_qualification_manifest_is_context_bound_after_owner_resolutions
         QUALIFICATION_REQUIRED_DECISION_IDS
     )
     validate_manifest(
-        manifest, protocol, contract_version="1.0.0", matrix_id="cf-observational-provisional-v1",
+        manifest,
+        protocol,
+        contract_version="1.0.0",
+        matrix_id="cf-observational-provisional-v1",
     )
     changed = dict(manifest, contract_version="2.0.0")
     with pytest.raises(ValueError, match="checksum"):
         validate_manifest(
-            changed, protocol, contract_version="1.0.0", matrix_id="cf-observational-provisional-v1",
+            changed,
+            protocol,
+            contract_version="1.0.0",
+            matrix_id="cf-observational-provisional-v1",
         )
-
 
 
 def test_methods_evidence_cannot_alone_resolve_a_qualification_manifest() -> None:
@@ -145,12 +160,18 @@ def test_methods_evidence_cannot_alone_resolve_a_qualification_manifest() -> Non
     registry = {validated.decision_id: validated}
     protocol = qualification_protocol()
     manifest = build_qualification_manifest(
-        protocol, contract_version="1.0.0", matrix_id="cf-observational-provisional-v1",
-        required_decision_ids=(validated.decision_id,), registry=registry,
+        protocol,
+        contract_version="1.0.0",
+        matrix_id="cf-observational-provisional-v1",
+        required_decision_ids=(validated.decision_id,),
+        registry=registry,
     )
     with pytest.raises(ValueError, match="Methods-study evidence"):
         validate_manifest(
-            manifest, protocol, contract_version="1.0.0", matrix_id="cf-observational-provisional-v1",
+            manifest,
+            protocol,
+            contract_version="1.0.0",
+            matrix_id="cf-observational-provisional-v1",
             registry=registry,
         )
 

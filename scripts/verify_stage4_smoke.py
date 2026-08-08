@@ -25,9 +25,7 @@ def verify(paths: list[Path], specification: dict[str, Any]) -> dict[str, int]:
     tier = "engineering_smoke"
     cells = frozen_cells(tier, specification)
     repetitions = int(specification["tiers"][tier]["repetitions"])
-    expected = {
-        item for shard in range(4) for item in shard_items(cells, repetitions, shard, 4)
-    }
+    expected = {item for shard in range(4) for item in shard_items(cells, repetitions, shard, 4)}
     observed: set[tuple[int, int]] = set()
     for path in paths:
         payload = json.loads(path.read_text(encoding="utf-8"))

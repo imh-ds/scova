@@ -36,6 +36,7 @@ _NUMERICAL_ENVIRONMENT_FIELDS = (
     "scikit-learn",
 )
 
+
 def _version(name: str) -> str:
     try:
         return version(name)
@@ -100,9 +101,7 @@ def run_shard(
             repetition = int(record["repetition"])
             global_index = focused_index * count + repetition
             expected_seed = (
-                protocol.inference.start
-                + focused_index * protocol.inference.count
-                + repetition
+                protocol.inference.start + focused_index * protocol.inference.count + repetition
             )
             if (
                 not 0 <= focused_index < len(protocol.inference_cells)
@@ -131,9 +130,7 @@ def run_shard(
                 ):
                     continue
                 seed = (
-                    protocol.inference.start
-                    + focused_index * protocol.inference.count
-                    + repetition
+                    protocol.inference.start + focused_index * protocol.inference.count + repetition
                 )
                 try:
                     generated = simulate_reference_cell(cell, seed=seed)
@@ -194,7 +191,10 @@ def run_shard(
 
 
 def aggregate(
-    paths: list[Path], *, protocol: CFValidationProtocol, decision_manifest_checksum: str | None = None
+    paths: list[Path],
+    *,
+    protocol: CFValidationProtocol,
+    decision_manifest_checksum: str | None = None,
 ) -> dict[str, Any]:
     assert protocol.inference is not None
     records = []
@@ -219,9 +219,8 @@ def aggregate(
         if values["replications_per_cell"] != protocol.inference.count:
             raise ValueError("Reduced inference shards cannot form release evidence")
         for record in shard_records:
-            global_index = (
-                int(record["focused_cell_index"]) * protocol.inference.count
-                + int(record["repetition"])
+            global_index = int(record["focused_cell_index"]) * protocol.inference.count + int(
+                record["repetition"]
             )
             if global_index % int(values["shard_count"]) != int(values["shard_index"]):
                 raise ValueError("Inference record is assigned to the wrong shard")
@@ -289,23 +288,13 @@ def aggregate(
                 None
                 if effect != "null"
                 else float(
-                    np.mean(
-                        [
-                            record["omnibus"]["p_value"] < 0.05
-                            for record in cell_records
-                        ]
-                    )
+                    np.mean([record["omnibus"]["p_value"] < 0.05 for record in cell_records])
                 )
             )
             omnibus_passed = bool(
-                omnibus_size is None
-                or abs(omnibus_size - 0.05) <= multiplier * mcse
+                omnibus_size is None or abs(omnibus_size - 0.05) <= multiplier * mcse
             )
-            passed = bool(
-                fwer_passed
-                and coverage >= 0.95 - multiplier * mcse
-                and omnibus_passed
-            )
+            passed = bool(fwer_passed and coverage >= 0.95 - multiplier * mcse and omnibus_passed)
             audit = {
                 "passed": passed,
                 "familywise_error": fwer,
@@ -332,15 +321,23 @@ def aggregate(
     if protocol.verification_lanes is not None:
         lane = protocol.verification_lanes["inference"]
         complete = len(records) == len(protocol.inference_cells) * protocol.inference.count
-        evidence.update({
-            "program_type": "qualification", "verification_lane": "inference",
-            "verification_role": lane["role"], "permitted_claim": lane["permitted_claim"],
-            "prohibited_claim": lane["prohibited_claim"], "promotion_required": lane["promotion_required"],
-            "design_checksum": str((protocol.design_selection or {}).get("design_checksum", "")),
-            "decision_manifest_checksum": decision_manifest_checksum,
-            "planned_replications": len(protocol.inference_cells) * protocol.inference.count,
-            "completed_replications": len(records), "informative": bool(complete and all_passed),
-        })
+        evidence.update(
+            {
+                "program_type": "qualification",
+                "verification_lane": "inference",
+                "verification_role": lane["role"],
+                "permitted_claim": lane["permitted_claim"],
+                "prohibited_claim": lane["prohibited_claim"],
+                "promotion_required": lane["promotion_required"],
+                "design_checksum": str(
+                    (protocol.design_selection or {}).get("design_checksum", "")
+                ),
+                "decision_manifest_checksum": decision_manifest_checksum,
+                "planned_replications": len(protocol.inference_cells) * protocol.inference.count,
+                "completed_replications": len(records),
+                "informative": bool(complete and all_passed),
+            }
+        )
     evidence["evidence_checksum"] = canonical_checksum(evidence)
     return evidence
 
@@ -358,10 +355,17 @@ def main() -> None:
     args = parser.parse_args()
     protocol = CFValidationProtocol.load(args.spec)
     if args.aggregate:
-        manifest = None if args.decision_manifest is None else json.loads(args.decision_manifest.read_text(encoding="utf-8"))
+        manifest = (
+            None
+            if args.decision_manifest is None
+            else json.loads(args.decision_manifest.read_text(encoding="utf-8"))
+        )
         evidence = aggregate(
-            args.aggregate, protocol=protocol,
-            decision_manifest_checksum=None if manifest is None else manifest.get("manifest_checksum"),
+            args.aggregate,
+            protocol=protocol,
+            decision_manifest_checksum=None
+            if manifest is None
+            else manifest.get("manifest_checksum"),
         )
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(evidence, indent=2, sort_keys=True), encoding="utf-8")

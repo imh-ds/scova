@@ -20,6 +20,7 @@ UNCHANGED from v10 -- no factor is collapsed, and pairwise coverage stays comple
 
 Run with --write to emit benchmarks/specs/cf_reference_v11.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -124,9 +125,8 @@ BOUNDARY_ESTIMATION: dict[str, Any] = {
 
 # The strata the reference profile claims. maximum_group_count is 3, so k=5 is
 # outside the claim and is covered by the pairwise fill rather than reserved.
-CLAIMED_STRATA = tuple(
-    (groups, learner) for groups in (2, 3) for learner in ("linear", "adaptive")
-)
+CLAIMED_STRATA = tuple((groups, learner) for groups in (2, 3) for learner in ("linear", "adaptive"))
+
 
 # Free factors -- confounding, confounding_form, effect, noise, overlap, surface --
 # are deliberately NOT fixed here. `select_design` fills them greedily against the

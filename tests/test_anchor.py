@@ -26,14 +26,25 @@ DEFAULT_BOUNDS = AnchoredBoundsDeclaration(-20, 20)
 
 def thresholds() -> DiagnosticThresholds:
     return DiagnosticThresholds(
-        version="stage5a-test", calibrated=True, artifact_sha256="test", min_group_ess_warning=1,
-        min_group_ess_refuse=0, min_target_ess_ratio_warning=0, min_target_ess_ratio_refuse=0,
-        max_influence_share_warning=1, max_influence_share_refuse=1,
-        max_weight_concentration_warning=1, max_weight_concentration_refuse=1,
-        min_propensity_q01_warning=1e-12, min_propensity_q01_refuse=1e-14,
-        max_calibration_error_warning=1, max_calibration_error_refuse=1,
-        max_balance_warning=1_000, max_balance_refuse=10_000,
-        max_crossfit_instability_warning=1, max_crossfit_instability_refuse=1,
+        version="stage5a-test",
+        calibrated=True,
+        artifact_sha256="test",
+        min_group_ess_warning=1,
+        min_group_ess_refuse=0,
+        min_target_ess_ratio_warning=0,
+        min_target_ess_ratio_refuse=0,
+        max_influence_share_warning=1,
+        max_influence_share_refuse=1,
+        max_weight_concentration_warning=1,
+        max_weight_concentration_refuse=1,
+        min_propensity_q01_warning=1e-12,
+        min_propensity_q01_refuse=1e-14,
+        max_calibration_error_warning=1,
+        max_calibration_error_refuse=1,
+        max_balance_warning=1_000,
+        max_balance_refuse=10_000,
+        max_crossfit_instability_warning=1,
+        max_crossfit_instability_refuse=1,
     )
 
 
@@ -46,8 +57,12 @@ def prepared(bounds: AnchoredBoundsDeclaration | None = DEFAULT_BOUNDS):
         row_ids=range(len(frame)),
     )
     declaration = DesignDeclaration(
-        group="group", covariates=("x1", "x2", "x3"), random_state=211, n_splits=2,
-        lambdas=(0.0, 1.0), anchored_bounds=bounds,
+        group="group",
+        covariates=("x1", "x2", "x3"),
+        random_state=211,
+        n_splits=2,
+        lambdas=(0.0, 1.0),
+        anchored_bounds=bounds,
     )
     engine = SCOVADesign(thresholds=thresholds())
     return engine, engine.prepare_design(data, declaration), frame["outcome"].to_numpy()
@@ -68,9 +83,15 @@ def test_smooth_weight_is_bounded_and_endpoints_ordered() -> None:
     assert np.all((omega >= 0) & (omega <= 1))
     assert gradient.shape == probability.shape
     result = bounded_pairwise_anchor(
-        groups=("a", "b"), group_codes=np.array([0, 1, 0]), outcomes=np.array([0.2, 0.8, 0.4]),
-        propensity=probability, outcome_predictions=np.array([[0.3, 0.7], [0.3, 0.7], [0.3, 0.7]]),
-        active_codes=(0, 1), outcome_lower=0, outcome_upper=1, confidence_level=0.95,
+        groups=("a", "b"),
+        group_codes=np.array([0, 1, 0]),
+        outcomes=np.array([0.2, 0.8, 0.4]),
+        propensity=probability,
+        outcome_predictions=np.array([[0.3, 0.7], [0.3, 0.7], [0.3, 0.7]]),
+        active_codes=(0, 1),
+        outcome_lower=0,
+        outcome_upper=1,
+        confidence_level=0.95,
     )
     assert result.lower_endpoint <= result.upper_endpoint
 
@@ -150,9 +171,7 @@ def test_lipschitz_geometry_is_locked_smooth_and_experimental(tmp_path) -> None:
     stored = design.lock.design_metadata["support_geometry"]
     assert stored["valid"]
     ids = design.lock.estimation_row_ids
-    result = engine.analyze_lipschitz_anchors(
-        design, outcomes[list(ids)], row_ids=ids
-    )
+    result = engine.analyze_lipschitz_anchors(design, outcomes[list(ids)], row_ids=ids)
     b1 = engine.analyze_anchored_bounds(design, outcomes[list(ids)], row_ids=ids)
     b1_by_name = {contrast.name: contrast for contrast in b1.contrasts}
     assert result.verdict == "experimental"
@@ -193,9 +212,7 @@ def test_lipschitz_geometry_is_locked_smooth_and_experimental(tmp_path) -> None:
 def test_lipschitz_refuses_missing_or_insufficient_geometry() -> None:
     engine, design, outcomes = prepared()
     ids = design.lock.estimation_row_ids
-    refused = engine.analyze_lipschitz_anchors(
-        design, outcomes[list(ids)], row_ids=ids
-    )
+    refused = engine.analyze_lipschitz_anchors(design, outcomes[list(ids)], row_ids=ids)
     assert refused.verdict == "refused"
     geometry = SupportGeometryDeclaration(neighbor_count=1000)
     invalid_bounds = AnchoredBoundsDeclaration(-20, 20, support_geometry=geometry)
@@ -227,50 +244,83 @@ def test_support_geometry_declaration_rejects_non_frozen_settings(settings, mess
 def test_geometry_and_b2_primitives_fail_closed_for_invalid_inputs() -> None:
     declaration = SupportGeometryDeclaration(neighbor_count=2)
     too_small = fit_support_geometry(
-        np.array([[0.0], [1.0], [2.0]]), ["a", "a", "b"], [0, 1, 2],
-        np.array([True, True, True]), declaration,
+        np.array([[0.0], [1.0], [2.0]]),
+        ["a", "a", "b"],
+        [0, 1, 2],
+        np.array([True, True, True]),
+        declaration,
     )
     assert not too_small["valid"]
     degenerate = fit_support_geometry(
-        np.zeros((4, 1)), ["a", "a", "b", "b"], [0, 1, 2, 3],
-        np.ones(4, dtype=bool), declaration,
+        np.zeros((4, 1)),
+        ["a", "a", "b", "b"],
+        [0, 1, 2, 3],
+        np.ones(4, dtype=bool),
+        declaration,
     )
     assert not degenerate["valid"]
     with pytest.raises(ValueError, match="not usable"):
-        soft_k_nearest(np.zeros((1, 1)), np.zeros((1, 1)), {
-            "location": [0.0], "scale": [1.0], "precision": [[1.0]],
-            "temperature": 1.0, "configuration": declaration.to_dict(),
-        })
+        soft_k_nearest(
+            np.zeros((1, 1)),
+            np.zeros((1, 1)),
+            {
+                "location": [0.0],
+                "scale": [1.0],
+                "precision": [[1.0]],
+                "temperature": 1.0,
+                "configuration": declaration.to_dict(),
+            },
+        )
     with pytest.raises(ValueError, match="propensities"):
         scaled_harmonic_overlap_and_gradient(np.array([[1.0, 0.0]]), (0, 1))
     bounded = bounded_pairwise_anchor(
-        groups=("a", "b"), group_codes=np.array([0, 1]), outcomes=np.array([0.2, 0.8]),
-        propensity=np.full((2, 2), 0.5), outcome_predictions=np.full((2, 2), 0.5),
-        active_codes=(0, 1), outcome_lower=0, outcome_upper=1, confidence_level=0.95,
+        groups=("a", "b"),
+        group_codes=np.array([0, 1]),
+        outcomes=np.array([0.2, 0.8]),
+        propensity=np.full((2, 2), 0.5),
+        outcome_predictions=np.full((2, 2), 0.5),
+        active_codes=(0, 1),
+        outcome_lower=0,
+        outcome_upper=1,
+        confidence_level=0.95,
     )
     with pytest.raises(ValueError, match="aligned columns"):
         lipschitz_pairwise_anchor(
-            bounded=bounded, propensity=np.full((2, 2), 0.5), active_codes=(0, 1),
-            gamma_grid=np.array([0.0]), smooth_distances=np.zeros((2, 1)),
-            reference_predictions=np.zeros((2, 2)), outcome_lower=0, outcome_upper=1,
+            bounded=bounded,
+            propensity=np.full((2, 2), 0.5),
+            active_codes=(0, 1),
+            gamma_grid=np.array([0.0]),
+            smooth_distances=np.zeros((2, 1)),
+            reference_predictions=np.zeros((2, 2)),
+            outcome_lower=0,
+            outcome_upper=1,
         )
 
 
 def test_b2_eif_is_centered_and_tracks_a_query_perturbation() -> None:
     propensity = np.full((6, 2), 0.5)
     bounded = bounded_pairwise_anchor(
-        groups=("a", "b"), group_codes=np.array([0, 1, 0, 1, 0, 1]),
-        outcomes=np.array([0.1, 0.7, 0.2, 0.8, 0.3, 0.9]), propensity=propensity,
-        outcome_predictions=np.full((6, 2), 0.5), active_codes=(0, 1), outcome_lower=0,
-        outcome_upper=1, confidence_level=0.95,
+        groups=("a", "b"),
+        group_codes=np.array([0, 1, 0, 1, 0, 1]),
+        outcomes=np.array([0.1, 0.7, 0.2, 0.8, 0.3, 0.9]),
+        propensity=propensity,
+        outcome_predictions=np.full((6, 2), 0.5),
+        active_codes=(0, 1),
+        outcome_lower=0,
+        outcome_upper=1,
+        confidence_level=0.95,
     )
     result = lipschitz_pairwise_anchor(
-        bounded=bounded, propensity=propensity, active_codes=(0, 1),
+        bounded=bounded,
+        propensity=propensity,
+        active_codes=(0, 1),
         gamma_grid=np.array([0.0, 0.5, 2.0]),
         smooth_distances=np.full((6, 2), 0.1),
         reference_predictions=np.column_stack((np.linspace(0.35, 0.55, 6), np.full(6, 0.45))),
         transport_residuals=np.column_stack((np.linspace(-0.1, 0.1, 6), np.zeros(6))),
-        outcome_lower=0, outcome_upper=1, confidence_level=0.95,
+        outcome_lower=0,
+        outcome_upper=1,
+        confidence_level=0.95,
     )
     assert result.lower_influence_values is not None
     assert result.upper_influence_values is not None
@@ -283,16 +333,26 @@ def test_b2_eif_is_centered_and_tracks_a_query_perturbation() -> None:
 def test_b2_endpoint_finite_difference_away_from_clipping() -> None:
     propensity = np.full((6, 2), 0.5)
     bounded = bounded_pairwise_anchor(
-        groups=("a", "b"), group_codes=np.array([0, 1, 0, 1, 0, 1]),
-        outcomes=np.array([0.2, 0.8, 0.3, 0.7, 0.4, 0.6]), propensity=propensity,
-        outcome_predictions=np.full((6, 2), 0.5), active_codes=(0, 1), outcome_lower=0,
-        outcome_upper=1, confidence_level=0.95,
+        groups=("a", "b"),
+        group_codes=np.array([0, 1, 0, 1, 0, 1]),
+        outcomes=np.array([0.2, 0.8, 0.3, 0.7, 0.4, 0.6]),
+        propensity=propensity,
+        outcome_predictions=np.full((6, 2), 0.5),
+        active_codes=(0, 1),
+        outcome_lower=0,
+        outcome_upper=1,
+        confidence_level=0.95,
     )
     predictions = np.full((6, 2), (0.55, 0.45))
     direction = np.column_stack((np.linspace(-0.1, 0.1, 6), np.zeros(6)))
     common = dict(
-        bounded=bounded, propensity=propensity, active_codes=(0, 1), gamma_grid=np.array([0.0]),
-        smooth_distances=np.full((6, 2), 0.1), outcome_lower=0, outcome_upper=1,
+        bounded=bounded,
+        propensity=propensity,
+        active_codes=(0, 1),
+        gamma_grid=np.array([0.0]),
+        smooth_distances=np.full((6, 2), 0.1),
+        outcome_lower=0,
+        outcome_upper=1,
         confidence_level=0.95,
     )
     baseline = lipschitz_pairwise_anchor(reference_predictions=predictions, **common)

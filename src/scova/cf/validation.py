@@ -112,15 +112,24 @@ class CFValidationProtocol:
                 raise ValueError("Version-2 protocols require pairwise-design provenance")
         if self.verification_lanes is not None:
             if not self.frozen or len(self.retained_cells) != 48:
-                raise ValueError("Version-3 qualification protocols require a frozen 48-cell design")
+                raise ValueError(
+                    "Version-3 qualification protocols require a frozen 48-cell design"
+                )
             if len(self.inference_cells) != 6 or len(self.external_cells) != 8:
-                raise ValueError("Version-3 qualification protocols require six inference and eight external cells")
+                raise ValueError(
+                    "Version-3 qualification protocols require six inference "
+                    "and eight external cells"
+                )
             if self.external is None or self.inference is None:
-                raise ValueError("Version-3 qualification protocols require external and inference seeds")
+                raise ValueError(
+                    "Version-3 qualification protocols require external and inference seeds"
+                )
             if self.external.count != 50 or self.inference.count != 2000:
                 raise ValueError("Version-3 verification lane replication counts are fixed")
             if not self.dependency_lock_checksum or not self.design_selection:
-                raise ValueError("Version-3 qualification protocols require dependency and design identities")
+                raise ValueError(
+                    "Version-3 qualification protocols require dependency and design identities"
+                )
             self._validate_verification_lanes()
         if not 0 < self.calibration_fit_fraction < 1:
             raise ValueError("calibration_fit_fraction must lie in (0, 1)")
@@ -130,9 +139,7 @@ class CFValidationProtocol:
             if set(cell) != set(self.factors):
                 raise ValueError("Every retained cell must specify every campaign factor")
             invalid = {
-                name: value
-                for name, value in cell.items()
-                if value not in self.factors[name]
+                name: value for name, value in cell.items() if value not in self.factors[name]
             }
             if invalid:
                 raise ValueError(f"Retained cell contains undeclared factor levels: {invalid}")
@@ -153,17 +160,12 @@ class CFValidationProtocol:
             len(self.inference_cells),
         )
         intervals = sorted(
-            (part.start, part.start + part.count * maximum_cells)
-            for part in partitions
+            (part.start, part.start + part.count * maximum_cells) for part in partitions
         )
-        if any(
-            left[1] > right[0]
-            for left, right in pairwise(intervals)
-        ):
+        if any(left[1] > right[0] for left, right in pairwise(intervals)):
             raise ValueError("Pilot, calibration, and validation seed partitions must be disjoint")
         maximum_sklearn_seed = max(
-            part.start + maximum_cells * part.count - 1 + 7919
-            for part in partitions
+            part.start + maximum_cells * part.count - 1 + 7919 for part in partitions
         )
         if maximum_sklearn_seed > 2**32 - 1:
             raise ValueError("Campaign seeds must remain valid scikit-learn random_state values")
@@ -186,10 +188,7 @@ class CFValidationProtocol:
         if self.calibration_screening is not None:
             missing = required_metrics.difference(self.calibration_screening)
             if missing:
-                raise ValueError(
-                    "Calibration screening is missing metrics: "
-                    f"{sorted(missing)}"
-                )
+                raise ValueError(f"Calibration screening is missing metrics: {sorted(missing)}")
         if self.boundary_estimation is not None:
             self._validate_boundary_estimation()
         if self.external_agreement is not None:
@@ -203,9 +202,7 @@ class CFValidationProtocol:
             }
             missing = required_source.difference(self.calibration_source)
             if missing:
-                raise ValueError(
-                    "Calibration source is missing fields: " f"{sorted(missing)}"
-                )
+                raise ValueError(f"Calibration source is missing fields: {sorted(missing)}")
             if any(
                 not self.calibration_source[name]
                 for name in ("protocol_id", "protocol_checksum", "evidence_checksum", "git_commit")
@@ -269,8 +266,7 @@ class CFValidationProtocol:
                 if self.threshold_quantiles is None
                 else {
                     "threshold_quantiles": {
-                        name: list(levels)
-                        for name, levels in self.threshold_quantiles.items()
+                        name: list(levels) for name, levels in self.threshold_quantiles.items()
                     }
                 }
             ),
@@ -328,7 +324,11 @@ class CFValidationProtocol:
             **(
                 {}
                 if self.verification_lanes is None
-                else {"verification_lanes": {name: dict(value) for name, value in self.verification_lanes.items()}}
+                else {
+                    "verification_lanes": {
+                        name: dict(value) for name, value in self.verification_lanes.items()
+                    }
+                }
             ),
         }
 
@@ -398,13 +398,18 @@ class CFValidationProtocol:
         for name, lane in lanes.items():
             if set(lane) != {"role", "permitted_claim", "prohibited_claim", "promotion_required"}:
                 raise ValueError(f"Verification lane {name} has an invalid schema")
-            if not all(isinstance(lane[field], str) and lane[field] for field in ("role", "permitted_claim", "prohibited_claim")):
+            if not all(
+                isinstance(lane[field], str) and lane[field]
+                for field in ("role", "permitted_claim", "prohibited_claim")
+            ):
                 raise ValueError(f"Verification lane {name} must describe its claims")
             if not isinstance(lane["promotion_required"], bool):
                 raise ValueError(f"Verification lane {name} must declare promotion_required")
         if lanes["boundary"]["promotion_required"]:
             raise ValueError("The boundary diagnostic must remain report-only")
-        if not all(lanes[name]["promotion_required"] for name in ("external", "inference", "validation")):
+        if not all(
+            lanes[name]["promotion_required"] for name in ("external", "inference", "validation")
+        ):
             raise ValueError("External, inference, and validation evidence must gate promotion")
 
     _EXTERNAL_AGREEMENT_SCHEMA: ClassVar[Mapping[str, Any]] = {
@@ -466,9 +471,7 @@ class CFValidationProtocol:
             frozen=bool(values.get("frozen", False)),
             protocol_id=str(values["protocol_id"]),
             reference_profile=dict(values["reference_profile"]),
-            factors={
-                str(name): tuple(levels) for name, levels in values["factors"].items()
-            },
+            factors={str(name): tuple(levels) for name, levels in values["factors"].items()},
             retained_cells=tuple(dict(cell) for cell in values["retained_cells"]),
             plasmode_cells=tuple(dict(cell) for cell in values.get("plasmode_cells", ())),
             inference_cells=tuple(dict(cell) for cell in values.get("inference_cells", ())),
@@ -477,14 +480,10 @@ class CFValidationProtocol:
             calibration=SeedPartition(**partitions["calibration"]),
             validation=SeedPartition(**partitions["validation"]),
             external=(
-                None
-                if "external" not in partitions
-                else SeedPartition(**partitions["external"])
+                None if "external" not in partitions else SeedPartition(**partitions["external"])
             ),
             inference=(
-                None
-                if "inference" not in partitions
-                else SeedPartition(**partitions["inference"])
+                None if "inference" not in partitions else SeedPartition(**partitions["inference"])
             ),
             calibration_fit_fraction=float(values.get("calibration_fit_fraction", 0.60)),
             calibration_candidate_retention_fraction=float(
@@ -519,15 +518,14 @@ class CFValidationProtocol:
             verification_lanes=(
                 None
                 if values.get("verification_lanes") is None
-                else {str(name): dict(value) for name, value in values["verification_lanes"].items()}
+                else {
+                    str(name): dict(value) for name, value in values["verification_lanes"].items()
+                }
             ),
             calibration_source=(
                 None
                 if values.get("calibration_source") is None
-                else {
-                    str(name): str(value)
-                    for name, value in values["calibration_source"].items()
-                }
+                else {str(name): str(value) for name, value in values["calibration_source"].items()}
             ),
             candidate_source=(
                 None
@@ -559,8 +557,7 @@ class CFValidationProtocol:
             metrics={str(name): float(value) for name, value in values["metrics"].items()},
             software={str(name): str(value) for name, value in values["software"].items()},
             dataset_checksums={
-                str(name): str(value)
-                for name, value in values.get("dataset_checksums", {}).items()
+                str(name): str(value) for name, value in values.get("dataset_checksums", {}).items()
             },
             dependency_lock_checksum=(
                 None
@@ -633,13 +630,9 @@ class CFSupportProfile:
                 if values.get("validation_evidence_checksum") is None
                 else str(values["validation_evidence_checksum"])
             ),
-            thresholds={
-                str(name): float(value) for name, value in values["thresholds"].items()
-            },
+            thresholds={str(name): float(value) for name, value in values["thresholds"].items()},
             compatibility=(
-                None
-                if not values.get("compatibility")
-                else dict(values["compatibility"])
+                None if not values.get("compatibility") else dict(values["compatibility"])
             ),
             state=str(values["state"]),  # type: ignore[arg-type]
         )

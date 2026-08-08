@@ -95,14 +95,25 @@ def _ancova(frame: pd.DataFrame) -> dict[str, Any]:
 def _illustrative_thresholds() -> DiagnosticThresholds:
     """Calibrated illustrative gates; production analyses use released thresholds."""
     return DiagnosticThresholds(
-        version="simulated-program-tracks-v1", calibrated=True, artifact_sha256="example",
-        min_group_ess_warning=20, min_group_ess_refuse=10, min_target_ess_ratio_warning=0.1,
-        min_target_ess_ratio_refuse=0.05, max_influence_share_warning=0.9,
-        max_influence_share_refuse=0.99, max_weight_concentration_warning=0.5,
-        max_weight_concentration_refuse=0.9, min_propensity_q01_warning=0.001,
-        min_propensity_q01_refuse=0.0001, max_calibration_error_warning=1,
-        max_calibration_error_refuse=2, max_balance_warning=2, max_balance_refuse=5,
-        max_crossfit_instability_warning=1, max_crossfit_instability_refuse=2,
+        version="simulated-program-tracks-v1",
+        calibrated=True,
+        artifact_sha256="example",
+        min_group_ess_warning=20,
+        min_group_ess_refuse=10,
+        min_target_ess_ratio_warning=0.1,
+        min_target_ess_ratio_refuse=0.05,
+        max_influence_share_warning=0.9,
+        max_influence_share_refuse=0.99,
+        max_weight_concentration_warning=0.5,
+        max_weight_concentration_refuse=0.9,
+        min_propensity_q01_warning=0.001,
+        min_propensity_q01_refuse=0.0001,
+        max_calibration_error_warning=1,
+        max_calibration_error_refuse=2,
+        max_balance_warning=2,
+        max_balance_refuse=5,
+        max_crossfit_instability_warning=1,
+        max_crossfit_instability_refuse=2,
     )
 
 

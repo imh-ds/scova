@@ -31,9 +31,7 @@ def coverage_inventory(protocol: CFValidationProtocol) -> dict[str, Any]:
     eligible_simulated = [
         cell for cell in simulated if _profile_eligible(protocol, cell, "simulated")
     ]
-    eligible_plasmode = [
-        cell for cell in plasmode if _profile_eligible(protocol, cell, "plasmode")
-    ]
+    eligible_plasmode = [cell for cell in plasmode if _profile_eligible(protocol, cell, "plasmode")]
     return {
         "matrix_id": matrix.matrix_id,
         "protocol_id": protocol.protocol_id,
@@ -49,9 +47,7 @@ def coverage_inventory(protocol: CFValidationProtocol) -> dict[str, Any]:
             eligible_simulated, "n_covariates"
         ),
         "profile_eligible_simulated_by_group_count": _counts(eligible_simulated, "n_groups"),
-        "profile_eligible_plasmode_by_covariate_count": _counts(
-            eligible_plasmode, "n_covariates"
-        ),
+        "profile_eligible_plasmode_by_covariate_count": _counts(eligible_plasmode, "n_covariates"),
         "known_limitations": [
             entry["entry_id"]
             for entry in matrix.classifications[ApplicabilityClassification.KNOWN_LIMITATION]

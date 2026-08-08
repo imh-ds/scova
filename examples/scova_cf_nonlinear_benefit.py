@@ -17,9 +17,7 @@ from scova.cf import (
 )
 
 
-def simulate_nonlinear_trial(*, n: int = 1200, seed: int = 2) -> tuple[
-    pd.DataFrame, np.ndarray
-]:
+def simulate_nonlinear_trial(*, n: int = 1200, seed: int = 2) -> tuple[pd.DataFrame, np.ndarray]:
     """Simulate mutually exclusive groups with nonlinear heterogeneous response surfaces."""
     rng = np.random.default_rng(seed)
     x = rng.normal(size=(n, 3))
@@ -63,9 +61,7 @@ def _declaration() -> SCOVACFDeclaration:
             ("x2", "baseline quadratic prognostic and effect-modifying factor"),
             ("x3", "baseline prognostic factor"),
         ),
-        assignment=KnownAssignment(
-            probabilities=(("g0", 1 / 3), ("g1", 1 / 3), ("g2", 1 / 3))
-        ),
+        assignment=KnownAssignment(probabilities=(("g0", 1 / 3), ("g1", 1 / 3), ("g2", 1 / 3))),
         contrasts=(
             ContrastSpec("g1 - g0", (("g1", 1.0), ("g0", -1.0))),
             ContrastSpec("g2 - g0", (("g2", 1.0), ("g0", -1.0))),

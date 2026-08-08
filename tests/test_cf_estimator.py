@@ -13,11 +13,11 @@ from scova.cf import (
     ClaimClass,
     EstimatedAssignment,
     KnownAssignment,
+    QualificationStatus,
     SCOVACFDeclaration,
     SCOVACFNuisancePredictions,
     SCOVACFRefusal,
     SCOVACFResult,
-    QualificationStatus,
     SupportPolicy,
     SupportStatus,
 )
@@ -30,9 +30,7 @@ def declaration(
     sensitivity_analysis: str | None = None,
 ) -> SCOVACFDeclaration:
     assignment = (
-        KnownAssignment(
-            probabilities=(("g0", 1 / 3), ("g1", 1 / 3), ("g2", 1 / 3))
-        )
+        KnownAssignment(probabilities=(("g0", 1 / 3), ("g1", 1 / 3), ("g2", 1 / 3)))
         if mode is AnalysisMode.RANDOMIZED
         else EstimatedAssignment(nuisance_strategy="linear")
     )
@@ -100,9 +98,7 @@ def test_randomized_cf_oracle_matches_base_numerical_engine() -> None:
     assert isinstance(cf, SCOVACFResult)
     base = SCOVA().fit(
         simulation.data,
-        SCOVADeclaration(
-            "outcome", "group", ("x1", "x2", "x3"), n_splits=3, random_state=17
-        ),
+        SCOVADeclaration("outcome", "group", ("x1", "x2", "x3"), n_splits=3, random_state=17),
         nuisance_predictions=NuisancePredictions(
             simulation.propensity,
             simulation.outcome_regression,
@@ -128,9 +124,7 @@ def test_cf_cross_fit_uses_known_assignment_and_produces_benchmarks() -> None:
     assert result.nuisance_metadata["propensity_model"] == "known-design"
     assert result.benchmarks["unadjusted"]["name"] == "unadjusted-group-means"
     assert result.benchmarks["lin_interacted"]["name"] == "lin-fully-interacted"
-    assert result.evidence_card["scientific_boundary"].startswith(
-        "Population counterfactual means"
-    )
+    assert result.evidence_card["scientific_boundary"].startswith("Population counterfactual means")
 
 
 def test_associational_and_observational_claim_gates() -> None:
@@ -182,9 +176,7 @@ def test_labelled_inference_and_cf_artifact_round_trip(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("schema_version", [1, 2])
-def test_legacy_artifacts_derive_qualification_status(
-    tmp_path: Path, schema_version: int
-) -> None:
+def test_legacy_artifacts_derive_qualification_status(tmp_path: Path, schema_version: int) -> None:
     result = oracle_result()
     path = tmp_path / "current.scova-cf"
     result.save(path)
@@ -287,9 +279,7 @@ def test_singular_omnibus_is_refused_without_hiding_other_estimates() -> None:
     result = SCOVACF().analyze(
         data,
         declaration(),
-        nuisance_predictions=SCOVACFNuisancePredictions(
-            predictions, simulation.group_labels
-        ),
+        nuisance_predictions=SCOVACFNuisancePredictions(predictions, simulation.group_labels),
     )
     assert isinstance(result, SCOVACFResult)
     assert result.omnibus.status_code == "refused/singular-omnibus"
@@ -299,9 +289,7 @@ def test_singular_omnibus_is_refused_without_hiding_other_estimates() -> None:
 def test_estimator_input_refusals_are_typed() -> None:
     simulation = generate_data("randomized", n=180, seed=18)
 
-    missing_column = SCOVACF().analyze(
-        simulation.data.drop(columns="x3"), declaration()
-    )
+    missing_column = SCOVACF().analyze(simulation.data.drop(columns="x3"), declaration())
     assert isinstance(missing_column, SCOVACFRefusal)
     assert missing_column.status.code == "refused/missing-column"
 
@@ -320,9 +308,7 @@ def test_estimator_input_refusals_are_typed() -> None:
 
     bad_assignment = replace(
         declaration(),
-        assignment=KnownAssignment(
-            probabilities=(("g0", 1 / 3), ("g1", 1 / 3), ("other", 1 / 3))
-        ),
+        assignment=KnownAssignment(probabilities=(("g0", 1 / 3), ("g1", 1 / 3), ("other", 1 / 3))),
     )
     invalid_assignment = SCOVACF().analyze(simulation.data, bad_assignment)
     assert isinstance(invalid_assignment, SCOVACFRefusal)
@@ -442,9 +428,7 @@ def test_support_warning_details_and_rank_limited_benchmark() -> None:
     assert "ESS ratio" in result.status.reason
     assert "maximum normalized weight" in result.status.reason
     assert "top-one-percent" in result.status.reason
-    assert result.benchmarks["lin_interacted"]["status"] == (
-        "limited/rank-deficient-benchmark"
-    )
+    assert result.benchmarks["lin_interacted"]["status"] == ("limited/rank-deficient-benchmark")
 
 
 def test_result_validation_branches() -> None:
@@ -491,9 +475,7 @@ def test_locked_seed_refits_are_reported_but_not_pooled(tmp_path: Path) -> None:
     result.save(path)
     loaded = SCOVACFResult.load(path)
     assert loaded.seed_stability is not None
-    np.testing.assert_allclose(
-        loaded.seed_stability.group_means, stability.group_means
-    )
+    np.testing.assert_allclose(loaded.seed_stability.group_means, stability.group_means)
 
 
 def test_five_full_refits_are_promotion_eligible_but_do_not_upgrade_support() -> None:

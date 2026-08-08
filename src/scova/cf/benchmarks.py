@@ -50,9 +50,7 @@ def lin_interacted_benchmark(
     k = len(group_labels)
     centered = x - x.mean(axis=0)
     treatment = np.eye(k, dtype=float)[group_codes][:, 1:]
-    interactions = np.column_stack(
-        [treatment[:, code, None] * centered for code in range(k - 1)]
-    )
+    interactions = np.column_stack([treatment[:, code, None] * centered for code in range(k - 1)])
     design = np.column_stack((np.ones(n), treatment, centered, interactions))
     rank = int(np.linalg.matrix_rank(design))
     if rank < design.shape[1] or n <= design.shape[1]:

@@ -27,9 +27,7 @@ def main() -> None:
             ("x2", "baseline prognostic factor"),
             ("x3", "baseline prognostic factor"),
         ),
-        assignment=KnownAssignment(
-            probabilities=(("g0", 1 / 3), ("g1", 1 / 3), ("g2", 1 / 3))
-        ),
+        assignment=KnownAssignment(probabilities=(("g0", 1 / 3), ("g1", 1 / 3), ("g2", 1 / 3))),
         contrasts=(
             ContrastSpec("g0 - g1", (("g0", 1.0), ("g1", -1.0))),
             ContrastSpec("g2 - g1", (("g2", 1.0), ("g1", -1.0))),

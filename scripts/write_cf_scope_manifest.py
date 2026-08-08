@@ -15,7 +15,9 @@ from scova.cf import (
 
 
 def contract_version(path: Path) -> str:
-    match = re.search(r"^\*\*Version:\*\*\s*([^\s]+)", path.read_text(encoding="utf-8"), re.MULTILINE)
+    match = re.search(
+        r"^\*\*Version:\*\*\s*([^\s]+)", path.read_text(encoding="utf-8"), re.MULTILINE
+    )
     if match is None:
         raise ValueError("Methodological contract has no version")
     return match.group(1)

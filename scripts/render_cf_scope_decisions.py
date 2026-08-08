@@ -15,21 +15,30 @@ def render(values: dict[str, Any]) -> str:
     lines = ["# SCOVA-CF scope-decision log", ""]
     for decision in decisions.values():
         record = decision.payload
-        lines.extend([
-            f"## {decision.decision_id}", "",
-            f"- Status: `{decision.status}`", f"- Path: `{decision.path}`",
-            f"- Evidence: {', '.join(record['evidence_ids'])}",
-            f"- Affected protocols: {', '.join(record['affected_protocols'])}",
-            f"- Uncertainty: {record['uncertainty']}",
-            f"- Rationale: {record['rationale']}",
-            f"- Prior evidence: {record['prior_evidence_consequences']}",
-            f"- Record checksum: `{decision.checksum}`", "",
-        ])
-    lines.extend([
-        "## Review rule", "",
-        "A resolved decision records an approved governance choice. It does not establish "
-        "exchangeability, positivity, or causal validity in an applied dataset.", "",
-    ])
+        lines.extend(
+            [
+                f"## {decision.decision_id}",
+                "",
+                f"- Status: `{decision.status}`",
+                f"- Path: `{decision.path}`",
+                f"- Evidence: {', '.join(record['evidence_ids'])}",
+                f"- Affected protocols: {', '.join(record['affected_protocols'])}",
+                f"- Uncertainty: {record['uncertainty']}",
+                f"- Rationale: {record['rationale']}",
+                f"- Prior evidence: {record['prior_evidence_consequences']}",
+                f"- Record checksum: `{decision.checksum}`",
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "## Review rule",
+            "",
+            "A resolved decision records an approved governance choice. It does not establish "
+            "exchangeability, positivity, or causal validity in an applied dataset.",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 

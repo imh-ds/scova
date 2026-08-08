@@ -43,9 +43,7 @@ def _selection_z(metrics: MappingLike) -> float | None:
         return None
     confidence = float(confidence)
     if not 0.5 <= confidence < 1.0:
-        raise ValueError(
-            f"{_SELECTION_CONFIDENCE_METRIC} must lie in [0.5, 1.0); got {confidence}"
-        )
+        raise ValueError(f"{_SELECTION_CONFIDENCE_METRIC} must lie in [0.5, 1.0); got {confidence}")
     return float(statistics.NormalDist().inv_cdf(confidence))
 
 
@@ -124,11 +122,7 @@ def _verify_evidence(evidence: dict[str, Any]) -> None:
 def _passes(record: dict[str, Any], thresholds: dict[str, float]) -> bool:
     features = record["support_features"]
     return bool(
-        all(
-            features[name] >= thresholds[name]
-            for name in LOWER_FEATURES
-            if name in thresholds
-        )
+        all(features[name] >= thresholds[name] for name in LOWER_FEATURES if name in thresholds)
         and all(features[name] <= thresholds[name] for name in UPPER_FEATURES)
     )
 
@@ -225,8 +219,7 @@ def _unstable_enrichment(
     )
     passed = bool(
         unstable
-        and unstable_bad - supported_bad
-        >= float(metrics["minimum_unstable_absolute_enrichment"])
+        and unstable_bad - supported_bad >= float(metrics["minimum_unstable_absolute_enrichment"])
         and risk_ratio >= float(metrics["minimum_unstable_risk_ratio"])
     )
     selection_z = _selection_z(metrics)
@@ -352,9 +345,7 @@ def _candidate_enrichments(
             ),
             "risk_ratio_lower_bound": lower_bounds[index],
             "selection_confidence": (
-                None
-                if selection_z is None
-                else float(metrics[_SELECTION_CONFIDENCE_METRIC])
+                None if selection_z is None else float(metrics[_SELECTION_CONFIDENCE_METRIC])
             ),
         }
         for index in range(len(candidates))
@@ -389,9 +380,7 @@ def _cell_gate(
     passed = bool(
         abs(coverage - 0.95) <= multiplier * coverage_mcse
         and abs(bias) <= float(metrics["maximum_standardized_bias"]) * empirical_sd
-        and float(metrics["minimum_se_ratio"])
-        <= se_ratio
-        <= float(metrics["maximum_se_ratio"])
+        and float(metrics["minimum_se_ratio"]) <= se_ratio <= float(metrics["maximum_se_ratio"])
         and type_i_ok
     )
     return passed, {
@@ -436,9 +425,7 @@ def _screening_cell_gate(
         type_i_ok = bool(type_i_error <= 0.05 + multiplier * type_i_mcse)
     bias_ok = bool(abs(bias) <= float(metrics["maximum_standardized_bias"]) * empirical_sd)
     se_ok = bool(
-        float(metrics["minimum_se_ratio"])
-        <= se_ratio
-        <= float(metrics["maximum_se_ratio"])
+        float(metrics["minimum_se_ratio"]) <= se_ratio <= float(metrics["maximum_se_ratio"])
     )
     passed = bool(coverage_ok and bias_ok and se_ok and type_i_ok)
     return passed, {
@@ -559,9 +546,7 @@ def _profile_scope(protocol: CFValidationProtocol) -> tuple[float, int | None, f
     )
 
 
-def _profile_eligible(
-    protocol: CFValidationProtocol, cell: dict[str, Any], kind: str
-) -> bool:
+def _profile_eligible(protocol: CFValidationProtocol, cell: dict[str, Any], kind: str) -> bool:
     minimum, maximum, density = _profile_scope(protocol)
     return _strong(cell, kind, minimum, maximum, density)
 
@@ -635,19 +620,15 @@ def _candidate_usefulness(
         passing += supported_counts / len(cell_supported) >= float(
             protocol.metrics["minimum_strong_replication_pass_fraction"]
         )
-    useful = (
-        passing / len(strong_cells)
-        >= float(protocol.metrics["minimum_strong_cell_pass_fraction"])
+    useful = passing / len(strong_cells) >= float(
+        protocol.metrics["minimum_strong_cell_pass_fraction"]
     )
     return [
-        (bool(useful[index]), float(supported_totals[index]))
-        for index in range(len(candidates))
+        (bool(useful[index]), float(supported_totals[index])) for index in range(len(candidates))
     ]
 
 
-def calibrate(
-    protocol: CFValidationProtocol, evidence: dict[str, Any]
-) -> dict[str, Any]:
+def calibrate(protocol: CFValidationProtocol, evidence: dict[str, Any]) -> dict[str, Any]:
     # Legacy reference evidence predates explicit program provenance.  New
     # artifacts must declare qualification; methods studies are never a source
     # of support thresholds or a candidate profile.
@@ -703,9 +684,7 @@ def calibrate(
     lower_features = _active_lower_features(fit_records)
     # Each lower feature may declare its own grid; absent one it reuses the ESS
     # grid, so a protocol adding a feature need not restate the quantiles.
-    lower_grids = {
-        name: tuple((quantiles or {}).get(name, lower_q)) for name in lower_features
-    }
+    lower_grids = {name: tuple((quantiles or {}).get(name, lower_q)) for name in lower_features}
     grids = {
         **{
             name: tuple(
@@ -746,9 +725,7 @@ def calibrate(
     candidate_values = list(candidates.values())
     usefulness = _candidate_usefulness(fit_records, candidate_values, protocol)
     ranked: list[tuple[float, tuple[float, ...], dict[str, float]]] = []
-    for thresholds, (useful, objective) in zip(
-        candidate_values, usefulness, strict=True
-    ):
+    for thresholds, (useful, objective) in zip(candidate_values, usefulness, strict=True):
         if useful:
             # Smaller upper limits and larger ESS floors win exact objective ties.
             conservative = (
@@ -776,9 +753,7 @@ def calibrate(
         for cell_index in sorted({int(record["cell_index"]) for record in evidence["records"]})
     }
     audit_records_by_cell = {
-        cell_index: [
-            record for record in audit_records if int(record["cell_index"]) == cell_index
-        ]
+        cell_index: [record for record in audit_records if int(record["cell_index"]) == cell_index]
         for cell_index in records_by_cell
     }
     ranked_candidates = ranked[:candidate_limit]
@@ -791,9 +766,7 @@ def calibrate(
         ranked_candidates, enrichments, strict=True
     ):
         if protocol.calibration_enrichment_screening and not enrichment["passed"]:
-            attempts.append(
-                (-negative_objective, conservative, thresholds, [], enrichment)
-            )
+            attempts.append((-negative_objective, conservative, thresholds, [], enrichment))
             continue
         audits = []
         passed = True
@@ -805,18 +778,17 @@ def calibrate(
                     "structural_refusal_rate": float(np.mean([r["refused"] for r in all_cell])),
                 }
             else:
-                supported = [
-                    r
-                    for r in audit_records_by_cell[cell_index]
-                    if _passes(r, thresholds)
-                ]
+                supported = [r for r in audit_records_by_cell[cell_index] if _passes(r, thresholds)]
                 if protocol.calibration_screening is None:
                     audit_passed, audit = _cell_gate(supported, protocol.metrics)
-                    if not _strong(
-                        cell,
-                        all_cell[0]["cell_kind"],
-                        float(protocol.metrics["strong_support_minimum_expected_arm_count"]),
-                    ) and not supported:
+                    if (
+                        not _strong(
+                            cell,
+                            all_cell[0]["cell_kind"],
+                            float(protocol.metrics["strong_support_minimum_expected_arm_count"]),
+                        )
+                        and not supported
+                    ):
                         audit_passed = True
                         audit = {"passed": True, "reason": "unstable-cell-no-supported-results"}
                 elif not _profile_eligible(protocol, cell, all_cell[0]["cell_kind"]):
@@ -844,9 +816,7 @@ def calibrate(
             attempt
             for attempt in attempts
             if all(audit["passed"] for audit in attempt[3])
-            and (
-                not protocol.calibration_enrichment_screening or attempt[4]["passed"]
-            )
+            and (not protocol.calibration_enrichment_screening or attempt[4]["passed"])
         ]
         closest = max(
             attempts,

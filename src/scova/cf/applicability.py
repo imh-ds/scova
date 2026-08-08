@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum
 from importlib.resources import files
-from typing import Any, Mapping
+from typing import Any
 
 
 class ApplicabilityClassification(str, Enum):
@@ -62,11 +63,16 @@ def _matrix_from_dict(values: Mapping[str, Any]) -> ApplicabilityMatrix:
     if values["mode"] != "observational-causal" or values["state"] != "provisional":
         raise ValueError("Only a provisional observational applicability matrix is supported")
     if envelope.get("assignment") != "estimated" or envelope.get("nuisance_strategy") != "adaptive":
-        raise ValueError("Observational applicability envelope requires estimated adaptive nuisances")
+        raise ValueError(
+            "Observational applicability envelope requires estimated adaptive nuisances"
+        )
     group_counts = tuple(int(value) for value in envelope.get("n_groups", ()))
     maximum_covariate_count = int(envelope.get("maximum_covariate_count", 0))
     if group_counts != (2, 3) or maximum_covariate_count != 5:
-        raise ValueError("Provisional observational envelope must cover only two/three groups and five covariates")
+        raise ValueError(
+            "Provisional observational envelope must cover only two/three groups "
+            "and five covariates"
+        )
     normalized: dict[ApplicabilityClassification, tuple[Mapping[str, Any], ...]] = {}
     entry_ids: set[str] = set()
     for classification in ApplicabilityClassification:
@@ -74,7 +80,11 @@ def _matrix_from_dict(values: Mapping[str, Any]) -> ApplicabilityMatrix:
         if not isinstance(entries, list):
             raise ValueError("Applicability classification entries must be lists")
         for entry in entries:
-            if not isinstance(entry, dict) or not entry.get("entry_id") or not entry.get("statement"):
+            if (
+                not isinstance(entry, dict)
+                or not entry.get("entry_id")
+                or not entry.get("statement")
+            ):
                 raise ValueError("Applicability entries require an id and statement")
             if entry["entry_id"] in entry_ids or not isinstance(entry.get("evidence"), dict):
                 raise ValueError("Applicability entries require unique ids and evidence")
@@ -122,7 +132,8 @@ def assess_observational_applicability(
         return ApplicabilityAssessment(
             matrix.matrix_id,
             ApplicabilityClassification.UNTESTED,
-            "Outside provisional observational predictor scope; more than five covariates are untested",
+            "Outside provisional observational predictor scope; more than five "
+            "covariates are untested",
             True,
         )
     if n_groups not in matrix.group_counts:

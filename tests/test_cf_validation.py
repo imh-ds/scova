@@ -87,12 +87,8 @@ def test_frozen_reference_protocol_has_disjoint_evidence_lanes() -> None:
     assert protocol.validation.start == 1_300_000_000
     assert protocol.external.start == 1_600_000_000
     assert protocol.inference.start == 1_700_000_000
-    assert protocol.checksum == (
-        "dfb842e6e54aff3f11a7a5a8780881bfa78e3866a230231407286ce9d9e439c0"
-    )
-    assert protocol.checksum == CFValidationProtocol.from_dict(
-        protocol.to_dict()
-    ).checksum
+    assert protocol.checksum == ("dfb842e6e54aff3f11a7a5a8780881bfa78e3866a230231407286ce9d9e439c0")
+    assert protocol.checksum == CFValidationProtocol.from_dict(protocol.to_dict()).checksum
 
 
 def test_v4_protocol_uses_new_seed_namespaces_and_calibration_screening() -> None:
@@ -285,9 +281,7 @@ def test_v7_calibration_enrichment_gate_rejects_weak_risk_separation() -> None:
 def test_v8_spec_adds_robust_enrichment_margin_selection() -> None:
     protocol = CFValidationProtocol.load(V8_SPEC)
     assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v8"
-    assert protocol.checksum == (
-        "9afacfbe9fb7be9968b18b47ad5a57ad2522c6baee35035d28e4dcdad56370dc"
-    )
+    assert protocol.checksum == ("9afacfbe9fb7be9968b18b47ad5a57ad2522c6baee35035d28e4dcdad56370dc")
     # The v8 change is held-out-blind: it reuses the v7 frozen development,
     # external, and inference sources unchanged, and keeps the preregistered
     # acceptance thresholds.
@@ -344,6 +338,7 @@ def test_candidate_enrichment_margin_ranks_robust_rule_above_a_boundary_rule() -
         "maximum_influence_top_one_percent_share": 0.5,
         "maximum_seed_standardized_departure": 0.5,
     }
+
     def make(n_sup: int, n_sup_bad: int, n_uns: int, n_uns_bad: int) -> list[dict]:
         return [record(supported=True, bad=i < n_sup_bad) for i in range(n_sup)] + [
             record(supported=False, bad=i < n_uns_bad) for i in range(n_uns)
@@ -365,10 +360,7 @@ def test_candidate_enrichment_margin_ranks_robust_rule_above_a_boundary_rule() -
     # Both report a lower bound below their point estimate; the better-supported
     # rule earns the higher bound, which is the key that v8 selection ranks on.
     assert thin_enrichment["risk_ratio_lower_bound"] < thin_enrichment["risk_ratio"]
-    assert (
-        thin_enrichment["risk_ratio_lower_bound"]
-        < thick_enrichment["risk_ratio_lower_bound"]
-    )
+    assert thin_enrichment["risk_ratio_lower_bound"] < thick_enrichment["risk_ratio_lower_bound"]
 
 
 def test_validation_accepts_only_the_exact_frozen_inference_source() -> None:
@@ -488,14 +480,12 @@ def test_inference_environment_identity_ignores_only_host_platform() -> None:
         "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
     }
     alternate_host = {**base, "platform": "Linux-6.17.0-1018-azure-x86_64-with-glibc2.39"}
-    assert (
-        cf_inference_campaign._numerical_environment_identity(base)
-        == cf_inference_campaign._numerical_environment_identity(alternate_host)
-    )
-    assert (
-        cf_inference_campaign._numerical_environment_identity({**base, "numpy": "2.3.0"})
-        != cf_inference_campaign._numerical_environment_identity(base)
-    )
+    assert cf_inference_campaign._numerical_environment_identity(
+        base
+    ) == cf_inference_campaign._numerical_environment_identity(alternate_host)
+    assert cf_inference_campaign._numerical_environment_identity(
+        {**base, "numpy": "2.3.0"}
+    ) != cf_inference_campaign._numerical_environment_identity(base)
     incomplete = dict(base)
     del incomplete["scipy"]
     with pytest.raises(ValueError, match="missing fields"):
@@ -504,9 +494,10 @@ def test_inference_environment_identity_ignores_only_host_platform() -> None:
 
 def test_inference_fwer_gate_requires_control_only_when_a_true_null_exists() -> None:
     no_null = [{"contrasts": [{"null": False}], "simultaneous": {"any_null_rejected": False}}]
-    assert cf_inference_campaign._familywise_error_gate(
-        no_null, alpha=0.05, multiplier=2.0
-    ) == (None, True)
+    assert cf_inference_campaign._familywise_error_gate(no_null, alpha=0.05, multiplier=2.0) == (
+        None,
+        True,
+    )
     conservative = [
         {"contrasts": [{"null": True}], "simultaneous": {"any_null_rejected": False}}
         for _ in range(100)
@@ -518,9 +509,10 @@ def test_inference_fwer_gate_requires_control_only_when_a_true_null_exists() -> 
         {"contrasts": [{"null": True}], "simultaneous": {"any_null_rejected": index < 20}}
         for index in range(100)
     ]
-    assert cf_inference_campaign._familywise_error_gate(
-        inflated, alpha=0.05, multiplier=2.0
-    ) == (0.2, False)
+    assert cf_inference_campaign._familywise_error_gate(inflated, alpha=0.05, multiplier=2.0) == (
+        0.2,
+        False,
+    )
 
 
 def test_validation_accepts_the_checksum_bound_source_candidate(tmp_path: Path) -> None:
@@ -571,14 +563,12 @@ def test_campaign_environment_identity_ignores_only_host_platform() -> None:
         "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
     }
     other_host = {**base, "platform": "Linux-6.17.0-1018-azure-x86_64-with-glibc2.39"}
-    assert (
-        aggregate_cf_campaign._numerical_environment_identity(base)
-        == aggregate_cf_campaign._numerical_environment_identity(other_host)
-    )
-    assert (
-        aggregate_cf_campaign._numerical_environment_identity({**base, "pandas": "2.3.0"})
-        != aggregate_cf_campaign._numerical_environment_identity(base)
-    )
+    assert aggregate_cf_campaign._numerical_environment_identity(
+        base
+    ) == aggregate_cf_campaign._numerical_environment_identity(other_host)
+    assert aggregate_cf_campaign._numerical_environment_identity(
+        {**base, "pandas": "2.3.0"}
+    ) != aggregate_cf_campaign._numerical_environment_identity(base)
 
 
 def _fake_numerical_source(commit: str, path: str) -> bytes:
@@ -681,12 +671,8 @@ def test_numerical_fingerprint_refactor_does_not_invalidate_evidence(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(_numerical_identity, "_committed_file", _fake_numerical_source)
-    before = _numerical_identity.cf_numerical_fingerprint(
-        "before-identity-refactor", "inference"
-    )
-    after = _numerical_identity.cf_numerical_fingerprint(
-        "after-identity-refactor", "inference"
-    )
+    before = _numerical_identity.cf_numerical_fingerprint("before-identity-refactor", "inference")
+    after = _numerical_identity.cf_numerical_fingerprint("after-identity-refactor", "inference")
     assert before == after
 
 
@@ -695,9 +681,7 @@ def test_v2_is_machine_readably_blocked_without_using_heldout_evidence() -> None
     assert blocked["status"] == "blocked"
     assert blocked["heldout_validation_inspected"] is False
     assert blocked["profile_promoted"] is False
-    assert blocked["replacement_protocol_id"] == (
-        "cf-randomized-continuous-aipw-unnormalized-v3"
-    )
+    assert blocked["replacement_protocol_id"] == ("cf-randomized-continuous-aipw-unnormalized-v3")
     supplied = blocked.pop("blocking_record_checksum")
     assert supplied == canonical_checksum(blocked)
 
@@ -799,9 +783,7 @@ def test_fixed_nuisance_reference_matches_shared_engine_to_machine_precision() -
     labels = simulation.group_labels
     codes = np.array([labels.index(value) for value in simulation.data["group"]])
     outcome = simulation.data["outcome"].to_numpy()
-    expected = assemble_aipw(
-        outcome, codes, simulation.propensity, simulation.outcome_regression
-    )
+    expected = assemble_aipw(outcome, codes, simulation.propensity, simulation.outcome_regression)
     observed = fixed_nuisance_score(
         outcome, codes, simulation.propensity, simulation.outcome_regression
     )
@@ -999,16 +981,19 @@ def test_campaign_prerequisites_lock_order_commit_and_evidence() -> None:
         "all_inference_gates_passed": True,
     }
     inference["evidence_checksum"] = canonical_checksum(inference)
-    assert prerequisite_reasons(
-        "validation",
-        protocol,
-        calibration_campaign=campaign,
-        calibration_audit=audit,
-        candidate=candidate,
-        expected_commit=commit,
-        external=external,
-        inference=inference,
-    ) == []
+    assert (
+        prerequisite_reasons(
+            "validation",
+            protocol,
+            calibration_campaign=campaign,
+            calibration_audit=audit,
+            candidate=candidate,
+            expected_commit=commit,
+            external=external,
+            inference=inference,
+        )
+        == []
+    )
     assert "external-agreement evidence is required" in prerequisite_reasons(
         "validation",
         protocol,
@@ -1117,8 +1102,8 @@ def test_family_wise_correction_controls_spurious_cell_failures() -> None:
     draws = rng.binomial(counts, 0.95, size=(trials, m)) / counts
     raw_family_fail = np.mean(np.any(np.abs(draws - 0.95) > 2.0 * mcse, axis=1))
     corrected_family_fail = np.mean(np.any(np.abs(draws - 0.95) > corrected * mcse, axis=1))
-    assert raw_family_fail > 0.4          # the defect: majority of clean runs fail
-    assert corrected_family_fail < 0.12   # budget restored (target 0.05)
+    assert raw_family_fail > 0.4  # the defect: majority of clean runs fail
+    assert corrected_family_fail < 0.12  # budget restored (target 0.05)
     # power: a broken 0.90 cell (n=4000) is still detected essentially always
     broken = rng.binomial(4000, 0.90, size=trials) / 4000
     assert np.mean(np.abs(broken - 0.95) > corrected * np.sqrt(0.95 * 0.05 / 4000)) > 0.99
@@ -1127,9 +1112,7 @@ def test_family_wise_correction_controls_spurious_cell_failures() -> None:
 def test_v9_consolidates_robust_margin_and_family_wise_coverage_gate() -> None:
     protocol = CFValidationProtocol.load(V9_SPEC)
     assert protocol.protocol_id == "cf-randomized-continuous-aipw-unnormalized-v9"
-    assert protocol.checksum == (
-        "c60b3780680bbbfa08c2d31ed3ff51c4a28aec0d14f013c08daeaec243d7330b"
-    )
+    assert protocol.checksum == ("c60b3780680bbbfa08c2d31ed3ff51c4a28aec0d14f013c08daeaec243d7330b")
     # both improvements are active, and both reused-evidence sources are unchanged
     assert protocol.metrics["unstable_risk_ratio_selection_confidence"] == 0.95
     assert protocol.metrics["coverage_family_wise_error"] == 0.05
@@ -1184,6 +1167,7 @@ def test_overlap_factor_is_the_only_lever_on_common_support() -> None:
     drive units to propensity ~0 regardless of the overlap factor, leaving
     nothing for support screening to distinguish.
     """
+
     def worst_propensity(overlap: str) -> float:
         cell = {
             **_OBSERVATIONAL_BASE,
@@ -1208,9 +1192,7 @@ V11_SPEC = Path("benchmarks/specs/cf_reference_v11.json")
 def test_v10_is_a_wholly_observational_protocol_reusing_no_evidence() -> None:
     protocol = CFValidationProtocol.load(V10_SPEC)
     assert protocol.protocol_id == "cf-observational-continuous-aipw-unnormalized-v10"
-    assert protocol.checksum == (
-        "a1c54a76e1fb8401f8d1b7eea50c16ccd77cd9e0e1f0afdb08fe28594c6caccb"
-    )
+    assert protocol.checksum == ("a1c54a76e1fb8401f8d1b7eea50c16ccd77cd9e0e1f0afdb08fe28594c6caccb")
     assert protocol.reference_profile["mode"] == "observational-causal"
     assert protocol.reference_profile["assignment"] == "estimated"
 
@@ -1426,7 +1408,11 @@ def test_end_to_end_passes_on_fold_noise_and_fails_on_an_offset() -> None:
 
     noisy = _records((0, "k=2,linear", 40, 0.63), (1, "k=3,adaptive", 40, 0.63))
     passing = _summary(
-        "DoubleMLAPOS", noisy, [], lane_complete=True, critical_z=3.0,
+        "DoubleMLAPOS",
+        noisy,
+        [],
+        lane_complete=True,
+        critical_z=3.0,
         minimum_informative_fraction=1.0,
     )
     assert passing["status"] == "complete"
@@ -1443,7 +1429,11 @@ def test_end_to_end_passes_on_fold_noise_and_fails_on_an_offset() -> None:
         for record in noisy
     ]
     failing = _summary(
-        "DoubleMLAPOS", shifted, [], lane_complete=True, critical_z=3.0,
+        "DoubleMLAPOS",
+        shifted,
+        [],
+        lane_complete=True,
+        critical_z=3.0,
         minimum_informative_fraction=1.0,
     )
     assert failing["status"] == "blocked/agreement-tolerance"
@@ -1462,7 +1452,11 @@ def test_end_to_end_requires_every_cell_to_be_informative() -> None:
 
     records = _records((0, "k=2,linear", 40, 0.63), (1, "k=3,adaptive", 40, 1e-15))
     summary = _summary(
-        "DoubleMLAPOS", records, [], lane_complete=True, critical_z=3.0,
+        "DoubleMLAPOS",
+        records,
+        [],
+        lane_complete=True,
+        critical_z=3.0,
         minimum_informative_fraction=1.0,
     )
 
@@ -1471,7 +1465,11 @@ def test_end_to_end_requires_every_cell_to_be_informative() -> None:
     assert summary["degenerate_cell_count"] == 1
     # Still not judged that way on a truncated smoke run.
     truncated = _summary(
-        "DoubleMLAPOS", records, [], lane_complete=False, critical_z=3.0,
+        "DoubleMLAPOS",
+        records,
+        [],
+        lane_complete=False,
+        critical_z=3.0,
         minimum_informative_fraction=1.0,
     )
     assert truncated["status"] == "incomplete/degenerate-subset"
@@ -1498,7 +1496,11 @@ def test_one_replication_does_not_refuse_the_smoke_lane() -> None:
         }
     ]
     smoke = _summary(
-        "DoubleMLAPOS", single, [], lane_complete=False, critical_z=2.236,
+        "DoubleMLAPOS",
+        single,
+        [],
+        lane_complete=False,
+        critical_z=2.236,
         minimum_informative_fraction=1.0,
     )
 
@@ -1514,7 +1516,11 @@ def test_one_replication_does_not_refuse_the_smoke_lane() -> None:
     # The same shape on the COMPLETE lane means no observed spread, and must
     # fail closed rather than be excused.
     frozen = _summary(
-        "DoubleMLAPOS", single, [], lane_complete=True, critical_z=2.236,
+        "DoubleMLAPOS",
+        single,
+        [],
+        lane_complete=True,
+        critical_z=2.236,
         minimum_informative_fraction=1.0,
     )
     assert frozen["status"] == "blocked/agreement-tolerance"
@@ -1535,7 +1541,11 @@ def test_a_real_breach_still_fails_a_truncated_lane() -> None:
         for index in range(12)
     ]
     summary = _summary(
-        "DoubleMLAPOS", records, [], lane_complete=False, critical_z=2.236,
+        "DoubleMLAPOS",
+        records,
+        [],
+        lane_complete=False,
+        critical_z=2.236,
         minimum_informative_fraction=1.0,
     )
 
@@ -1562,9 +1572,7 @@ def test_comparator_folds_are_independent_of_scova_folds() -> None:
     generated = simulate_reference_cell(cell, seed=1_600_000_004)
     declaration = _declaration(generated, cell, include_stability=False)
     result = SCOVACF().analyze(generated.data, declaration)
-    codes = np.array(
-        [result.group_labels.index(value) for value in generated.data["group"]]
-    )
+    codes = np.array([result.group_labels.index(value) for value in generated.data["group"]])
     folds = _comparator_folds(generated.data, declaration, codes, agreement)
 
     assert not np.array_equal(folds, result.fold_assignments)
@@ -1723,9 +1731,7 @@ def _enrichment_record(*, supported: bool, se_ratio: float) -> dict:
                 "standard_error": se_ratio,
             }
         ],
-        "benchmarks": {
-            "unadjusted": {"contrasts": [{"group_code": 1, "standard_error": 1.0}]}
-        },
+        "benchmarks": {"unadjusted": {"contrasts": [{"group_code": 1, "standard_error": 1.0}]}},
     }
 
 
@@ -1840,16 +1846,25 @@ def test_arm_density_is_screened_and_separates_the_failing_cells() -> None:
     from benchmarks.cf_reference_campaign import _support_features
     from scova.cf import SCOVACF, SCOVACFRefusal
 
-    failing = dict(allocation="moderate", confounding="strong", confounding_form="linear",
-                   dataset="breast-cancer", effect="null", learner="adaptive", n_groups=3,
-                   n_per_group=100, noise="normal", overlap="full")
+    failing = dict(
+        allocation="moderate",
+        confounding="strong",
+        confounding_form="linear",
+        dataset="breast-cancer",
+        effect="null",
+        learner="adaptive",
+        n_groups=3,
+        n_per_group=100,
+        noise="normal",
+        overlap="full",
+    )
     generated = simulate_plasmode_cell(failing, seed=600_000)
     result = SCOVACF().analyze(
         generated.data, _declaration(generated, failing, include_stability=False)
     )
     assert not isinstance(result, SCOVACFRefusal)
     density = _support_features(result)["minimum_arm_units_per_covariate"]
-    assert density < 3.0, density   # ~55 rows against 30 covariates
+    assert density < 3.0, density  # ~55 rows against 30 covariates
 
 
 def _eligible_cell(n_groups: int, learner: str, n_per_group: int = 50) -> dict[str, object]:
@@ -2276,9 +2291,7 @@ def test_a_checkpoint_from_another_shard_is_refused(tmp_path: Path) -> None:
         include_stability=False,
     )
     partial = output.with_suffix(output.suffix + ".partial.ndjson")
-    tampered = [
-        json.loads(line) for line in partial.read_text(encoding="utf-8").splitlines()
-    ]
+    tampered = [json.loads(line) for line in partial.read_text(encoding="utf-8").splitlines()]
     tampered[0]["seed"] += 1
     partial.write_text(
         "\n".join(json.dumps(row, sort_keys=True) for row in tampered) + "\n",

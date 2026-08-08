@@ -22,6 +22,7 @@ bias, coverage, or the gate.
 * `capacity` -- sweeps the adaptive outcome learner's capacity on that same
   cell to describe the observed sensitivity to this implementation setting.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -126,8 +127,12 @@ def variants(design: str, capacities: tuple[int, ...]) -> list[Variant]:
                     rows.append(
                         (
                             f"form={form},surface={surface},learner={learner}",
-                            {**BENIGN, "confounding_form": form, "surface": surface,
-                             "learner": learner},
+                            {
+                                **BENIGN,
+                                "confounding_form": form,
+                                "surface": surface,
+                                "learner": learner,
+                            },
                             None,
                         )
                     )
@@ -179,9 +184,7 @@ def run_variant(
         "replications": reps,
         "refused": refused,
         "passed": passed,
-        "bias_over_sd": (
-            abs(audit["bias"]) / deviation if deviation else None
-        ),
+        "bias_over_sd": (abs(audit["bias"]) / deviation if deviation else None),
         "audit": audit,
     }
 
@@ -220,9 +223,7 @@ def main() -> None:
     limit = float(metrics["maximum_standardized_bias"])
     results_dir = Path(args.results_dir)
 
-    header = (
-        f"{'variant':34} {'bias/sd':>8} {'cov':>7} {'se_ratio':>9} {'refuse':>7}  verdict"
-    )
+    header = f"{'variant':34} {'bias/sd':>8} {'cov':>7} {'se_ratio':>9} {'refuse':>7}  verdict"
     if args.merge:
         # Report the whole planned grid, so a shard that timed out or crashed
         # shows up as missing rather than silently narrowing the study.

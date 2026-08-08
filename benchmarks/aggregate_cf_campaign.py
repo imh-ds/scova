@@ -49,9 +49,10 @@ def _read_metadata(path: Path) -> dict[str, Any]:
 
 def _read_records(path: Path) -> list[dict[str, Any]]:
     sidecar = path.with_suffix(path.suffix + ".sha256")
-    if not sidecar.is_file() or sidecar.read_text(encoding="ascii").strip() != sha256(
-        path.read_bytes()
-    ).hexdigest():
+    if (
+        not sidecar.is_file()
+        or sidecar.read_text(encoding="ascii").strip() != sha256(path.read_bytes()).hexdigest()
+    ):
         raise ValueError(f"Shard checksum mismatch: {path}")
     with gzip.open(path, "rt", encoding="utf-8") as stream:
         return [json.loads(line) for line in stream if line.strip()]
@@ -63,12 +64,8 @@ def _summaries(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
         cell_records = [record for record in records if record["cell_index"] == cell_index]
         usable = [record for record in cell_records if not record["refused"]]
         contrasts = [item for record in usable for item in record["contrasts"]]
-        errors = np.array(
-            [item["estimate"] - item["truth"] for item in contrasts], dtype=float
-        )
-        standard_errors = np.array(
-            [item["standard_error"] for item in contrasts], dtype=float
-        )
+        errors = np.array([item["estimate"] - item["truth"] for item in contrasts], dtype=float)
+        standard_errors = np.array([item["standard_error"] for item in contrasts], dtype=float)
         empirical_sd = float(errors.std(ddof=1)) if len(errors) > 1 else None
         nulls = [item for item in contrasts if item["null"]]
         result.append(
@@ -164,9 +161,7 @@ def aggregate_shards(
     for path, values in zip(paths, metadata, strict=True):
         shard_records = _read_records(path)
         for record in shard_records:
-            global_index = (
-                int(record["cell_index"]) * partition.count + int(record["repetition"])
-            )
+            global_index = int(record["cell_index"]) * partition.count + int(record["repetition"])
             if global_index % shard_count != int(values["shard_index"]):
                 raise ValueError("Campaign record is assigned to the wrong shard")
         records.extend(shard_records)

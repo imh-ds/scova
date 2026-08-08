@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from benchmarks.cf_qualification_program import VERIFICATION_LANES, qualification_protocol, qualification_spec
+from benchmarks.cf_qualification_program import (
+    VERIFICATION_LANES,
+    qualification_protocol,
+    qualification_spec,
+)
 from scripts.aggregate_qualification_verification import aggregate
 from scripts.estimate_qualification_boundary import boundary_diagnostic
 
@@ -12,9 +16,15 @@ def test_prospective_protocol_declares_frozen_external_and_inference_lanes() -> 
     assert len(protocol.inference_cells) == 6
     assert protocol.external is not None and protocol.external.count == 50
     assert protocol.inference is not None and protocol.inference.count == 2000
-    assert all(cell["learner"] == "adaptive" and cell["n_covariates"] <= 5 for cell in protocol.external_cells)
+    assert all(
+        cell["learner"] == "adaptive" and cell["n_covariates"] <= 5
+        for cell in protocol.external_cells
+    )
     assert not protocol.verification_lanes["boundary"]["promotion_required"]
-    assert all(protocol.verification_lanes[name]["promotion_required"] for name in ("external", "inference", "validation"))
+    assert all(
+        protocol.verification_lanes[name]["promotion_required"]
+        for name in ("external", "inference", "validation")
+    )
 
 
 def test_qualification_spec_declares_lane_claim_limits_without_reusing_boundary_scope() -> None:

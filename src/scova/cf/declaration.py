@@ -57,9 +57,7 @@ class KnownAssignment:
 
     probabilities: tuple[tuple[JsonLabel, float], ...] = ()
     stratum_column: str | None = None
-    stratum_probabilities: tuple[
-        tuple[JsonLabel, tuple[tuple[JsonLabel, float], ...]], ...
-    ] = ()
+    stratum_probabilities: tuple[tuple[JsonLabel, tuple[tuple[JsonLabel, float], ...]], ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "probabilities", tuple(self.probabilities))
@@ -311,9 +309,7 @@ class SupportPolicy:
             ),
         )
 
-    def governs(
-        self, mode: AnalysisMode, assignment: AssignmentSpecification
-    ) -> str | None:
+    def governs(self, mode: AnalysisMode, assignment: AssignmentSpecification) -> str | None:
         """Reason this policy cannot govern the analysis, or None if it can.
 
         A calibrated profile is evidence about one regime.  Applying it to a
@@ -483,10 +479,10 @@ class SCOVACFDeclaration:
         ):
             raise ValueError("At least two unique groups require nonempty operational definitions")
         rationales = dict(self.covariate_rationales)
-        if len(rationales) != len(self.covariate_rationales) or set(rationales) != set(
-            self.covariates
-        ) or any(
-            not rationale.strip() for rationale in rationales.values()
+        if (
+            len(rationales) != len(self.covariate_rationales)
+            or set(rationales) != set(self.covariates)
+            or any(not rationale.strip() for rationale in rationales.values())
         ):
             raise ValueError("Every and only declared covariate must have a nonempty rationale")
         if self.mode is AnalysisMode.RANDOMIZED and not isinstance(

@@ -16,14 +16,24 @@ from scova.simulate import generate_data
 def simulation_thresholds() -> DiagnosticThresholds:
     """Permissive, calibrated gates solely for this reproducible example."""
     return DiagnosticThresholds(
-        version="stage5b-example", calibrated=True, artifact_sha256="example",
-        min_group_ess_warning=1, min_group_ess_refuse=0, min_target_ess_ratio_warning=0,
-        min_target_ess_ratio_refuse=0, max_influence_share_warning=1,
-        max_influence_share_refuse=1, max_weight_concentration_warning=1,
-        max_weight_concentration_refuse=1, min_propensity_q01_warning=1e-12,
-        min_propensity_q01_refuse=1e-14, max_calibration_error_warning=1,
-        max_calibration_error_refuse=1, max_balance_warning=1_000,
-        max_balance_refuse=10_000, max_crossfit_instability_warning=1,
+        version="stage5b-example",
+        calibrated=True,
+        artifact_sha256="example",
+        min_group_ess_warning=1,
+        min_group_ess_refuse=0,
+        min_target_ess_ratio_warning=0,
+        min_target_ess_ratio_refuse=0,
+        max_influence_share_warning=1,
+        max_influence_share_refuse=1,
+        max_weight_concentration_warning=1,
+        max_weight_concentration_refuse=1,
+        min_propensity_q01_warning=1e-12,
+        min_propensity_q01_refuse=1e-14,
+        max_calibration_error_warning=1,
+        max_calibration_error_refuse=1,
+        max_balance_warning=1_000,
+        max_balance_refuse=10_000,
+        max_crossfit_instability_warning=1,
         max_crossfit_instability_refuse=1,
     )
 
@@ -60,9 +70,7 @@ def main() -> None:
         print(contrast.name, contrast.gamma_grid, contrast.confidence_intervals)
 
     # A finite-range violation returns a typed refusal rather than widening the lock.
-    refused = engine.analyze_lipschitz_anchors(
-        locked, [1_000.0] * len(row_ids), row_ids=row_ids
-    )
+    refused = engine.analyze_lipschitz_anchors(locked, [1_000.0] * len(row_ids), row_ids=row_ids)
     print(refused.verdict, refused.refused)
 
 

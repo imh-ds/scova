@@ -275,7 +275,8 @@ class LipschitzAnchorResult:
                     ),
                     inference_status=(
                         str(item.get("inference_status", "unavailable"))
-                        if version >= 2 else "legacy-unavailable"
+                        if version >= 2
+                        else "legacy-unavailable"
                     ),
                     boundary_proximity=(
                         np.asarray(item["boundary_proximity"], dtype=bool)
@@ -294,9 +295,7 @@ class LipschitzAnchorResult:
             gamma_grid=np.asarray(metadata["gamma_grid"], dtype=float),
             contrasts=contrasts,
             refused=tuple(metadata["refused"]),
-            confidence_level=(
-                None if version == 1 else metadata.get("confidence_level")
-            ),
+            confidence_level=(None if version == 1 else metadata.get("confidence_level")),
             inference_method=(
                 "legacy-unavailable" if version == 1 else str(metadata.get("inference_method"))
             ),
@@ -345,11 +344,11 @@ def bounded_pairwise_anchor(
     one_hot = np.eye(propensity.shape[1])[group_codes]
     q = np.einsum("nk,nk->n", gradient, one_hot - propensity)
     delta = outcome_predictions[:, first] - outcome_predictions[:, second]
-    residual = (
-        (group_codes == first) * (outcomes - outcome_predictions[:, first]) / propensity[:, first]
-        - (group_codes == second) * (outcomes - outcome_predictions[:, second])
-        / propensity[:, second]
-    )
+    residual = (group_codes == first) * (outcomes - outcome_predictions[:, first]) / propensity[
+        :, first
+    ] - (group_codes == second) * (outcomes - outcome_predictions[:, second]) / propensity[
+        :, second
+    ]
     core_terms = omega * residual + omega * delta + delta * q
     core = float(np.mean(core_terms))
     mass = float(np.mean(1 - omega))
@@ -466,10 +465,12 @@ def lipschitz_pairwise_anchor(
         lower_influence.append(lower_phi)
         upper_influence.append(upper_phi)
         raw = np.column_stack((raw_lower_a, raw_upper_a, raw_lower_b, raw_upper_b))
-        boundary.append(bool(
-            np.any(np.isclose(raw, outcome_lower, rtol=0, atol=boundary_tolerance))
-            or np.any(np.isclose(raw, outcome_upper, rtol=0, atol=boundary_tolerance))
-        ))
+        boundary.append(
+            bool(
+                np.any(np.isclose(raw, outcome_lower, rtol=0, atol=boundary_tolerance))
+                or np.any(np.isclose(raw, outcome_upper, rtol=0, atol=boundary_tolerance))
+            )
+        )
     lower_array = np.asarray(lower)
     upper_array = np.asarray(upper)
     lower_influence_array = np.column_stack(lower_influence)
@@ -523,6 +524,7 @@ def _imbens_manski_intervals(
         standardized_gap = max(float(right - left) / scale, 0.0)
         one_sided = float(norm.ppf(1 - alpha))
         two_sided = float(norm.ppf(1 - alpha / 2))
+
         def coverage(value: float, gap: float = standardized_gap) -> float:
             return float(norm.cdf(value + gap) - norm.cdf(-value) - confidence_level)
 

@@ -19,9 +19,7 @@ def main() -> None:
     if reasons:
         raise SystemExit("SCOVA-CF profile packaging blocked:\n- " + "\n- ".join(reasons))
     profile = json.loads(
-        (args.evidence_root / "cf-reference-support-profile.json").read_text(
-            encoding="utf-8"
-        )
+        (args.evidence_root / "cf-reference-support-profile.json").read_text(encoding="utf-8")
     )
     manifest = {"schema_version": 1, "profiles": [profile]}
     args.output.parent.mkdir(parents=True, exist_ok=True)

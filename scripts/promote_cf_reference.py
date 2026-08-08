@@ -59,9 +59,7 @@ def _claim_sentence(profile: dict) -> str:
 
 
 def _replace_once(text: str, pattern: str, replacement: str, label: str) -> str:
-    updated, count = re.subn(
-        pattern, replacement, text, count=1, flags=re.MULTILINE | re.DOTALL
-    )
+    updated, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE | re.DOTALL)
     if count != 1:
         raise ValueError(f"Could not update exactly one {label}")
     return updated

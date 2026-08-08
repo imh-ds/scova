@@ -1,11 +1,10 @@
 from scova.cf import (
     ApplicabilityClassification,
+    CFValidationProtocol,
     assess_observational_applicability,
     observational_applicability_matrix,
 )
 from scripts.audit_cf_observational_scope import coverage_inventory
-from scova.cf import CFValidationProtocol
-
 
 V11_SPEC = "benchmarks/specs/cf_reference_v11.json"
 

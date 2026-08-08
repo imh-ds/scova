@@ -36,12 +36,8 @@ def randomized_declaration(**updates: object) -> SCOVACFDeclaration:
             ("x2", "baseline prognostic factor"),
             ("x3", "baseline prognostic factor"),
         ),
-        "assignment": KnownAssignment(
-            probabilities=(("g0", 1 / 3), ("g1", 1 / 3), ("g2", 1 / 3))
-        ),
-        "contrasts": (
-            ContrastSpec("g0 - g1", (("g0", 1.0), ("g1", -1.0))),
-        ),
+        "assignment": KnownAssignment(probabilities=(("g0", 1 / 3), ("g1", 1 / 3), ("g2", 1 / 3))),
+        "contrasts": (ContrastSpec("g0 - g1", (("g0", 1.0), ("g1", -1.0))),),
         "n_splits": 3,
         "outcome_nuisance_strategy": "linear",
     }
@@ -148,11 +144,11 @@ def test_packaged_arm_density_enforces_the_declared_scope_not_only_the_threshold
         "mode": "observational-causal",
         "outcome_type": "continuous",
         "estimator": "aipw-unnormalized",
-            "estimand_id": "study-population-standardized-means",
+        "estimand_id": "study-population-standardized-means",
         "assignment": "estimated",
         "nuisance_strategy": "adaptive",
         "maximum_covariate_count": 5,
-            "independent_unit": "row",
+        "independent_unit": "row",
         "minimum_group_count": 50,
         "minimum_arm_units_per_covariate": 10.0,
     }
@@ -245,15 +241,11 @@ def test_associational_claim_is_derived_not_user_selected() -> None:
             "positive",
         ),
         (
-            lambda: KnownAssignment(
-                probabilities=(("a", 0.5), ("b", 0.5)), stratum_column="block"
-            ),
+            lambda: KnownAssignment(probabilities=(("a", 0.5), ("b", 0.5)), stratum_column="block"),
             "stratum_column",
         ),
         (
-            lambda: KnownAssignment(
-                stratum_probabilities=(("s", (("a", 0.5), ("b", 0.5))),)
-            ),
+            lambda: KnownAssignment(stratum_probabilities=(("s", (("a", 0.5), ("b", 0.5))),)),
             "nonempty stratum_column",
         ),
         (
@@ -305,9 +297,7 @@ def test_amendment_validation() -> None:
     with pytest.raises(ValueError, match="change names"):
         DeclarationAmendment("time", "reason", ())
     with pytest.raises(ValueError, match="change names"):
-        DeclarationAmendment(
-            "time", "reason", (("field", "first"), ("field", "second"))
-        )
+        DeclarationAmendment("time", "reason", (("field", "first"), ("field", "second")))
 
 
 @pytest.mark.parametrize(
@@ -326,9 +316,7 @@ def test_amendment_validation() -> None:
         (
             {
                 "mode": AnalysisMode.STANDARDIZED_ASSOCIATIONAL,
-                "assignment": KnownAssignment(
-                    probabilities=(("g0", 0.5), ("g1", 0.5))
-                ),
+                "assignment": KnownAssignment(probabilities=(("g0", 0.5), ("g1", 0.5))),
             },
             "Nonrandomized",
         ),
@@ -364,9 +352,7 @@ def test_string_mode_is_canonicalized() -> None:
         ((True,), "nonnegative"),
     ],
 )
-def test_stability_seed_registry_is_governed(
-    seeds: tuple[int, ...], message: str
-) -> None:
+def test_stability_seed_registry_is_governed(seeds: tuple[int, ...], message: str) -> None:
     with pytest.raises(ValueError, match=message):
         randomized_declaration(stability_seeds=seeds)
 
@@ -399,16 +385,8 @@ def _profile(mode: str, assignment: str, profile_id: str = "regime-test") -> CFS
             "estimand_id": "study-population-standardized-means",
             "assignment": assignment,
             "independent_unit": "row",
-            **(
-                {"nuisance_strategy": "adaptive"}
-                if mode == "observational-causal"
-                else {}
-            ),
-            **(
-                {"maximum_covariate_count": 5}
-                if mode == "observational-causal"
-                else {}
-            ),
+            **({"nuisance_strategy": "adaptive"} if mode == "observational-causal" else {}),
+            **({"maximum_covariate_count": 5} if mode == "observational-causal" else {}),
         },
         state="promoted",
     )
@@ -510,9 +488,7 @@ def test_a_calibrated_profile_only_governs_its_own_regime(
     _install(monkeypatch, _profile("observational-causal", "estimated"))
     observational_policy = SupportPolicy.packaged("regime-test")
     assert observational_policy.governs(AnalysisMode.OBSERVATIONAL_CAUSAL, estimated) is None
-    assert "cannot govern" in (
-        observational_policy.governs(AnalysisMode.RANDOMIZED, known) or ""
-    )
+    assert "cannot govern" in (observational_policy.governs(AnalysisMode.RANDOMIZED, known) or "")
 
 
 def test_uncalibrated_policy_governs_every_mode() -> None:

@@ -7,9 +7,10 @@ artifact may describe simulation behaviour only.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from enum import Enum
 from itertools import combinations, product
-from typing import Any, Mapping
+from typing import Any
 
 from .validation import canonical_checksum
 
@@ -58,8 +59,7 @@ def factorial_cells(surface_family: str = "interaction") -> tuple[dict[str, Any]
         seventh = sum(bits) % 2
         levels = (*bits, seventh)
         cell = {
-            name: METHODS_FACTORS[name][level]
-            for name, level in zip(names, levels, strict=True)
+            name: METHODS_FACTORS[name][level] for name, level in zip(names, levels, strict=True)
         }
         cell.update(
             {
@@ -83,10 +83,7 @@ def factorial_cells(surface_family: str = "interaction") -> tuple[dict[str, Any]
 def methods_design() -> dict[str, Any]:
     """Describe the primary and supplemental factorial blocks without pooling."""
     primary = factorial_cells("interaction")
-    supplemental = {
-        family: factorial_cells(family)
-        for family in ("smooth-nonlinear", "threshold")
-    }
+    supplemental = {family: factorial_cells(family) for family in ("smooth-nonlinear", "threshold")}
     payload = {
         "study_id": METHODS_STUDY_ID,
         "program_type": StudyProgram.METHODS.value,

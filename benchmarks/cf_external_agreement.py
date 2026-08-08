@@ -194,9 +194,7 @@ def _summary(
         by_cell.setdefault(int(record["cell_index"]), []).append(record)
     degenerate_cells: set[int] = set()
     for cell_index in sorted(by_cell):
-        flat = [
-            abs(value) for record in by_cell[cell_index] for value in record["differences"]
-        ]
+        flat = [abs(value) for record in by_cell[cell_index] for value in record["differences"]]
         cell_maximum = max(flat) if flat else 0.0
         degenerate = cell_maximum <= DEGENERATE_DIFFERENCE_IN_SCOVA_SE
         if degenerate:
@@ -212,9 +210,7 @@ def _summary(
     informative_cells = len(by_cell) - len(degenerate_cells)
     fraction = informative_cells / len(by_cell) if by_cell else 0.0
 
-    scored = [
-        record for record in records if int(record["cell_index"]) not in degenerate_cells
-    ]
+    scored = [record for record in records if int(record["cell_index"]) not in degenerate_cells]
     by_stratum: dict[str, list[float]] = {}
     for record in scored:
         # One value per (cell, repetition): the differences inside a replication
@@ -242,22 +238,16 @@ def _summary(
         for name, values in strata.items()
         if values["offset_z"] is not None and abs(values["offset_z"]) > critical_z
     )
-    unestimable = sorted(
-        name for name, values in strata.items() if values["offset_z"] is None
-    )
+    unestimable = sorted(name for name, values in strata.items() if values["offset_z"] is None)
 
     if not records:
         status = "blocked/agreement-tolerance"
     elif fraction < minimum_informative_fraction:
-        status = (
-            "blocked/lane-degenerate" if lane_complete else "incomplete/degenerate-subset"
-        )
+        status = "blocked/lane-degenerate" if lane_complete else "incomplete/degenerate-subset"
     elif blocked or breaching:
         status = "blocked/agreement-tolerance"
     elif unestimable:
-        status = (
-            "blocked/agreement-tolerance" if lane_complete else "incomplete/unscored-subset"
-        )
+        status = "blocked/agreement-tolerance" if lane_complete else "incomplete/unscored-subset"
     else:
         status = "complete"
     return {
@@ -458,12 +448,8 @@ def run_external_agreement(
                     result.group_standard_errors,
                     np.nan,
                 )
-                differences = (
-                    (np.asarray(dml.estimates) - result.group_means) / scale
-                ).tolist()
-                records["DoubleMLAPOS"].append(
-                    _record(cell, cell_index, repetition, differences)
-                )
+                differences = ((np.asarray(dml.estimates) - result.group_means) / scale).tolist()
+                records["DoubleMLAPOS"].append(_record(cell, cell_index, repetition, differences))
             else:
                 blocked["DoubleMLAPOS"].append(
                     f"fitted cell={cell_index} rep={repetition}: {dml.detail}"
@@ -473,9 +459,7 @@ def run_external_agreement(
                 [result.contrasts[f"g{code} - g0"].standard_error for code in range(1, len(labels))]
             )
             if econ.status == "complete":
-                differences = (
-                    (np.asarray(econ.estimates) - reference) / reference_se
-                ).tolist()
+                differences = ((np.asarray(econ.estimates) - reference) / reference_se).tolist()
                 records["EconML.DRLearner"].append(
                     _record(cell, cell_index, repetition, differences)
                 )
@@ -554,23 +538,30 @@ def run_external_agreement(
         },
         "run_details": details,
         "all_numerical_agreement_gates_passed": bool(
-            complete
-            and shared_passed
-            and all(row["status"] == "complete" for row in summaries)
+            complete and shared_passed and all(row["status"] == "complete" for row in summaries)
         ),
     }
     if protocol.verification_lanes is not None:
         lane = protocol.verification_lanes["external"]
-        evidence.update({
-            "program_type": "qualification", "verification_lane": "external",
-            "verification_role": lane["role"], "permitted_claim": lane["permitted_claim"],
-            "prohibited_claim": lane["prohibited_claim"], "promotion_required": lane["promotion_required"],
-            "design_checksum": str((protocol.design_selection or {}).get("design_checksum", "")),
-            "decision_manifest_checksum": decision_manifest_checksum,
-            "planned_replications": len(protocol.external_cells) * protocol.external.count,
-            "completed_replications": len(cells) * count,
-            "informative": bool(complete and all(row["status"] == "complete" for row in summaries)),
-        })
+        evidence.update(
+            {
+                "program_type": "qualification",
+                "verification_lane": "external",
+                "verification_role": lane["role"],
+                "permitted_claim": lane["permitted_claim"],
+                "prohibited_claim": lane["prohibited_claim"],
+                "promotion_required": lane["promotion_required"],
+                "design_checksum": str(
+                    (protocol.design_selection or {}).get("design_checksum", "")
+                ),
+                "decision_manifest_checksum": decision_manifest_checksum,
+                "planned_replications": len(protocol.external_cells) * protocol.external.count,
+                "completed_replications": len(cells) * count,
+                "informative": bool(
+                    complete and all(row["status"] == "complete" for row in summaries)
+                ),
+            }
+        )
     evidence["evidence_checksum"] = canonical_checksum(evidence)
     return evidence
 
@@ -588,7 +579,11 @@ def main() -> None:
         help="Write a non-authoritative smoke artifact without requiring the full frozen lane.",
     )
     args = parser.parse_args()
-    manifest = None if args.decision_manifest is None else json.loads(args.decision_manifest.read_text(encoding="utf-8"))
+    manifest = (
+        None
+        if args.decision_manifest is None
+        else json.loads(args.decision_manifest.read_text(encoding="utf-8"))
+    )
     evidence = run_external_agreement(
         CFValidationProtocol.load(args.spec),
         replications=args.replications,

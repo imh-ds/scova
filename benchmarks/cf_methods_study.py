@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import numpy as np
 
@@ -36,7 +37,9 @@ def summarize_records(records: Iterable[dict[str, Any]]) -> dict[str, float | in
     completed = len(values)
     refused = sum(bool(value.get("refused")) for value in values)
     contrasts = [
-        contrast for value in values if not value.get("refused")
+        contrast
+        for value in values
+        if not value.get("refused")
         for contrast in value.get("contrasts", [])
     ]
     if not contrasts:
@@ -64,7 +67,8 @@ def summarize_records(records: Iterable[dict[str, Any]]) -> dict[str, float | in
         "bias_over_sd": ratio,
         "bias_over_sd_mcse": ratio_mcse,
         "bias_over_sd_mc_interval": (
-            None if ratio is None or ratio_mcse is None
+            None
+            if ratio is None or ratio_mcse is None
             else [max(0.0, ratio - 1.96 * ratio_mcse), ratio + 1.96 * ratio_mcse]
         ),
         "coverage": coverage,
@@ -81,8 +85,12 @@ def _effect_table(cells: list[dict[str, Any]]) -> dict[str, dict[str, float | No
     """Unaliased main-effect contrasts for the primary regular factorial."""
     result: dict[str, dict[str, float | None]] = {}
     for factor, levels in methods_design()["factors"].items():
-        low = [cell["summary"]["bias_over_sd"] for cell in cells if cell["cell"][factor] == levels[0]]
-        high = [cell["summary"]["bias_over_sd"] for cell in cells if cell["cell"][factor] == levels[1]]
+        low = [
+            cell["summary"]["bias_over_sd"] for cell in cells if cell["cell"][factor] == levels[0]
+        ]
+        high = [
+            cell["summary"]["bias_over_sd"] for cell in cells if cell["cell"][factor] == levels[1]
+        ]
         low_values = [float(value) for value in low if value is not None]
         high_values = [float(value) for value in high if value is not None]
         result[factor] = {
@@ -90,14 +98,17 @@ def _effect_table(cells: list[dict[str, Any]]) -> dict[str, dict[str, float | No
             "high_mean_bias_over_sd": float(np.mean(high_values)) if high_values else None,
             "difference": (
                 float(np.mean(high_values) - np.mean(low_values))
-                if low_values and high_values else None
+                if low_values and high_values
+                else None
             ),
         }
     return result
 
 
 def methods_artifact(
-    *, surface_family: str, cell_records: dict[str, list[dict[str, Any]]],
+    *,
+    surface_family: str,
+    cell_records: dict[str, list[dict[str, Any]]],
     replications_per_cell: int = 1000,
 ) -> dict[str, Any]:
     """Build a checksum-bound methods artifact, rejecting qualification fields."""
@@ -147,7 +158,9 @@ def run(surface_family: str, *, reps: int) -> dict[str, Any]:
             seed = 710_000_000 + cell_index * 10_000 + repetition
             fitted = fit_campaign_record(
                 simulate_reference_cell(simulation_cell, seed=seed),
-                simulation_cell, include_stability=False, seed=seed,
+                simulation_cell,
+                include_stability=False,
+                seed=seed,
             )
             records[cell["cell_id"]].append(fitted)
     return methods_artifact(
@@ -157,7 +170,9 @@ def run(surface_family: str, *, reps: int) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--surface-family", choices=("interaction", "smooth-nonlinear", "threshold"), required=True)
+    parser.add_argument(
+        "--surface-family", choices=("interaction", "smooth-nonlinear", "threshold"), required=True
+    )
     parser.add_argument("--reps", type=int, default=1000)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()

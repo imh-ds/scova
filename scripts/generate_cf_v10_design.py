@@ -17,6 +17,7 @@ Three things make it a new campaign rather than an amendment to v9:
 
 Run with --write to emit benchmarks/specs/cf_reference_v10.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -110,9 +111,7 @@ def dataset_checksums() -> dict[str, str]:
 def expected_smallest_arm(cell: dict[str, Any]) -> float:
     from benchmarks.cf_reference_campaign import _probabilities
 
-    baseline = _probabilities(
-        int(cell["n_groups"]), str(cell["allocation"]), str(cell["support"])
-    )
+    baseline = _probabilities(int(cell["n_groups"]), str(cell["allocation"]), str(cell["support"]))
     return float(cell["n_per_group"]) * int(cell["n_groups"]) * float(baseline.min())
 
 
@@ -126,8 +125,7 @@ def _feasibility_subspace() -> list[dict[str, Any]]:
 
     keys = ("allocation", "support", "n_groups", "n_per_group")
     return [
-        dict(zip(keys, values, strict=True))
-        for values in product(*(FACTORS[key] for key in keys))
+        dict(zip(keys, values, strict=True)) for values in product(*(FACTORS[key] for key in keys))
     ]
 
 
@@ -155,15 +153,15 @@ def _all_pairs() -> set[tuple[str, Any, str, Any]]:
 
 
 def _covered_by(cell: dict[str, Any]) -> set[tuple[str, Any, str, Any]]:
-    return {
-        (left, cell[left], right, cell[right]) for left, right in combinations(NAMES, 2)
-    }
+    return {(left, cell[left], right, cell[right]) for left, right in combinations(NAMES, 2)}
 
 
 def _sorted_pairs(pairs: set[tuple[str, Any, str, Any]]) -> list[tuple[str, Any, str, Any]]:
     """Deterministic order independent of set iteration order."""
-    return sorted(pairs, key=lambda pair: (NAMES.index(pair[0]), str(pair[1]),
-                                           NAMES.index(pair[2]), str(pair[3])))
+    return sorted(
+        pairs,
+        key=lambda pair: (NAMES.index(pair[0]), str(pair[1]), NAMES.index(pair[2]), str(pair[3])),
+    )
 
 
 def _grow_from_anchor(
@@ -180,9 +178,7 @@ def _grow_from_anchor(
     return _grow_from({left_name: left_value, right_name: right_value}, remaining)
 
 
-def _grow_from(
-    fixed: dict[str, Any], remaining: set[tuple[str, Any, str, Any]]
-) -> dict[str, Any]:
+def _grow_from(fixed: dict[str, Any], remaining: set[tuple[str, Any, str, Any]]) -> dict[str, Any]:
     """Hold `fixed` and fill every remaining factor greedily.
 
     Split out so a cell can be pinned on the factors that decide profile
@@ -314,8 +310,16 @@ def build_spec() -> dict[str, Any]:
             ("breast-cancer", 2, 100, "balanced", "null", "linear", "weak", "nonlinear"),
             ("breast-cancer", 2, 100, "balanced", "constant", "adaptive", "moderate", "nonlinear"),
             ("breast-cancer", 2, 150, "moderate", "constant", "adaptive", "strong", "linear"),
-            ("breast-cancer", 3, 100, "balanced", "heterogeneous", "adaptive", "moderate",
-             "nonlinear"),
+            (
+                "breast-cancer",
+                3,
+                100,
+                "balanced",
+                "heterogeneous",
+                "adaptive",
+                "moderate",
+                "nonlinear",
+            ),
             ("breast-cancer", 2, 150, "balanced", "constant", "linear", "moderate", "nonlinear"),
             ("breast-cancer", 3, 100, "moderate", "null", "adaptive", "strong", "linear"),
         )
@@ -502,14 +506,10 @@ def eligible_cells_by_stratum(spec: dict[str, Any]) -> dict[tuple[int, str], int
     protocol = CFValidationProtocol.from_dict(spec)
     maximum = spec["reference_profile"].get("maximum_group_count")
     claimed = [
-        groups
-        for groups in FACTORS["n_groups"]
-        if maximum is None or int(groups) <= int(maximum)
+        groups for groups in FACTORS["n_groups"] if maximum is None or int(groups) <= int(maximum)
     ]
     counts = {
-        (int(groups), str(learner)): 0
-        for groups in claimed
-        for learner in FACTORS["learner"]
+        (int(groups), str(learner)): 0 for groups in claimed for learner in FACTORS["learner"]
     }
     cells = [(cell, "simulated") for cell in protocol.retained_cells]
     cells += [(cell, "plasmode") for cell in protocol.plasmode_cells]
@@ -577,9 +577,7 @@ def main() -> None:
         # Refusing to write is the whole point. A design that cannot populate
         # the region its own profile claims will still calibrate, still pass
         # every gate, and still say nothing about the regime it omitted.
-        raise SystemExit(
-            f"{len(failures)} coverage failure(s); refusing to write {args.output}"
-        )
+        raise SystemExit(f"{len(failures)} coverage failure(s); refusing to write {args.output}")
     if args.write:
         args.output.write_text(json.dumps(spec, indent=1, sort_keys=True) + "\n", encoding="utf-8")
         print(f"wrote {args.output}")

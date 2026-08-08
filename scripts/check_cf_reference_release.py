@@ -24,9 +24,7 @@ def _checksum_valid(values: dict[str, Any], field: str) -> bool:
     return supplied == canonical_checksum(payload)
 
 
-def _matches_declared_source(
-    values: dict[str, Any], source: dict[str, Any] | None
-) -> bool:
+def _matches_declared_source(values: dict[str, Any], source: dict[str, Any] | None) -> bool:
     return bool(
         source
         and values.get("protocol_checksum") == source.get("protocol_checksum")
@@ -75,9 +73,7 @@ def blocking_reasons(
             reasons.append(f"{name} protocol checksum mismatch")
     if not (
         values["calibration campaign"].get("protocol_checksum") == protocol.checksum
-        or _matches_declared_source(
-            values["calibration campaign"], protocol.calibration_source
-        )
+        or _matches_declared_source(values["calibration campaign"], protocol.calibration_source)
     ):
         reasons.append("calibration campaign does not match the frozen source")
     if not (
@@ -119,9 +115,7 @@ def blocking_reasons(
         reasons.append("calibration is not bound to its campaign")
     if not calibration.get("all_calibration_gates_passed", False):
         reasons.append("calibration gates did not all pass")
-    if validation.get("campaign_evidence_checksum") != validation_campaign.get(
-        "evidence_checksum"
-    ):
+    if validation.get("campaign_evidence_checksum") != validation_campaign.get("evidence_checksum"):
         reasons.append("validation is not bound to its held-out campaign")
     candidate_source = protocol.candidate_source
     if candidate_source and validation_campaign.get(
@@ -136,8 +130,7 @@ def blocking_reasons(
         if (
             profile.thresholds != candidate.thresholds
             or profile.compatibility != candidate.compatibility
-            or profile.calibration_evidence_checksum
-            != candidate.calibration_evidence_checksum
+            or profile.calibration_evidence_checksum != candidate.calibration_evidence_checksum
         ):
             reasons.append("promoted profile does not preserve the calibrated candidate")
     if validation.get("inference_evidence_checksum") != inference.get("evidence_checksum"):
@@ -150,9 +143,7 @@ def blocking_reasons(
         reasons.append("simultaneous-inference gates did not all pass")
     implementations = external.get("end_to_end", {}).get("implementations", [])
     complete = {
-        item.get("implementation")
-        for item in implementations
-        if item.get("status") == "complete"
+        item.get("implementation") for item in implementations if item.get("status") == "complete"
     }
     if not {"DoubleMLAPOS", "EconML.DRLearner"}.issubset(complete):
         reasons.append("two independent external comparisons have not completed")

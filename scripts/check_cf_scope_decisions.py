@@ -20,7 +20,8 @@ def main() -> None:
     validate_manifest(
         json.loads(args.manifest.read_text(encoding="utf-8")),
         CFValidationProtocol.load(args.spec),
-        contract_version=contract_version(args.contract), matrix_id=args.matrix_id,
+        contract_version=contract_version(args.contract),
+        matrix_id=args.matrix_id,
     )
 
 

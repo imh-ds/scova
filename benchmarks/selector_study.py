@@ -20,6 +20,7 @@ Run one shard:
 Merge shards into one summary:
     python -m benchmarks.selector_study --merge --results-dir cells --out study.json
 """
+
 from __future__ import annotations
 
 import argparse
@@ -142,9 +143,7 @@ def incumbent_scores(x, group_codes, candidates, n_splits=3):
             probability = np.asarray(model.predict_proba(x[test]), dtype=float)
             for column, code in enumerate(np.asarray(model.classes_, dtype=int)):
                 predicted[test, code] = probability[:, column]
-        scores[name] = float(
-            log_loss(group_codes, predicted, labels=np.arange(predicted.shape[1]))
-        )
+        scores[name] = float(log_loss(group_codes, predicted, labels=np.arange(predicted.shape[1])))
     return scores
 
 

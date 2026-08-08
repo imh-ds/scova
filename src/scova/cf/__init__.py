@@ -1,5 +1,12 @@
 """SCOVA-CF: governed population-counterfactual mean estimation."""
 
+from .applicability import (
+    ApplicabilityAssessment,
+    ApplicabilityClassification,
+    ApplicabilityMatrix,
+    assess_observational_applicability,
+    observational_applicability_matrix,
+)
 from .declaration import (
     AnalysisMode,
     ClaimClass,
@@ -8,13 +15,6 @@ from .declaration import (
     KnownAssignment,
     SCOVACFDeclaration,
     SupportPolicy,
-)
-from .applicability import (
-    ApplicabilityAssessment,
-    ApplicabilityClassification,
-    ApplicabilityMatrix,
-    assess_observational_applicability,
-    observational_applicability_matrix,
 )
 from .estimator import SCOVACF, SCOVACFNuisancePredictions
 from .result import (
@@ -25,7 +25,6 @@ from .result import (
     SCOVACFResult,
     SeedStabilityResult,
 )
-from .status import QualificationStatus, SCOVACFRefusal, SCOVACFStatus, SupportStatus
 from .scope_governance import (
     QUALIFICATION_REQUIRED_DECISION_IDS,
     ScopeDecision,
@@ -36,6 +35,7 @@ from .scope_governance import (
     validate_record,
     validate_registry,
 )
+from .status import QualificationStatus, SCOVACFRefusal, SCOVACFStatus, SupportStatus
 from .studies import (
     ARTIFACT_SCHEMA_VERSION,
     METHODS_STUDY_ID,

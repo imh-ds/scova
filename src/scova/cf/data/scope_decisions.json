@@ -126,7 +126,7 @@
       "issue_type": "dependency-stack-discrepancy",
       "affected_protocols": ["cf-observational-continuous-aipw-unnormalized-v11", "cf-observational-adaptive-qualification-v1"],
       "affected_artifacts": ["methods-study", "qualification-evidence"],
-      "evidence_ids": ["methods:30843098640"],
+      "evidence_ids": ["campaign:30781945289", "methods:30843098640"],
       "competing_explanations": ["scikit-learn version", "Python version", "implementation sensitivity"],
       "uncertainty": "The unpinned local run differed in two ablation cells.",
       "path": "retain-limitation",
@@ -135,7 +135,7 @@
       "change_consequences": {"new_protocol_freeze": true, "new_contract_version": false, "new_matrix_version": false},
       "exclusion_rule": null,
       "approvals": {"owner": {"name": "Hohjin (Henry) Im", "approved_at": "2026-08-08T00:00:00Z", "review_reference": "owner-review:2026-08-08-conversation"}, "independent_reviewer": null},
-      "record_checksum": "6a075ba3408c0540b34df3a496217e3815aafae2a4ebdc29d6262268e44943a4"
+      "record_checksum": "b4affeafa30388df171f68442148d4f186379865399204452cd4a1151e1fcd36"
     }
   ]
 }

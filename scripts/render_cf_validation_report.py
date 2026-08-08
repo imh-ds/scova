@@ -33,8 +33,7 @@ def render(root: Path, protocol: CFValidationProtocol) -> str:
     evidence = {label: _read(root / filename) for label, filename in names.items()}
     validation = evidence["Held-out audit"] or {}
     promoted = bool(
-        validation.get("all_validation_gates_passed", False)
-        and evidence["Promoted profile"]
+        validation.get("all_validation_gates_passed", False) and evidence["Promoted profile"]
     )
     lines = [
         "# SCOVA-CF randomized reference validation report",

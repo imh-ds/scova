@@ -194,8 +194,7 @@ def test_two_arm_propensity_is_bit_identical_under_either_parameterization() -> 
     )
 
     assert (
-        multiclass.propensity_predictions.tobytes()
-        == one_vs_rest.propensity_predictions.tobytes()
+        multiclass.propensity_predictions.tobytes() == one_vs_rest.propensity_predictions.tobytes()
     )
     assert multiclass.group_means.tobytes() == one_vs_rest.group_means.tobytes()
     assert one_vs_rest.nuisance_metadata["propensity_parameterization"] == "multiclass"

@@ -69,8 +69,7 @@ def _validate_shards(
         if payload.get("protocol") != specification.get("protocol"):
             raise ValueError("shards do not match the requested frozen protocol")
         if specification.get("metric_contract") == "stage4-v3" and (
-            payload.get("schema_version") != 3
-            or payload.get("metric_contract") != "stage4-v3"
+            payload.get("schema_version") != 3 or payload.get("metric_contract") != "stage4-v3"
         ):
             raise ValueError("v3 shards must use the v3 metric-contract schema")
         if specification.get("metric_contract") == "stage4-v4" and (
@@ -233,9 +232,7 @@ def _summarize_v3(paths: list[Path], specification: dict[str, Any], tier: str) -
         }
     )
     expected_refusals = [
-        record
-        for record in records
-        if record["cell"].get("expected_outcome") == "refusal"
+        record for record in records if record["cell"].get("expected_outcome") == "refusal"
     ]
     accepted_per_cell = {
         cell_id: sum(record["accepted"] for record in records if record["cell"]["id"] == cell_id)
@@ -280,9 +277,7 @@ def _summarize_v3(paths: list[Path], specification: dict[str, Any], tier: str) -
         eligible_cell_ids=metrics["simultaneous_coverage_min"]["eligible_cell_ids"],
     )
     pairwise = [
-        record
-        for record in inferential
-        if record["cell"]["scenario"] == "pairwise_without_kway"
+        record for record in inferential if record["cell"]["scenario"] == "pairwise_without_kway"
     ]
     pairwise_ids = sorted({record["cell"]["id"] for record in pairwise})
     false_globals = sum(bool(record["selected_hyperedges"]) for record in pairwise)

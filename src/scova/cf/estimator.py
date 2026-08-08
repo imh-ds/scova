@@ -14,8 +14,8 @@ from .._aipw import assemble_aipw, validate_probability_matrix
 from .._version import __version__
 from ..declaration import JsonLabel
 from ..estimator import SCOVA
-from .benchmarks import lin_interacted_benchmark, unadjusted_benchmark
 from .applicability import assess_observational_applicability
+from .benchmarks import lin_interacted_benchmark, unadjusted_benchmark
 from .declaration import (
     AnalysisMode,
     EstimatedAssignment,
@@ -92,15 +92,16 @@ class SCOVACF:
         return (2, value)
 
     @staticmethod
-    def _qualify_status(
-        declaration: SCOVACFDeclaration, status: SCOVACFStatus
-    ) -> SCOVACFStatus:
+    def _qualify_status(declaration: SCOVACFDeclaration, status: SCOVACFStatus) -> SCOVACFStatus:
         """Attach the contract's output class without changing numerical output."""
         if declaration.mode is AnalysisMode.STANDARDIZED_ASSOCIATIONAL:
             return replace(
                 status,
                 qualification_status=QualificationStatus.INELIGIBLE,
-                qualification_reason="Standardized-associational analyses never receive causal qualification",
+                qualification_reason=(
+                    "Standardized-associational analyses never receive causal "
+                    "qualification"
+                ),
             )
         if declaration.mode is AnalysisMode.OBSERVATIONAL_CAUSAL:
             assignment = declaration.assignment
@@ -190,9 +191,7 @@ class SCOVACF:
         stratified_by_design = False
         if strata_column is not None:
             strata_codes = pd.factorize(data[strata_column], sort=True)[0]
-            cell_counts = np.bincount(
-                group_codes * (int(strata_codes.max()) + 1) + strata_codes
-            )
+            cell_counts = np.bincount(group_codes * (int(strata_codes.max()) + 1) + strata_codes)
             stratified_by_design = bool(
                 np.all(cell_counts[cell_counts > 0] >= declaration.n_splits)
             )
@@ -244,9 +243,7 @@ class SCOVACF:
         """Run SCOVA-CF or return a typed refusal for an unmet prerequisite."""
         if not isinstance(data, pd.DataFrame):
             raise TypeError("data must be a pandas DataFrame")
-        incompatible = declaration.support_policy.governs(
-            declaration.mode, declaration.assignment
-        )
+        incompatible = declaration.support_policy.governs(declaration.mode, declaration.assignment)
         if incompatible is not None:
             return self._refusal(
                 declaration,
@@ -285,9 +282,7 @@ class SCOVACF:
             )
         try:
             x = data.loc[:, declaration.covariates].to_numpy(dtype=float)
-            raw_labels = [
-                self._native_label(value) for value in pd.unique(data[declaration.group])
-            ]
+            raw_labels = [self._native_label(value) for value in pd.unique(data[declaration.group])]
         except (TypeError, ValueError) as error:
             return self._refusal(
                 declaration,
@@ -458,9 +453,7 @@ class SCOVACF:
                     code="refused/nuisance-labels",
                     reason="Nuisance group labels must match canonical analysis labels",
                 )
-            outcome_regression = np.asarray(
-                nuisance_predictions.outcome_regression, dtype=float
-            )
+            outcome_regression = np.asarray(nuisance_predictions.outcome_regression, dtype=float)
             if known_propensity is not None:
                 propensity = known_propensity
                 propensity_source = "known-design"
@@ -517,7 +510,10 @@ class SCOVACF:
                     "quantitative sensitivity analysis"
                 ),
                 qualification_status=QualificationStatus.UNQUALIFIED,
-                qualification_reason="A required observational sensitivity analysis was not declared",
+                qualification_reason=(
+                    "A required observational sensitivity analysis was not "
+                    "declared"
+                ),
             )
         status = self._qualify_status(declaration, status)
         try:
@@ -630,8 +626,7 @@ class SCOVACF:
             "stability_seeds": list(declaration.stability_seeds),
             "aggregation": "none",
             "promotion_eligible": bool(
-                result.seed_stability is not None
-                and result.seed_stability.promotion_eligible
+                result.seed_stability is not None and result.seed_stability.promotion_eligible
             ),
         }
         self._apply_calibrated_reliability(result, declaration)
@@ -646,9 +641,7 @@ class SCOVACF:
             return
         warnings: list[str] = []
         influence = result.diagnostics["influence_concentration"].values()
-        maximum_influence = max(
-            value["top_one_percent_variance_share"] for value in influence
-        )
+        maximum_influence = max(value["top_one_percent_variance_share"] for value in influence)
         if maximum_influence > policy.max_influence_top_one_percent_share:
             warnings.append("influence concentration exceeds the packaged profile")
         stability = result.seed_stability

@@ -234,9 +234,7 @@ def test_stage5b_workflows_keep_pr_and_full_audit_campaigns_separate() -> None:
 
 
 def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
-    workflow = Path(".github/workflows/cf-reference-validation.yml").read_text(
-        encoding="utf-8"
-    )
+    workflow = Path(".github/workflows/cf-reference-validation.yml").read_text(encoding="utf-8")
     assert 'counts = {"pilot": 16, "simultaneous_inference": 64}' in workflow
     assert "--shard-count 16 --resume" in workflow
     assert "--stage external" in workflow
@@ -245,9 +243,7 @@ def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
     assert "scova-cf-reference-v3-freeze-r4" in workflow
     assert "- freeze_check" in workflow
     prepare_job = workflow.split("  prepare:", 1)[1].split("  campaign_freeze:", 1)[0]
-    freeze_job = workflow.split("  campaign_freeze:", 1)[1].split(
-        "  prerequisite_lock:", 1
-    )[0]
+    freeze_job = workflow.split("  campaign_freeze:", 1)[1].split("  prerequisite_lock:", 1)[0]
     assert "freeze_check" not in prepare_job
     assert "inputs.tier == 'freeze_check'" in freeze_job
     assert "python -m scripts.write_cf_freeze_manifest" in workflow
@@ -260,14 +256,14 @@ def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
     ):
         assert f"python -m benchmarks.{module}" in workflow
     assert "python benchmarks/" not in workflow
-    aggregate_job = workflow.split("  campaign_aggregate:", 1)[1].split(
-        "  calibrate_support:", 1
-    )[0]
+    aggregate_job = workflow.split("  campaign_aggregate:", 1)[1].split("  calibrate_support:", 1)[
+        0
+    ]
     assert "always()" in aggregate_job
     assert "needs.campaign_shard.result == 'success'" in aggregate_job
-    calibrate_job = workflow.split("  calibrate_support:", 1)[1].split(
-        "  external_agreement:", 1
-    )[0]
+    calibrate_job = workflow.split("  calibrate_support:", 1)[1].split("  external_agreement:", 1)[
+        0
+    ]
     assert "--require-candidate" in calibrate_job
     assert "if: always()" in calibrate_job
     assert "actions/attest-build-provenance@v3" in workflow
@@ -284,9 +280,7 @@ def test_cf_priority3_workflow_is_ordered_and_fail_closed() -> None:
 
 
 def test_cf_v4_workflow_is_isolated_from_v3_campaign_identity() -> None:
-    workflow = Path(".github/workflows/cf-reference-v4-validation.yml").read_text(
-        encoding="utf-8"
-    )
+    workflow = Path(".github/workflows/cf-reference-v4-validation.yml").read_text(encoding="utf-8")
     assert "SCOVA-CF v4 frozen reference validation" in workflow
     assert "benchmarks/specs/cf_reference_v4.json" in workflow
     assert "scova-cf-reference-v4-freeze-r1" in workflow
@@ -294,9 +288,7 @@ def test_cf_v4_workflow_is_isolated_from_v3_campaign_identity() -> None:
 
 
 def test_cf_v6_workflow_limits_execution_to_the_inference_amendment() -> None:
-    workflow = Path(".github/workflows/cf-reference-v6-validation.yml").read_text(
-        encoding="utf-8"
-    )
+    workflow = Path(".github/workflows/cf-reference-v6-validation.yml").read_text(encoding="utf-8")
     assert "SCOVA-CF v6 inference-profile amendment" in workflow
     assert "benchmarks/specs/cf_reference_v6.json" in workflow
     assert "scova-cf-reference-v6-freeze-r8" in workflow
@@ -309,9 +301,7 @@ def test_cf_v6_workflow_limits_execution_to_the_inference_amendment() -> None:
 
 
 def test_cf_v7_workflow_uses_rejected_v6_only_for_development() -> None:
-    workflow = Path(".github/workflows/cf-reference-v7-validation.yml").read_text(
-        encoding="utf-8"
-    )
+    workflow = Path(".github/workflows/cf-reference-v7-validation.yml").read_text(encoding="utf-8")
     assert "SCOVA-CF v7 support-profile recalibration" in workflow
     assert "benchmarks/specs/cf_reference_v7.json" in workflow
     assert "scova-cf-reference-v7-freeze-r1" in workflow
@@ -342,9 +332,7 @@ def test_cf_promotion_applies_only_exact_evidence_and_release_text(
     (evidence / "cf-reference-support-profile.json").write_text(
         json.dumps(profile), encoding="utf-8"
     )
-    (evidence / "proposed-support-profiles.json").write_text(
-        json.dumps(proposed), encoding="utf-8"
-    )
+    (evidence / "proposed-support-profiles.json").write_text(json.dumps(proposed), encoding="utf-8")
     manifest = tmp_path / "support_profiles.json"
     manifest.write_text('{"schema_version":1,"profiles":[]}', encoding="utf-8")
     pyproject = tmp_path / "pyproject.toml"
@@ -353,8 +341,7 @@ def test_cf_promotion_applies_only_exact_evidence_and_release_text(
     readme.write_text("The `0.3.0.dev0` source tree is provisional.\n", encoding="utf-8")
     documentation = tmp_path / "scova_cf.md"
     documentation.write_text(
-        f"{promote_cf_reference.STATUS_START}\ncandidate\n"
-        f"{promote_cf_reference.STATUS_END}\n",
+        f"{promote_cf_reference.STATUS_START}\ncandidate\n{promote_cf_reference.STATUS_END}\n",
         encoding="utf-8",
     )
     monkeypatch.setattr(promote_cf_reference, "blocking_reasons", lambda *_: [])
@@ -373,9 +360,7 @@ def test_cf_promotion_applies_only_exact_evidence_and_release_text(
     assert profile["profile_id"] in documentation.read_text(encoding="utf-8")
 
 
-def test_cf_promotion_version_is_caller_supplied_and_validated(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_cf_promotion_version_is_caller_supplied_and_validated(tmp_path: Path, monkeypatch) -> None:
     """The release version is an input, not a constant baked into the script."""
     evidence = tmp_path / "evidence"
     evidence.mkdir()

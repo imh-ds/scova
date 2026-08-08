@@ -37,9 +37,7 @@ def _candidate_matches_protocol(
     )
 
 
-def _external_matches_protocol(
-    protocol: CFValidationProtocol, evidence: dict[str, Any]
-) -> bool:
+def _external_matches_protocol(protocol: CFValidationProtocol, evidence: dict[str, Any]) -> bool:
     """Accept current-protocol evidence or the exact frozen external source."""
     if evidence.get("protocol_checksum") == protocol.checksum:
         return True
@@ -52,9 +50,7 @@ def _external_matches_protocol(
     )
 
 
-def _inference_matches_protocol(
-    protocol: CFValidationProtocol, evidence: dict[str, Any]
-) -> bool:
+def _inference_matches_protocol(protocol: CFValidationProtocol, evidence: dict[str, Any]) -> bool:
     if evidence.get("protocol_checksum") == protocol.checksum:
         return True
     source = protocol.inference_source
@@ -159,8 +155,7 @@ def validate(
     useful_cells = [
         audit
         for audit in strong_cells
-        if int(audit.get("supported_replications", 0))
-        / protocol.validation.count
+        if int(audit.get("supported_replications", 0)) / protocol.validation.count
         >= float(protocol.metrics["minimum_strong_replication_pass_fraction"])
     ]
     usefulness_passed = bool(
@@ -231,17 +226,22 @@ def validate(
     }
     if protocol.verification_lanes is not None:
         lane = protocol.verification_lanes["validation"]  # type: ignore[index]
-        result.update({
-            "program_type": "qualification", "verification_lane": "validation",
-            "verification_role": lane["role"], "permitted_claim": lane["permitted_claim"],
-            "prohibited_claim": lane["prohibited_claim"], "promotion_required": lane["promotion_required"],
-            "design_checksum": campaign.get("design_checksum"),
-            "dependency_lock_checksum": campaign.get("dependency_lock_checksum"),
-            "decision_manifest_checksum": campaign.get("decision_manifest_checksum"),
-            "planned_replications": campaign.get("planned_replications"),
-            "completed_replications": campaign.get("completed_replications"),
-            "informative": bool(campaign.get("complete_frozen_lane") and all_passed),
-        })
+        result.update(
+            {
+                "program_type": "qualification",
+                "verification_lane": "validation",
+                "verification_role": lane["role"],
+                "permitted_claim": lane["permitted_claim"],
+                "prohibited_claim": lane["prohibited_claim"],
+                "promotion_required": lane["promotion_required"],
+                "design_checksum": campaign.get("design_checksum"),
+                "dependency_lock_checksum": campaign.get("dependency_lock_checksum"),
+                "decision_manifest_checksum": campaign.get("decision_manifest_checksum"),
+                "planned_replications": campaign.get("planned_replications"),
+                "completed_replications": campaign.get("completed_replications"),
+                "informative": bool(campaign.get("complete_frozen_lane") and all_passed),
+            }
+        )
     result["evidence_checksum"] = canonical_checksum(result)
     promoted = None
     if all_passed and protocol.verification_lanes is None:

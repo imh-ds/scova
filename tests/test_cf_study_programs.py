@@ -4,9 +4,15 @@ import pytest
 
 from benchmarks.cf_methods_study import methods_artifact
 from benchmarks.cf_qualification_program import qualification_protocol, qualification_spec
-from scripts.render_cf_study_report import render
-from scova.cf import StudyProgram, factorial_cells, methods_design, qualification_cells, qualification_design
+from scova.cf import (
+    StudyProgram,
+    factorial_cells,
+    methods_design,
+    qualification_cells,
+    qualification_design,
+)
 from scripts.calibrate_cf_support import calibrate
+from scripts.render_cf_study_report import render
 
 
 def test_qualification_design_is_adaptive_frozen_and_contains_every_stress_surface() -> None:
@@ -20,9 +26,12 @@ def test_qualification_design_is_adaptive_frozen_and_contains_every_stress_surfa
     assert {cell["n_groups"] for cell in cells} == {2, 3}
     assert max(cell["n_covariates"] for cell in cells) == 5
     stress = [
-        cell for cell in cells
-        if cell["n_per_group"] == 50 and cell["overlap"] == "poor"
-        and cell["confounding_form"] == "nonlinear" and cell["noise"] == "heavy-tailed"
+        cell
+        for cell in cells
+        if cell["n_per_group"] == 50
+        and cell["overlap"] == "poor"
+        and cell["confounding_form"] == "nonlinear"
+        and cell["noise"] == "heavy-tailed"
     ]
     assert {"smooth-nonlinear", "threshold", "interaction"}.issubset(
         {cell["surface"] for cell in stress}
@@ -61,7 +70,6 @@ def test_methods_artifact_is_complete_only_when_every_frozen_replication_exists(
     assert not artifact["complete"]
     assert artifact["planned_replications"] == 64_000
     assert "candidate profile" in artifact["interpretation"]
-
 
 
 def test_calibration_rejects_a_methods_artifact_before_any_profile_logic() -> None:

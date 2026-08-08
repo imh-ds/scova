@@ -24,7 +24,6 @@ from scova.cf import (
     qualification_design,
 )
 
-
 _METRICS = {
     "confidence_level": 0.95,
     "type_i_error": 0.05,
@@ -45,27 +44,138 @@ def _verification_cells() -> tuple[tuple[dict[str, Any], ...], tuple[dict[str, A
     inference: list[dict[str, Any]] = []
     for groups in (2, 3):
         common = {"n_groups": groups, "learner": "adaptive", "support": "strong"}
-        external.extend([
-            {**common, "allocation": "balanced", "confounding": "moderate", "confounding_form": "linear", "effect": "null", "n_covariates": 3, "n_per_group": 150, "noise": "normal", "overlap": "full", "surface": "linear"},
-            {**common, "allocation": "balanced", "confounding": "strong", "confounding_form": "nonlinear", "effect": "heterogeneous", "n_covariates": 5, "n_per_group": 50, "noise": "heavy-tailed", "overlap": "poor", "surface": "interaction"},
-            {**common, "allocation": "moderate", "confounding": "strong", "confounding_form": "nonlinear", "effect": "null", "n_covariates": 5, "n_per_group": 150, "noise": "normal", "overlap": "poor", "surface": "smooth-nonlinear"},
-            {**common, "allocation": "moderate", "confounding": "strong", "confounding_form": "nonlinear", "effect": "heterogeneous", "n_covariates": 3, "n_per_group": 50, "noise": "heavy-tailed", "overlap": "full", "surface": "threshold"},
-        ])
-        inference.extend([
-            {**common, "allocation": "balanced", "confounding": "moderate", "confounding_form": "linear", "effect": "null", "n_covariates": 3, "n_per_group": 150, "noise": "normal", "overlap": "full", "surface": "linear"},
-            {**common, "allocation": "balanced", "confounding": "strong", "confounding_form": "nonlinear", "effect": "null", "n_covariates": 5, "n_per_group": 50, "noise": "heavy-tailed", "overlap": "poor", "surface": "interaction"},
-            {**common, "allocation": "moderate", "confounding": "strong", "confounding_form": "nonlinear", "effect": "heterogeneous", "n_covariates": 5, "n_per_group": 150, "noise": "normal", "overlap": "poor", "surface": "threshold"},
-        ])
+        external.extend(
+            [
+                {
+                    **common,
+                    "allocation": "balanced",
+                    "confounding": "moderate",
+                    "confounding_form": "linear",
+                    "effect": "null",
+                    "n_covariates": 3,
+                    "n_per_group": 150,
+                    "noise": "normal",
+                    "overlap": "full",
+                    "surface": "linear",
+                },
+                {
+                    **common,
+                    "allocation": "balanced",
+                    "confounding": "strong",
+                    "confounding_form": "nonlinear",
+                    "effect": "heterogeneous",
+                    "n_covariates": 5,
+                    "n_per_group": 50,
+                    "noise": "heavy-tailed",
+                    "overlap": "poor",
+                    "surface": "interaction",
+                },
+                {
+                    **common,
+                    "allocation": "moderate",
+                    "confounding": "strong",
+                    "confounding_form": "nonlinear",
+                    "effect": "null",
+                    "n_covariates": 5,
+                    "n_per_group": 150,
+                    "noise": "normal",
+                    "overlap": "poor",
+                    "surface": "smooth-nonlinear",
+                },
+                {
+                    **common,
+                    "allocation": "moderate",
+                    "confounding": "strong",
+                    "confounding_form": "nonlinear",
+                    "effect": "heterogeneous",
+                    "n_covariates": 3,
+                    "n_per_group": 50,
+                    "noise": "heavy-tailed",
+                    "overlap": "full",
+                    "surface": "threshold",
+                },
+            ]
+        )
+        inference.extend(
+            [
+                {
+                    **common,
+                    "allocation": "balanced",
+                    "confounding": "moderate",
+                    "confounding_form": "linear",
+                    "effect": "null",
+                    "n_covariates": 3,
+                    "n_per_group": 150,
+                    "noise": "normal",
+                    "overlap": "full",
+                    "surface": "linear",
+                },
+                {
+                    **common,
+                    "allocation": "balanced",
+                    "confounding": "strong",
+                    "confounding_form": "nonlinear",
+                    "effect": "null",
+                    "n_covariates": 5,
+                    "n_per_group": 50,
+                    "noise": "heavy-tailed",
+                    "overlap": "poor",
+                    "surface": "interaction",
+                },
+                {
+                    **common,
+                    "allocation": "moderate",
+                    "confounding": "strong",
+                    "confounding_form": "nonlinear",
+                    "effect": "heterogeneous",
+                    "n_covariates": 5,
+                    "n_per_group": 150,
+                    "noise": "normal",
+                    "overlap": "poor",
+                    "surface": "threshold",
+                },
+            ]
+        )
     return tuple(external), tuple(inference)
 
 
 VERIFICATION_LANES = {
-    "calibration": {"role": "policy-selection", "permitted_claim": "Selects a predeclared candidate policy in development simulations.", "prohibited_claim": "Validation or causal identification.", "promotion_required": False},
-    "boundary": {"role": "report-only-density-diagnostic", "permitted_claim": "Describes post-candidate density information.", "prohibited_claim": "Scope, threshold, or promotion change.", "promotion_required": False},
-    "external": {"role": "software-agreement-diagnostic", "permitted_claim": "Detects systematic implementation divergence under independent folds.", "prohibited_claim": "Exchangeability, positivity, or causal validity.", "promotion_required": True},
-    "inference": {"role": "simultaneous-inference-check", "permitted_claim": "Evaluates family-wise inferential behavior in frozen simulations.", "prohibited_claim": "Causal assumptions or applied-data nuisance adequacy.", "promotion_required": True},
-    "validation": {"role": "held-out-qualification-check", "permitted_claim": "Evaluates the frozen qualification claim on untouched simulations.", "prohibited_claim": "Causal validity outside the simulated regimes.", "promotion_required": True},
-    "aggregate": {"role": "promotion-prerequisite-adjudication", "permitted_claim": "Determines whether frozen prerequisites are present and passing.", "prohibited_claim": "Identification evidence from diagnostics.", "promotion_required": False},
+    "calibration": {
+        "role": "policy-selection",
+        "permitted_claim": "Selects a predeclared candidate policy in development simulations.",
+        "prohibited_claim": "Validation or causal identification.",
+        "promotion_required": False,
+    },
+    "boundary": {
+        "role": "report-only-density-diagnostic",
+        "permitted_claim": "Describes post-candidate density information.",
+        "prohibited_claim": "Scope, threshold, or promotion change.",
+        "promotion_required": False,
+    },
+    "external": {
+        "role": "software-agreement-diagnostic",
+        "permitted_claim": "Detects systematic implementation divergence under independent folds.",
+        "prohibited_claim": "Exchangeability, positivity, or causal validity.",
+        "promotion_required": True,
+    },
+    "inference": {
+        "role": "simultaneous-inference-check",
+        "permitted_claim": "Evaluates family-wise inferential behavior in frozen simulations.",
+        "prohibited_claim": "Causal assumptions or applied-data nuisance adequacy.",
+        "promotion_required": True,
+    },
+    "validation": {
+        "role": "held-out-qualification-check",
+        "permitted_claim": "Evaluates the frozen qualification claim on untouched simulations.",
+        "prohibited_claim": "Causal validity outside the simulated regimes.",
+        "promotion_required": True,
+    },
+    "aggregate": {
+        "role": "promotion-prerequisite-adjudication",
+        "permitted_claim": "Determines whether frozen prerequisites are present and passing.",
+        "prohibited_claim": "Identification evidence from diagnostics.",
+        "promotion_required": False,
+    },
 }
 
 
@@ -105,8 +215,11 @@ def qualification_protocol() -> CFValidationProtocol:
         learners=("adaptive",),
         metrics=_METRICS,
         software={
-            "python": "3.12.13", "numpy": "2.2.6", "pandas": "2.2.3",
-            "scipy": "1.15.3", "scikit-learn": "1.6.1",
+            "python": "3.12.13",
+            "numpy": "2.2.6",
+            "pandas": "2.2.3",
+            "scipy": "1.15.3",
+            "scikit-learn": "1.6.1",
         },
         dependency_lock_checksum=dependency_lock_checksum(),
         design_selection={
@@ -123,9 +236,12 @@ def qualification_protocol() -> CFValidationProtocol:
         calibration_enrichment_screening=True,
         calibration_candidate_retention_fraction=0.85,
         external_agreement={
-            "comparator_folds": "independent", "comparator_fold_seed_offset": 811,
-            "statistic": "standardized-offset-z", "unit_of_observation": "cell-replication",
-            "strata": "n_groups-by-learner", "family_wise_error": 0.05,
+            "comparator_folds": "independent",
+            "comparator_fold_seed_offset": 811,
+            "statistic": "standardized-offset-z",
+            "unit_of_observation": "cell-replication",
+            "strata": "n_groups-by-learner",
+            "family_wise_error": 0.05,
             "minimum_informative_cell_fraction": 1.0,
             "degenerate_difference_in_scova_se": 1e-10,
         },
@@ -144,9 +260,12 @@ def qualification_spec() -> dict[str, Any]:
         "promotion_rule": "independent-held-out-validation-and-human-approval",
         "boundary_estimation": None,
         "boundary_diagnostic": {
-            "role": "report-only", "requires_candidate_profile": True,
-            "interval_scale": "log10-arm-units-per-covariate", "maximum_95_interval_width": 0.3010299956639812,
-            "scope_effect": "none", "promotion_effect": "none",
+            "role": "report-only",
+            "requires_candidate_profile": True,
+            "interval_scale": "log10-arm-units-per-covariate",
+            "maximum_95_interval_width": 0.3010299956639812,
+            "scope_effect": "none",
+            "promotion_effect": "none",
         },
         "verification_lanes": VERIFICATION_LANES,
         "source_evidence_ids": [],
@@ -154,7 +273,10 @@ def qualification_spec() -> dict[str, Any]:
 
 
 def qualification_evidence(
-    *, lane: str, replications: int | None = None, decision_manifest: dict[str, Any] | None = None,
+    *,
+    lane: str,
+    replications: int | None = None,
+    decision_manifest: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Produce a provenance-complete evidence artifact for a frozen lane."""
     protocol = qualification_protocol()
@@ -175,7 +297,8 @@ def qualification_evidence(
                 None if decision_manifest is None else decision_manifest.get("manifest_checksum")
             ),
             "required_decision_ids": (
-                [] if decision_manifest is None
+                []
+                if decision_manifest is None
                 else [entry["decision_id"] for entry in decision_manifest["required_decisions"]]
             ),
             "promotion_decision": "unpromoted/requires-independent-validation-and-human-approval",
@@ -195,7 +318,9 @@ def main() -> None:
     args = parser.parse_args()
     if args.write_spec:
         args.write_spec.parent.mkdir(parents=True, exist_ok=True)
-        args.write_spec.write_text(json.dumps(qualification_spec(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        args.write_spec.write_text(
+            json.dumps(qualification_spec(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
     if args.lane:
         if args.output is None:
             parser.error("--output is required with --lane")

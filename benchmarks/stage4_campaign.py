@@ -133,9 +133,7 @@ def load_specification(path: Path) -> dict[str, Any]:
                         item.get(key) == value
                         for key, value in when.items()
                         if key != "scenario_not"
-                    ) and (
-                        "scenario_not" not in when or item["scenario"] != when["scenario_not"]
-                    )
+                    ) and ("scenario_not" not in when or item["scenario"] != when["scenario_not"])
                     if matches:
                         item = {**item, **transform["set"]}
                 rendered.append(item)

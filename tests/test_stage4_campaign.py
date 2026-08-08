@@ -83,8 +83,7 @@ def test_v4_catalog_has_no_nonrare_low_sample_eight_group_cells() -> None:
     assert release["seed_namespaces"]["validation"] == 422000000
     assert release["catalog_definition_sha256"]
     assert all(
-        cell.scenario == "rare_group" or cell.expected_outcome == "inferential"
-        for cell in cells
+        cell.scenario == "rare_group" or cell.expected_outcome == "inferential" for cell in cells
     )
     assert all(
         not (cell.scenario != "rare_group" and cell.n == 500 and cell.n_groups == 8)
@@ -295,9 +294,7 @@ def test_v4_release_checker_uses_per_cell_criteria(
     spec_path.write_text(json.dumps(spec), encoding="utf-8")
     artifact_dir = root / "release" / "artifacts"
     artifact_dir.mkdir(parents=True)
-    (artifact_dir / "stage3-directional-thresholds.json").write_text(
-        "{}", encoding="utf-8"
-    )
+    (artifact_dir / "stage3-directional-thresholds.json").write_text("{}", encoding="utf-8")
     evidence = {
         "protocol": spec["protocol"],
         "threshold_artifact_sha256": "threshold",
@@ -308,9 +305,7 @@ def test_v4_release_checker_uses_per_cell_criteria(
         },
         "metrics": {},
     }
-    (artifact_dir / "stage4-evidence.json").write_text(
-        json.dumps(evidence), encoding="utf-8"
-    )
+    (artifact_dir / "stage4-evidence.json").write_text(json.dumps(evidence), encoding="utf-8")
 
     class CalibratedThresholds:
         calibrated = True

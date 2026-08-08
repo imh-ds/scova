@@ -94,9 +94,7 @@ class SCOVA:
         if nuisance_strategy not in {"adaptive", "linear", "custom"}:
             raise ValueError("nuisance_strategy must be 'adaptive', 'linear', or 'custom'")
         if propensity_parameterization not in {"multiclass", "one-vs-rest"}:
-            raise ValueError(
-                "propensity_parameterization must be 'multiclass' or 'one-vs-rest'"
-            )
+            raise ValueError("propensity_parameterization must be 'multiclass' or 'one-vs-rest'")
         if (propensity_model is None) != (outcome_model is None):
             raise ValueError("propensity_model and outcome_model must be supplied together")
         if nuisance_strategy == "custom" and propensity_model is None:
@@ -269,9 +267,7 @@ class SCOVA:
         propensity_selected: list[dict[str, Any]] = []
         outcome_selected: dict[str, list[dict[str, Any]]] = {str(label): [] for label in labels}
         if known_propensity is not None:
-            known_propensity = validate_probability_matrix(
-                known_propensity, len(outcome), n_groups
-            )
+            known_propensity = validate_probability_matrix(known_propensity, len(outcome), n_groups)
         for fold in sorted(np.unique(folds)):
             test = folds == fold
             train = ~test
@@ -294,9 +290,7 @@ class SCOVA:
                 for code in range(n_groups):
                     membership = (group_codes[train] == code).astype(int)
                     if membership.min() == membership.max():
-                        raise ValueError(
-                            "Every propensity training fold must contain every group"
-                        )
+                        raise ValueError("Every propensity training fold must contain every group")
                     arm_model = clone(propensity_model)
                     arm_model.fit(x[train], membership)
                     arm_classes = np.asarray(arm_model.classes_, dtype=int)
@@ -427,8 +421,7 @@ class SCOVA:
             propensity,
             n,
             n_groups,
-            require_simplex=nuisance_metadata.get("propensity_parameterization")
-            != "one-vs-rest",
+            require_simplex=nuisance_metadata.get("propensity_parameterization") != "one-vs-rest",
         )
         means, influence, covariance = assemble_aipw(
             outcome, group_codes, propensity, outcome_regression

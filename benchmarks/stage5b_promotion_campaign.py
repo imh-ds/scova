@@ -27,23 +27,32 @@ def _coverage(records: list[dict[str, Any]], field: str) -> float:
 def _boundary_block_is_recorded() -> bool:
     propensity = np.full((6, 2), 0.5)
     bounded = bounded_pairwise_anchor(
-        groups=("a", "b"), group_codes=np.array([0, 1, 0, 1, 0, 1]),
-        outcomes=np.array([0.2, 0.8, 0.3, 0.7, 0.4, 0.6]), propensity=propensity,
-        outcome_predictions=np.full((6, 2), 0.5), active_codes=(0, 1), outcome_lower=0,
-        outcome_upper=1, confidence_level=0.95,
+        groups=("a", "b"),
+        group_codes=np.array([0, 1, 0, 1, 0, 1]),
+        outcomes=np.array([0.2, 0.8, 0.3, 0.7, 0.4, 0.6]),
+        propensity=propensity,
+        outcome_predictions=np.full((6, 2), 0.5),
+        active_codes=(0, 1),
+        outcome_lower=0,
+        outcome_upper=1,
+        confidence_level=0.95,
     )
     result = lipschitz_pairwise_anchor(
-        bounded=bounded, propensity=propensity, active_codes=(0, 1), gamma_grid=np.array([0.0]),
-        smooth_distances=np.zeros((6, 2)), reference_predictions=np.ones((6, 2)),
-        outcome_lower=0, outcome_upper=1, confidence_level=0.95,
+        bounded=bounded,
+        propensity=propensity,
+        active_codes=(0, 1),
+        gamma_grid=np.array([0.0]),
+        smooth_distances=np.zeros((6, 2)),
+        reference_predictions=np.ones((6, 2)),
+        outcome_lower=0,
+        outcome_upper=1,
+        confidence_level=0.95,
     )
     return result.inference_status == "blocked-boundary"
 
 
 def _transport_refusal_is_recorded() -> bool:
-    settings = replace(
-        _thresholds(), min_group_ess_warning=20_000, min_group_ess_refuse=10_000
-    )
+    settings = replace(_thresholds(), min_group_ess_warning=20_000, min_group_ess_refuse=10_000)
     result, _ = _run(5_600_000, 300, threshold_settings=settings)
     return result["verdict"] == "refused"
 
@@ -126,9 +135,7 @@ def main() -> None:
     parser.add_argument(
         "--spec", type=Path, default=Path("benchmarks/specs/stage5b_promotion_audit.json")
     )
-    parser.add_argument(
-        "--audit", type=Path, default=Path("release/stage5b_promotion_audit.json")
-    )
+    parser.add_argument("--audit", type=Path, default=Path("release/stage5b_promotion_audit.json"))
     parser.add_argument(
         "--output", type=Path, default=Path("release/artifacts/stage5b-promotion-evidence.json")
     )

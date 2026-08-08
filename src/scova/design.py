@@ -817,7 +817,13 @@ class SCOVADesign:
         anchor = design.declaration.anchored_bounds
         if anchor is None or anchor.support_geometry is None:
             return LipschitzAnchorResult(
-                design.lock.lock_hash, None, "refused", None, None, np.array([]), (),
+                design.lock.lock_hash,
+                None,
+                "refused",
+                None,
+                None,
+                np.array([]),
+                (),
                 ("a locked Stage 5B support geometry declaration is required",),
             )
         geometry = design.lock.design_metadata.get("support_geometry")
@@ -826,8 +832,14 @@ class SCOVADesign:
             if isinstance(geometry, Mapping) and isinstance(geometry.get("reason"), str):
                 reason = str(geometry["reason"])
             return LipschitzAnchorResult(
-                design.lock.lock_hash, None, "refused", anchor.outcome_lower, anchor.outcome_upper,
-                np.asarray(anchor.support_geometry.gamma_grid), (), (reason,),
+                design.lock.lock_hash,
+                None,
+                "refused",
+                anchor.outcome_lower,
+                anchor.outcome_upper,
+                np.asarray(anchor.support_geometry.gamma_grid),
+                (),
+                (reason,),
             )
         expected_ids = design.lock.estimation_row_ids
         if set(row_ids) != set(expected_ids) or len(row_ids) != len(expected_ids):
@@ -837,15 +849,25 @@ class SCOVADesign:
             raise ValueError("outcomes must be a finite vector aligned with row_ids")
         if np.any(values < anchor.outcome_lower) or np.any(values > anchor.outcome_upper):
             return LipschitzAnchorResult(
-                design.lock.lock_hash, str(geometry["digest"]), "refused", anchor.outcome_lower,
-                anchor.outcome_upper, np.asarray(anchor.support_geometry.gamma_grid), (),
+                design.lock.lock_hash,
+                str(geometry["digest"]),
+                "refused",
+                anchor.outcome_lower,
+                anchor.outcome_upper,
+                np.asarray(anchor.support_geometry.gamma_grid),
+                (),
                 ("held-out outcomes fall outside the declared bounded-outcome range",),
             )
         pairs = tuple(edge.groups for edge in design.graph.edges if edge.supported)
         if not pairs:
             return LipschitzAnchorResult(
-                design.lock.lock_hash, str(geometry["digest"]), "refused", anchor.outcome_lower,
-                anchor.outcome_upper, np.asarray(anchor.support_geometry.gamma_grid), (),
+                design.lock.lock_hash,
+                str(geometry["digest"]),
+                "refused",
+                anchor.outcome_lower,
+                anchor.outcome_upper,
+                np.asarray(anchor.support_geometry.gamma_grid),
+                (),
                 ("no graph-supported pairwise contrasts are available",),
             )
         positions = [design.data.row_ids.index(row_id) for row_id in expected_ids]
@@ -861,9 +883,13 @@ class SCOVADesign:
             for pair in pairs
         )
         base = SCOVADeclaration(
-            "__scova_outcome__", design.declaration.group, design.declaration.covariates,
-            interpretation=design.declaration.interpretation, n_splits=design.declaration.n_splits,
-            random_state=design.declaration.random_state, contrasts=contrasts,
+            "__scova_outcome__",
+            design.declaration.group,
+            design.declaration.covariates,
+            interpretation=design.declaration.interpretation,
+            n_splits=design.declaration.n_splits,
+            random_state=design.declaration.random_state,
+            contrasts=contrasts,
         )
         fitted = SCOVA(
             propensity_model=self.propensity_model, outcome_model=self.outcome_model
@@ -893,8 +919,14 @@ class SCOVADesign:
                 x, references[code], dict(geometry)
             )
         reference_prediction = _fold_reference_predictions(
-            self, x, values, observed_codes, fitted.fold_assignments, references,
-            neighbor_indices, neighbor_weights,
+            self,
+            x,
+            values,
+            observed_codes,
+            fitted.fold_assignments,
+            references,
+            neighbor_indices,
+            neighbor_weights,
         )
         gamma_grid = np.asarray(anchor.support_geometry.gamma_grid)
         transport_residuals = np.zeros((len(x), len(labels)), dtype=float)
@@ -903,8 +935,13 @@ class SCOVADesign:
             observed = observed_codes == code
             if not np.any(observed):
                 return LipschitzAnchorResult(
-                    design.lock.lock_hash, str(geometry["digest"]), "refused", anchor.outcome_lower,
-                    anchor.outcome_upper, gamma_grid, (),
+                    design.lock.lock_hash,
+                    str(geometry["digest"]),
+                    "refused",
+                    anchor.outcome_lower,
+                    anchor.outcome_upper,
+                    gamma_grid,
+                    (),
                     (f"transport group {label!r} has no held-out observations",),
                 )
             normalized_tilt = transport_tilts[code] / float(
@@ -915,21 +952,34 @@ class SCOVADesign:
             transport_ess[str(label)] = ess
             if not np.isfinite(ess) or ess <= self.thresholds.min_group_ess_refuse:
                 return LipschitzAnchorResult(
-                    design.lock.lock_hash, str(geometry["digest"]), "refused", anchor.outcome_lower,
-                    anchor.outcome_upper, gamma_grid, (),
+                    design.lock.lock_hash,
+                    str(geometry["digest"]),
+                    "refused",
+                    anchor.outcome_lower,
+                    anchor.outcome_upper,
+                    gamma_grid,
+                    (),
                     (f"transport effective sample size failed for group {label!r}",),
                     confidence_level=design.declaration.confidence_level,
                     inference_method="regularized-transport-eif",
                     transport_diagnostics={"effective_sample_size": transport_ess},
                 )
             transport_residuals[:, code] = (
-                observed * normalized_tilt * (values - fitted.outcome_predictions[:, code])
+                observed
+                * normalized_tilt
+                * (values - fitted.outcome_predictions[:, code])
                 / fitted.propensity_predictions[:, code]
             )
         if not np.all(np.isfinite(transport_residuals)):
             return LipschitzAnchorResult(
-                design.lock.lock_hash, str(geometry["digest"]), "refused", anchor.outcome_lower,
-                anchor.outcome_upper, gamma_grid, (), ("transport residual score is non-finite",),
+                design.lock.lock_hash,
+                str(geometry["digest"]),
+                "refused",
+                anchor.outcome_lower,
+                anchor.outcome_upper,
+                gamma_grid,
+                (),
+                ("transport residual score is non-finite",),
                 confidence_level=design.declaration.confidence_level,
                 inference_method="regularized-transport-eif",
                 transport_diagnostics={"effective_sample_size": transport_ess},
@@ -967,8 +1017,14 @@ class SCOVADesign:
                 )
             )
         return LipschitzAnchorResult(
-            design.lock.lock_hash, str(geometry["digest"]), "experimental", anchor.outcome_lower,
-            anchor.outcome_upper, gamma_grid, tuple(results), (),
+            design.lock.lock_hash,
+            str(geometry["digest"]),
+            "experimental",
+            anchor.outcome_lower,
+            anchor.outcome_upper,
+            gamma_grid,
+            tuple(results),
+            (),
             confidence_level=design.declaration.confidence_level,
             inference_method="regularized-transport-eif-im",
             transport_diagnostics={

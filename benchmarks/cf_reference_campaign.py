@@ -75,13 +75,17 @@ def dependency_lock_checksum() -> str:
 
 def write_deterministic_gzip(path: Path, text: str, *, compresslevel: int = 6) -> None:
     """Write UTF-8 gzip bytes whose checksum is independent of wall-clock time."""
-    with path.open("wb") as raw, gzip.GzipFile(
-        filename="",
-        mode="wb",
-        compresslevel=compresslevel,
-        fileobj=raw,
-        mtime=0,
-    ) as archive, io.TextIOWrapper(archive, encoding="utf-8") as stream:
+    with (
+        path.open("wb") as raw,
+        gzip.GzipFile(
+            filename="",
+            mode="wb",
+            compresslevel=compresslevel,
+            fileobj=raw,
+            mtime=0,
+        ) as archive,
+        io.TextIOWrapper(archive, encoding="utf-8") as stream,
+    ):
         stream.write(text)
 
 
@@ -143,8 +147,12 @@ def _plasmode_assignment_signal(score: np.ndarray, form: str) -> np.ndarray:
 
 
 def _unit_probabilities(
-    signal_source: np.ndarray, k: int, cell: Mapping[str, Any], rng: np.random.Generator,
-    *, plasmode: bool = False,
+    signal_source: np.ndarray,
+    k: int,
+    cell: Mapping[str, Any],
+    rng: np.random.Generator,
+    *,
+    plasmode: bool = False,
 ) -> np.ndarray | None:
     """Covariate-dependent assignment probabilities, or None if randomized.
 
@@ -211,9 +219,7 @@ def _conditional_means(x: np.ndarray, cell: Mapping[str, Any]) -> np.ndarray:
         group_effects = np.linspace(0.0, 0.8, k)
     means = np.empty((len(x), k))
     for code in range(k):
-        heterogeneity = (
-            0.35 * code * np.tanh(x[:, 0]) if effect == "heterogeneous" else 0.0
-        )
+        heterogeneity = 0.35 * code * np.tanh(x[:, 0]) if effect == "heterogeneous" else 0.0
         means[:, code] = baseline + group_effects[code] + heterogeneity
     return means
 
@@ -364,9 +370,7 @@ def _declaration(
         outcome="outcome",
         group="group",
         covariates=covariates,
-        mode=(
-            AnalysisMode.OBSERVATIONAL_CAUSAL if observational else AnalysisMode.RANDOMIZED
-        ),
+        mode=(AnalysisMode.OBSERVATIONAL_CAUSAL if observational else AnalysisMode.RANDOMIZED),
         scientific_question=(
             "Reference observational population-counterfactual means"
             if observational
@@ -424,8 +428,7 @@ def _contrast_summary(
                 "truth": target,
                 "covered": bool(abs(estimate - target) <= 1.959963984540054 * standard_error),
                 "rejected": bool(
-                    standard_error > 0
-                    and abs(estimate / standard_error) > 1.959963984540054
+                    standard_error > 0 and abs(estimate / standard_error) > 1.959963984540054
                 ),
                 "null": bool(abs(target) <= 1e-12),
             }
@@ -438,9 +441,7 @@ def _support_features(result: Any) -> dict[str, float]:
     influence = result.diagnostics["influence_concentration"].values()
     return {
         "minimum_ess_ratio": min(group["effective_sample_size_ratio"] for group in groups),
-        "minimum_arm_units_per_covariate": min(
-            group["units_per_covariate"] for group in groups
-        ),
+        "minimum_arm_units_per_covariate": min(group["units_per_covariate"] for group in groups),
         "maximum_normalized_weight": max(group["maximum_normalized_weight"] for group in groups),
         "maximum_top_one_percent_weight_share": max(
             group["top_one_percent_weight_share"] for group in groups
@@ -505,9 +506,7 @@ def fit_campaign_record(
         )
         core = inference.core
         truths = np.array([item["truth"] for item in record["contrasts"]])
-        intervals = np.asarray(
-            [value.simultaneous_confidence_interval for value in core.contrasts]
-        )
+        intervals = np.asarray([value.simultaneous_confidence_interval for value in core.contrasts])
         record["simultaneous"] = {
             "family": list(core.family),
             "covered_family": bool(
@@ -573,9 +572,7 @@ def run_campaign(
                 }
             )
     complete = bool(
-        count == partition.count
-        and len(cells) == len(_all_cells(protocol))
-        and include_stability
+        count == partition.count and len(cells) == len(_all_cells(protocol)) and include_stability
     )
     evidence = {
         "artifact_type": "scova-cf-reference-campaign",
@@ -618,10 +615,7 @@ def run_shard(
         if (
             candidate_profile is None
             or candidate_profile.state != "candidate"
-            or (
-                candidate_profile.protocol_checksum != protocol.checksum
-                and not sourced_candidate
-            )
+            or (candidate_profile.protocol_checksum != protocol.checksum and not sourced_candidate)
         ):
             raise ValueError("Held-out shards require the frozen candidate profile")
     elif candidate_profile is not None:

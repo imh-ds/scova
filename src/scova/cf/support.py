@@ -49,10 +49,7 @@ def assess_support(
             f"number of groups {n_groups} exceeds the calibrated maximum "
             f"{policy.maximum_group_count}"
         )
-    if (
-        policy.maximum_covariate_count is not None
-        and x.shape[1] > policy.maximum_covariate_count
-    ):
+    if policy.maximum_covariate_count is not None and x.shape[1] > policy.maximum_covariate_count:
         warnings.append(
             f"outside validated predictor scope: declared covariate count {x.shape[1]} exceeds "
             "the calibrated maximum "
@@ -81,9 +78,7 @@ def assess_support(
         top_one = _share_of_largest(weights, 0.01)
         top_five = _share_of_largest(weights, 0.05)
         if count < policy.min_group_count:
-            warnings.append(
-                f"group {label!r} count {count} is below {policy.min_group_count}"
-            )
+            warnings.append(f"group {label!r} count {count} is below {policy.min_group_count}")
         if units_per_covariate < policy.min_arm_units_per_covariate:
             warnings.append(
                 f"group {label!r} holds {units_per_covariate:.2f} units per covariate, "
@@ -91,8 +86,7 @@ def assess_support(
             )
         if ess_ratio < policy.min_ess_ratio:
             warnings.append(
-                f"group {label!r} ESS ratio {ess_ratio:.3f} is below "
-                f"{policy.min_ess_ratio:.3f}"
+                f"group {label!r} ESS ratio {ess_ratio:.3f} is below {policy.min_ess_ratio:.3f}"
             )
         if max_normalized > policy.max_normalized_weight:
             warnings.append(
@@ -133,8 +127,7 @@ def assess_support(
             "top_one_percent_weight_share": top_one,
             "top_five_percent_weight_share": top_five,
             "weighted_balance": {
-                name: float(value)
-                for name, value in zip(covariate_names, balance, strict=True)
+                name: float(value) for name, value in zip(covariate_names, balance, strict=True)
             },
             "maximum_absolute_weighted_balance_difference": maximum_balance,
         }

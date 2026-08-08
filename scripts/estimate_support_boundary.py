@@ -14,6 +14,7 @@ point, so they sharpen that point's pass rate rather than locating the
 boundary; pooling them as independent would inflate the effective sample by
 roughly the replication count and produce an interval that means nothing.
 """
+
 from __future__ import annotations
 
 import argparse

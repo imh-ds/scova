@@ -45,9 +45,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--require-tag")
     args = parser.parse_args()
-    values = freeze_manifest(
-        CFValidationProtocol.load(args.spec), required_tag=args.require_tag
-    )
+    values = freeze_manifest(CFValidationProtocol.load(args.spec), required_tag=args.require_tag)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(values, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 

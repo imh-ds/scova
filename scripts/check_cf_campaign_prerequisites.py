@@ -14,6 +14,7 @@ from scova.cf._numerical_identity import same_cf_numerical_implementation
 
 Stage = Literal["external", "inference", "validation"]
 
+
 def _read(path: Path) -> dict[str, Any]:
     if path.suffix == ".gz":
         with gzip.open(path, "rt", encoding="utf-8") as stream:
@@ -99,9 +100,8 @@ def prerequisite_reasons(
         "evidence_checksum"
     ):
         reasons.append("calibration audit is not bound to its campaign")
-    if (
-        profile is not None
-        and profile.calibration_evidence_checksum != calibration_campaign.get("evidence_checksum")
+    if profile is not None and profile.calibration_evidence_checksum != calibration_campaign.get(
+        "evidence_checksum"
     ):
         reasons.append("candidate is not bound to the calibration campaign")
     audited_candidate = calibration_audit.get("candidate_profile")
@@ -142,10 +142,8 @@ def prerequisite_reasons(
             inference_source = protocol.inference_source
             sourced_inference = bool(
                 inference_source
-                and inference.get("protocol_checksum")
-                == inference_source.get("protocol_checksum")
-                and inference.get("evidence_checksum")
-                == inference_source.get("evidence_checksum")
+                and inference.get("protocol_checksum") == inference_source.get("protocol_checksum")
+                and inference.get("evidence_checksum") == inference_source.get("evidence_checksum")
                 and inference.get("git_commit") == inference_source.get("git_commit")
             )
             if inference.get("protocol_checksum") != protocol.checksum and not sourced_inference:
@@ -179,9 +177,7 @@ def main() -> None:
         CFValidationProtocol.load(args.spec),
         calibration_campaign=_read(args.calibration_campaign),
         calibration_audit=_read(args.calibration_audit),
-        candidate=(
-            _read(args.candidate_profile) if args.candidate_profile.is_file() else None
-        ),
+        candidate=(_read(args.candidate_profile) if args.candidate_profile.is_file() else None),
         expected_commit=_current_commit(),
         external=None if args.external_evidence is None else _read(args.external_evidence),
         inference=None if args.inference_evidence is None else _read(args.inference_evidence),
