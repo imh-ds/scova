@@ -10,11 +10,12 @@ python -m scripts.render_cf_scope_decisions `
 ```
 
 Each record must identify the evidence and uncertainty, choose exactly one
-prospective path, state its effect on existing evidence, and contain separate
-owner and independent-reviewer approvals before it is `resolved`. A scope
+prospective path, state its effect on existing evidence, and contain the named
+owner's approval before it is `resolved`. Independent review is a later
+promotion safeguard; it does not block development or calibration work. A scope
 exclusion is allowed only when its predicate is pre-outcome, runtime-checkable,
 and independent of a simulation result.
 
-The registry currently includes unresolved historical blockers. Consequently,
-the prospective observational qualification workflow is expected to refuse
-dispatch until those records are resolved through recorded review.
+The registry records the decisions governing the current prospective
+observational qualification workflow. A future profile cannot be promoted or
+presented as `qualified` without independent review.

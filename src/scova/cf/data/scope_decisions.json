@@ -3,7 +3,7 @@
   "records": [
     {
       "decision_id": "v11-linear-smooth-nonlinear-failure",
-      "status": "open",
+      "status": "resolved",
       "issue_type": "linear-nuisance-misspecification",
       "affected_protocols": ["cf-observational-continuous-aipw-unnormalized-v11"],
       "affected_artifacts": ["calibration", "applicability-matrix"],
@@ -15,12 +15,12 @@
       "prior_evidence_consequences": "v11 remains historical evidence; no result is relabeled.",
       "change_consequences": {"new_protocol_freeze": false, "new_contract_version": false, "new_matrix_version": false},
       "exclusion_rule": null,
-      "approvals": {"owner": null, "independent_reviewer": null},
-      "record_checksum": "9ec4bd9fa1fcf9b3fda4f60d7f6285bf585a643fb26e5ac86c712f43625b2c79"
+      "approvals": {"owner": {"name": "Hohjin (Henry) Im", "approved_at": "2026-08-08T00:00:00Z", "review_reference": "owner-review:2026-08-08-conversation"}, "independent_reviewer": null},
+      "record_checksum": "d8dc6c01e93e1dfc3203ba48459f31fab90f9a7b3f7803b1e656da7a2f2abc2f"
     },
     {
       "decision_id": "v11-linear-threshold-failure",
-      "status": "open",
+      "status": "resolved",
       "issue_type": "linear-nuisance-misspecification",
       "affected_protocols": ["cf-observational-continuous-aipw-unnormalized-v11"],
       "affected_artifacts": ["calibration", "applicability-matrix"],
@@ -32,12 +32,12 @@
       "prior_evidence_consequences": "v11 remains historical evidence; no result is relabeled.",
       "change_consequences": {"new_protocol_freeze": false, "new_contract_version": false, "new_matrix_version": false},
       "exclusion_rule": null,
-      "approvals": {"owner": null, "independent_reviewer": null},
-      "record_checksum": "bcf2bd4b4223d5fad2a0b371be552681dbded3e61d4a4039922c369ca07f31fb"
+      "approvals": {"owner": {"name": "Hohjin (Henry) Im", "approved_at": "2026-08-08T00:00:00Z", "review_reference": "owner-review:2026-08-08-conversation"}, "independent_reviewer": null},
+      "record_checksum": "757621b46aa2dd131d325d0155af8a543d9245c51c330032be9547be06a5abde"
     },
     {
       "decision_id": "v11-adaptive-cell-2-limitation",
-      "status": "open",
+      "status": "resolved",
       "issue_type": "adaptive-observational-performance-limitation",
       "affected_protocols": ["cf-observational-continuous-aipw-unnormalized-v11", "cf-observational-adaptive-qualification-v1"],
       "affected_artifacts": ["calibration", "applicability-matrix", "qualification-design"],
@@ -49,12 +49,12 @@
       "prior_evidence_consequences": "The matrix keeps the v11 scenario as a known limitation.",
       "change_consequences": {"new_protocol_freeze": true, "new_contract_version": false, "new_matrix_version": false},
       "exclusion_rule": null,
-      "approvals": {"owner": null, "independent_reviewer": null},
-      "record_checksum": "608b2968073c32eb6f25c90830104d45df9fdf258a6981d592b793bf3cc24ed3"
+      "approvals": {"owner": {"name": "Hohjin (Henry) Im", "approved_at": "2026-08-08T00:00:00Z", "review_reference": "owner-review:2026-08-08-conversation"}, "independent_reviewer": null},
+      "record_checksum": "d18b5680a4f48b23e50045c8bb53f065581fc4fa481345bd8282b7d341c8c4fa"
     },
     {
       "decision_id": "v11-density-boundary-defect",
-      "status": "open",
+      "status": "resolved",
       "issue_type": "qualification-boundary-procedure-defect",
       "affected_protocols": ["cf-observational-continuous-aipw-unnormalized-v11", "cf-observational-adaptive-qualification-v1"],
       "affected_artifacts": ["boundary-estimate", "qualification-design"],
@@ -66,12 +66,12 @@
       "prior_evidence_consequences": "The v11 boundary result remains report-only and is not used for scope.",
       "change_consequences": {"new_protocol_freeze": true, "new_contract_version": false, "new_matrix_version": false},
       "exclusion_rule": null,
-      "approvals": {"owner": null, "independent_reviewer": null},
-      "record_checksum": "e80f29c89fc10ec33eccde438288c76d6e89011cb8c9a1939cad4ff609fbd0a9"
+      "approvals": {"owner": {"name": "Hohjin (Henry) Im", "approved_at": "2026-08-08T00:00:00Z", "review_reference": "owner-review:2026-08-08-conversation"}, "independent_reviewer": null},
+      "record_checksum": "eb7816156d436d3b5eb29c302e500bc54361d80647125683caedc9d64cf8ade8"
     },
     {
       "decision_id": "predictor-count-above-five-gap",
-      "status": "open",
+      "status": "resolved",
       "issue_type": "predictor-scope-gap",
       "affected_protocols": ["cf-observational-adaptive-qualification-v1"],
       "affected_artifacts": ["applicability-matrix", "qualification-design"],
@@ -83,12 +83,12 @@
       "prior_evidence_consequences": "No earlier density rule is treated as high-dimensional qualification evidence.",
       "change_consequences": {"new_protocol_freeze": true, "new_contract_version": false, "new_matrix_version": true},
       "exclusion_rule": null,
-      "approvals": {"owner": null, "independent_reviewer": null},
-      "record_checksum": "5ccf8f681df783cfab28ff95934f5379f14a44a08b81cdd6779a1f21da07daa1"
+      "approvals": {"owner": {"name": "Hohjin (Henry) Im", "approved_at": "2026-08-08T00:00:00Z", "review_reference": "owner-review:2026-08-08-conversation"}, "independent_reviewer": null},
+      "record_checksum": "6d59109e8779fc97ac7bc65e0af4e6322295d9b6da1452a77af1dba33a4a3ec7"
     },
     {
       "decision_id": "v11-limited-small-sample-status",
-      "status": "open",
+      "status": "resolved",
       "issue_type": "unexplained-runtime-status",
       "affected_protocols": ["cf-observational-continuous-aipw-unnormalized-v11", "cf-observational-adaptive-qualification-v1"],
       "affected_artifacts": ["calibration"],
@@ -100,12 +100,12 @@
       "prior_evidence_consequences": "The v11 calibration count is retained; the records are interpreted as expected feasibility refusals, not execution or learner failures.",
       "change_consequences": {"new_protocol_freeze": false, "new_contract_version": false, "new_matrix_version": false},
       "exclusion_rule": null,
-      "approvals": {"owner": null, "independent_reviewer": null},
-      "record_checksum": "d67143bb5e3aea65344ed3e72bfaa2ebdbccb3a9d2b440aa993daa8675cf58e8"
+      "approvals": {"owner": {"name": "Hohjin (Henry) Im", "approved_at": "2026-08-08T00:00:00Z", "review_reference": "owner-review:2026-08-08-conversation"}, "independent_reviewer": null},
+      "record_checksum": "1e9406a30a6de92d3ad2add6167f3a36f8e79e8239505a0a46cdcad2b6a5e955"
     },
     {
       "decision_id": "v11-downstream-evidence-prerequisites",
-      "status": "open",
+      "status": "resolved",
       "issue_type": "unrun-downstream-lanes",
       "affected_protocols": ["cf-observational-continuous-aipw-unnormalized-v11"],
       "affected_artifacts": ["external-agreement", "simultaneous-inference", "validation"],
@@ -117,12 +117,12 @@
       "prior_evidence_consequences": "No v11 observational promotion may be inferred from calibration alone.",
       "change_consequences": {"new_protocol_freeze": false, "new_contract_version": false, "new_matrix_version": false},
       "exclusion_rule": null,
-      "approvals": {"owner": null, "independent_reviewer": null},
-      "record_checksum": "e5960176b02f3f1033e691f6c7d00d2c2c3ef03dc4bd9f01a132f3644f572d5e"
+      "approvals": {"owner": {"name": "Hohjin (Henry) Im", "approved_at": "2026-08-08T00:00:00Z", "review_reference": "owner-review:2026-08-08-conversation"}, "independent_reviewer": null},
+      "record_checksum": "4bc7fc6a3c4b6f1fc6deebbc2f2502a9c500892805c939eafa65bd2d40bdcf71"
     },
     {
       "decision_id": "unpinned-local-ablation-discrepancy",
-      "status": "open",
+      "status": "resolved",
       "issue_type": "dependency-stack-discrepancy",
       "affected_protocols": ["cf-observational-continuous-aipw-unnormalized-v11", "cf-observational-adaptive-qualification-v1"],
       "affected_artifacts": ["methods-study", "qualification-evidence"],
@@ -134,8 +134,8 @@
       "prior_evidence_consequences": "The pinned historical figures remain the cited v11 evidence.",
       "change_consequences": {"new_protocol_freeze": true, "new_contract_version": false, "new_matrix_version": false},
       "exclusion_rule": null,
-      "approvals": {"owner": null, "independent_reviewer": null},
-      "record_checksum": "a908d3fe5295851be83f1363cf03ae0b5a401d4f95e57c691bd8b1a69be1a9f4"
+      "approvals": {"owner": {"name": "Hohjin (Henry) Im", "approved_at": "2026-08-08T00:00:00Z", "review_reference": "owner-review:2026-08-08-conversation"}, "independent_reviewer": null},
+      "record_checksum": "6a075ba3408c0540b34df3a496217e3815aafae2a4ebdc29d6262268e44943a4"
     }
   ]
 }

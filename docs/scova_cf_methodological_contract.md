@@ -3,7 +3,7 @@
 **Version:** 1.0.0  
 **Effective date:** 2026-08-03  
 **Human owner:** Hohjin (Henry) Im  
-**Independent human reviewer:** unassigned — required before this contract governs a freeze
+**Independent human reviewer:** unassigned — required before profile promotion, not development work
 
 ## Status and governance
 
@@ -13,8 +13,9 @@ interpretation, and the boundary between assumption-conditional analysis and a
 future evidence-qualified operating regime. It does **not** itself establish
 that the observational v11 protocol is valid, promotable, or complete.
 
-The owner and an independent human reviewer must record approval before this
-version governs a campaign freeze. A change to the estimand, an identification
+The owner records approval before a development campaign freeze. An independent
+human reviewer is required before a resulting profile is promoted or presented
+as `qualified`. A change to the estimand, an identification
 assumption, the qualification of a nuisance strategy, or an allowed
 interpretation requires a new contract version and a new protocol freeze before
 new evidence may support that changed claim.
@@ -186,8 +187,8 @@ retain a limitation), and state what prior evidence remains unable to claim.
 Every qualification freeze has a decision manifest binding its protocol and
 design checksums, this contract version, the applicability-matrix checksum, the
 dependency lock, and its required records. A dispatch fails unless each linked
-record is resolved and separately approved by the owner and independent human
-reviewer. A resolved record documents governance; it does not prove
+record is resolved and approved by the owner. Independent review remains
+required before profile promotion. A resolved record documents governance; it does not prove
 exchangeability, positivity, or causal validity in an applied dataset.
 
 Estimator, estimand/target, declaration semantics, nuisance eligibility,
@@ -245,7 +246,8 @@ The review record must answer all of the following:
    been planned before evidence is interpreted under the changed claim?
 3. Do `docs/scova_cf.md` and the SCOVA-CF overview in `README.md` still agree
    with this contract?
-4. Has the human owner and an independent human reviewer recorded approval?
+4. Has the human owner recorded approval? If promoting a profile, has an
+   independent human reviewer also recorded approval?
 
 Until all applicable answers are recorded, the change may be exploratory but
 must not be presented as evidence for a governing or promoted SCOVA-CF claim.

@@ -61,7 +61,7 @@ def _record(*, path: str = "retain-limitation", status: str = "resolved") -> dic
     return record
 
 
-def test_scope_record_requires_checksum_and_independent_approvals() -> None:
+def test_scope_record_requires_checksum_and_owner_approval() -> None:
     record = _record()
     assert validate_record(record).status == "resolved"
     tampered = deepcopy(record)
@@ -75,7 +75,13 @@ def test_scope_record_requires_checksum_and_independent_approvals() -> None:
     )
     with pytest.raises(ValueError, match="different people"):
         validate_record(same_reviewer)
-    incomplete = deepcopy(record)
+    owner_only = deepcopy(record)
+    owner_only["approvals"]["independent_reviewer"] = None  # type: ignore[index]
+    owner_only["record_checksum"] = canonical_checksum(
+        {key: value for key, value in owner_only.items() if key != "record_checksum"}
+    )
+    assert validate_record(owner_only).status == "resolved"
+    incomplete = deepcopy(owner_only)
     incomplete["approvals"]["owner"] = None  # type: ignore[index]
     incomplete["record_checksum"] = canonical_checksum(
         {key: value for key, value in incomplete.items() if key != "record_checksum"}
@@ -108,7 +114,7 @@ def test_registry_has_unique_known_blockers_and_renders_for_review() -> None:
         validate_registry(duplicate)
 
 
-def test_current_qualification_manifest_is_context_bound_but_blocked_by_open_limited_status() -> None:
+def test_current_qualification_manifest_is_context_bound_after_owner_resolutions() -> None:
     protocol = qualification_protocol()
     manifest = build_qualification_manifest(
         protocol, contract_version="1.0.0", matrix_id="cf-observational-provisional-v1",
@@ -118,24 +124,15 @@ def test_current_qualification_manifest_is_context_bound_but_blocked_by_open_lim
     assert {entry["decision_id"] for entry in manifest["required_decisions"]} == set(
         QUALIFICATION_REQUIRED_DECISION_IDS
     )
-    with pytest.raises(ValueError, match="unresolved decision"):
-        validate_manifest(
-            manifest, protocol, contract_version="1.0.0", matrix_id="cf-observational-provisional-v1",
-        )
+    validate_manifest(
+        manifest, protocol, contract_version="1.0.0", matrix_id="cf-observational-provisional-v1",
+    )
     changed = dict(manifest, contract_version="2.0.0")
     with pytest.raises(ValueError, match="checksum"):
         validate_manifest(
             changed, protocol, contract_version="1.0.0", matrix_id="cf-observational-provisional-v1",
         )
 
-    limited_only = build_qualification_manifest(
-        protocol, contract_version="1.0.0", matrix_id="cf-observational-provisional-v1",
-        required_decision_ids=("v11-limited-small-sample-status",),
-    )
-    with pytest.raises(ValueError, match="v11-limited-small-sample-status"):
-        validate_manifest(
-            limited_only, protocol, contract_version="1.0.0", matrix_id="cf-observational-provisional-v1",
-        )
 
 
 def test_methods_evidence_cannot_alone_resolve_a_qualification_manifest() -> None:

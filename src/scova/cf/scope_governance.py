@@ -94,10 +94,14 @@ def validate_record(record: Mapping[str, Any]) -> ScopeDecision:
     if set(approvals) != {"owner", "independent_reviewer"}:
         raise ValueError("Scope decision approvals must name owner and independent reviewer")
     if record["status"] == "resolved":
+        # Scope decisions govern development work and can be resolved by the
+        # named owner. Independent review is a later promotion safeguard.
         _validate_approval(approvals["owner"], "owner")
-        _validate_approval(approvals["independent_reviewer"], "independent reviewer")
-        if approvals["owner"]["name"] == approvals["independent_reviewer"]["name"]:
-            raise ValueError("Owner and independent reviewer must be different people")
+        reviewer = approvals["independent_reviewer"]
+        if reviewer is not None:
+            _validate_approval(reviewer, "independent reviewer")
+            if approvals["owner"]["name"] == reviewer["name"]:
+                raise ValueError("Owner and independent reviewer must be different people")
     elif approvals["owner"] is not None or approvals["independent_reviewer"] is not None:
         raise ValueError("Open scope decisions cannot carry partial approvals")
     payload = _record_payload(record)
