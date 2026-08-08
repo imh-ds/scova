@@ -135,15 +135,15 @@ def aggregate_shards(
     )
     if invalid_candidate_lock:
         raise ValueError("Campaign shards have a missing or mixed candidate-profile lock")
-    expected_sources = {
-        name: plasmode_source_checksum(name) for name in ("diabetes", "breast-cancer")
-    }
-    if expected_sources != dict(protocol.dataset_checksums or {}):
+    expected_sources = dict(protocol.dataset_checksums or {})
+    if expected_sources and expected_sources != {
+        name: plasmode_source_checksum(name) for name in expected_sources
+    }:
         raise ValueError("Installed plasmode datasets do not match the frozen protocol")
     for value in metadata:
         if value["protocol_checksum"] != protocol.checksum or value["lane"] != lane:
             raise ValueError("Campaign shard uses the wrong protocol or lane")
-        if value["plasmode_source_checksums"] != expected_sources:
+        if expected_sources and value["plasmode_source_checksums"] != expected_sources:
             raise ValueError("Campaign shard plasmode source checksum mismatch")
         if value.get("dependency_lock_checksum") != protocol.dependency_lock_checksum:
             raise ValueError("Campaign shard dependency-lock checksum mismatch")

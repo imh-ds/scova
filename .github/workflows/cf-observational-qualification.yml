@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   qualification:
+    if: inputs.lane != 'calibration'
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
@@ -54,5 +55,70 @@ jobs:
         if: always()
         with:
           name: cf-observational-qualification-${{ inputs.lane }}
+          path: evidence/
+          retention-days: 90
+
+  calibration-shard:
+    if: inputs.lane == 'calibration'
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - run: python -m benchmarks.cf_qualification_program --write-spec evidence/qualification-spec.json
+      - run: >-
+          python -m scripts.write_cf_scope_manifest --spec evidence/qualification-spec.json
+          --contract docs/scova_cf_methodological_contract.md --output evidence/decisions.json
+      - run: >-
+          python -m scripts.check_cf_scope_decisions --spec evidence/qualification-spec.json
+          --contract docs/scova_cf_methodological_contract.md --manifest evidence/decisions.json
+      - run: >-
+          python -m benchmarks.cf_reference_campaign --spec evidence/qualification-spec.json
+          --lane calibration --output evidence/calibration-${{ matrix.shard }}.ndjson.gz
+          --shard-index ${{ matrix.shard }} --shard-count 128
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: cf-observational-calibration-shard-${{ matrix.shard }}
+          path: evidence/calibration-${{ matrix.shard }}.ndjson.gz*
+          retention-days: 90
+
+  calibrate:
+    if: inputs.lane == 'calibration'
+    needs: calibration-shard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12.13
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: cf-observational-calibration-shard-*
+          path: evidence/shards
+          merge-multiple: true
+      - run: python -m benchmarks.cf_qualification_program --write-spec evidence/qualification-spec.json
+      - run: >-
+          python -m benchmarks.aggregate_cf_campaign evidence/shards/*.ndjson.gz
+          --spec evidence/qualification-spec.json --lane calibration
+          --output evidence/calibration-evidence.json.gz
+      - run: >-
+          python -m scripts.calibrate_cf_support --spec evidence/qualification-spec.json
+          --calibration-evidence evidence/calibration-evidence.json.gz
+          --output evidence/calibration-report.json --candidate-output evidence/candidate-profile.json
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: cf-observational-calibration-aggregate
           path: evidence/
           retention-days: 90
