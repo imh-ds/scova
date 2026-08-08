@@ -104,7 +104,7 @@ def test_scope_record_requires_checksum_and_owner_approval() -> None:
     [
         (lambda record: record.__setitem__("decision_id", ""), "stable id"),
         (lambda record: record.__setitem__("status", "invalid"), "invalid status"),
-        (lambda record: record.__setitem__("affected_protocols", []), "nonempty string list"),
+        (lambda record: record.__setitem__("affected_protocols", [0]), "nonempty string list"),
         (lambda record: record.__setitem__("rationale", ""), "nonempty string"),
         (lambda record: record.__setitem__("change_consequences", {}), "freeze consequences"),
         (
@@ -128,6 +128,12 @@ def test_scope_record_rejects_malformed_approval_and_open_partial_approval() -> 
     with pytest.raises(ValueError, match="owner approval must be a record"):
         validate_record(malformed)
 
+    incomplete_fields = _record()
+    incomplete_fields["approvals"]["owner"] = {"name": "Owner"}  # type: ignore[index]
+    _resign(incomplete_fields)
+    with pytest.raises(ValueError, match="requires name"):
+        validate_record(incomplete_fields)
+
     open_record = _record(status="open")
     _resign(open_record)
     with pytest.raises(ValueError, match="partial approvals"):
@@ -150,6 +156,18 @@ def test_scope_exclusions_must_be_observable_before_outcomes() -> None:
     _resign(nonruntime)
     with pytest.raises(ValueError, match="runtime-checkable"):
         validate_record(nonruntime)
+
+    missing_rule = _record(path="exclude-with-observable-rule")
+    missing_rule["exclusion_rule"] = None
+    _resign(missing_rule)
+    with pytest.raises(ValueError, match="requires an exclusion rule"):
+        validate_record(missing_rule)
+
+    malformed_rule = _record(path="exclude-with-observable-rule")
+    malformed_rule["exclusion_rule"] = {"description": ""}
+    _resign(malformed_rule)
+    with pytest.raises(ValueError, match="invalid schema"):
+        validate_record(malformed_rule)
 
 
 def test_registry_has_unique_known_blockers_and_renders_for_review() -> None:
@@ -252,6 +270,31 @@ def test_manifest_rejects_unresolved_stale_and_duplicate_decisions() -> None:
     with pytest.raises(ValueError, match="not bound"):
         validate_manifest(
             stale,
+            protocol,
+            contract_version="1.0.0",
+            matrix_id="cf-observational-provisional-v1",
+            registry=registry,
+        )
+
+    malformed = dict(manifest)
+    malformed.pop("matrix_id")
+    with pytest.raises(ValueError, match="Unsupported"):
+        validate_manifest(
+            malformed,
+            protocol,
+            contract_version="1.0.0",
+            matrix_id="cf-observational-provisional-v1",
+            registry=registry,
+        )
+
+    empty_decisions = dict(manifest)
+    empty_decisions["required_decisions"] = []
+    empty_decisions["manifest_checksum"] = canonical_checksum(
+        {key: value for key, value in empty_decisions.items() if key != "manifest_checksum"}
+    )
+    with pytest.raises(ValueError, match="requires at least one"):
+        validate_manifest(
+            empty_decisions,
             protocol,
             contract_version="1.0.0",
             matrix_id="cf-observational-provisional-v1",
