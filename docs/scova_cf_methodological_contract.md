@@ -155,11 +155,14 @@ evidence. It cannot be changed by interpreting a passing subset after the fact.
 
 ## Simulation-program separation
 
-`cf-observational-adaptive-qualification-v1` is a prospective, frozen,
-adaptive-only qualification program. It covers two or three groups and at most
-five covariates, uses 2,000 replications per cell, retains its difficult
-small-arm, poor-overlap, nonlinear, and heavy-tailed scenarios, and begins
-unpromoted. Its evidence may create a candidate profile only; promotion still
+`cf-observational-adaptive-qualification-v1` is historical execution evidence
+only: its enrichment screen was incompletely declared, so it cannot support a
+qualification claim. `cf-observational-adaptive-qualification-v2` is the
+prospective, frozen, adaptive-only qualification program. It covers two or
+three groups and at most five covariates, uses 2,000 replications per cell,
+retains its difficult small-arm, poor-overlap, nonlinear, and heavy-tailed
+scenarios, and begins unpromoted. Its enrichment thresholds are explicitly
+frozen. Its evidence may create a candidate profile only; promotion still
 requires independent held-out validation plus recorded owner and independent
 human-reviewer approval.
 

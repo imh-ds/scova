@@ -22,7 +22,9 @@ class StudyProgram(str, Enum):
     METHODS = "methods"
 
 
-QUALIFICATION_PROTOCOL_ID = "cf-observational-adaptive-qualification-v1"
+# v1 omitted two mandatory enrichment-screen thresholds.  It remains historical
+# execution evidence only; v2 is the first dispatchable qualification freeze.
+QUALIFICATION_PROTOCOL_ID = "cf-observational-adaptive-qualification-v2"
 METHODS_STUDY_ID = "cf-observational-factorial-methods-v1"
 ARTIFACT_SCHEMA_VERSION = 1
 

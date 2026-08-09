@@ -189,6 +189,16 @@ class CFValidationProtocol:
             missing = required_metrics.difference(self.calibration_screening)
             if missing:
                 raise ValueError(f"Calibration screening is missing metrics: {sorted(missing)}")
+        if self.calibration_enrichment_screening:
+            enrichment_metrics = {
+                "minimum_unstable_risk_ratio",
+                "minimum_unstable_absolute_enrichment",
+            }
+            missing = enrichment_metrics.difference(self.metrics)
+            if missing:
+                raise ValueError(
+                    f"Calibration enrichment screening is missing metrics: {sorted(missing)}"
+                )
         if self.boundary_estimation is not None:
             self._validate_boundary_estimation()
         if self.external_agreement is not None:

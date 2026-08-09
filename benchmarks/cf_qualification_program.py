@@ -34,6 +34,8 @@ _METRICS = {
     "strong_support_minimum_expected_arm_count": 30.0,
     "minimum_strong_replication_pass_fraction": 0.85,
     "minimum_strong_cell_pass_fraction": 0.85,
+    "minimum_unstable_risk_ratio": 2.0,
+    "minimum_unstable_absolute_enrichment": 0.05,
     "coverage_family_wise_error": 0.05,
 }
 

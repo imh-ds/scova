@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from benchmarks.cf_methods_study import methods_artifact
@@ -46,6 +48,16 @@ def test_qualification_protocol_has_no_density_boundary_and_is_deterministic() -
     assert first.reference_profile["maximum_covariate_count"] == 5
     assert "minimum_arm_units_per_covariate" not in first.reference_profile
     assert first.calibration.count == 2000
+    assert first.metrics["minimum_unstable_risk_ratio"] == 2.0
+    assert first.metrics["minimum_unstable_absolute_enrichment"] == 0.05
+
+
+def test_qualification_protocol_refuses_enrichment_without_its_frozen_thresholds() -> None:
+    protocol = qualification_protocol()
+    malformed_metrics = dict(protocol.metrics)
+    malformed_metrics.pop("minimum_unstable_risk_ratio")
+    with pytest.raises(ValueError, match="Calibration enrichment screening is missing metrics"):
+        replace(protocol, metrics=malformed_metrics)
 
 
 def test_methods_design_is_64_run_unaliased_primary_with_separate_supplements() -> None:
