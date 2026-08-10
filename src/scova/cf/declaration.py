@@ -322,15 +322,6 @@ class SupportPolicy:
                 f"The packaged reference profile validates {self.profile_assignment} "
                 f"assignment; this declaration uses {actual}"
             )
-        if (
-            mode is AnalysisMode.OBSERVATIONAL_CAUSAL
-            and isinstance(assignment, EstimatedAssignment)
-            and self.profile_nuisance_strategy != assignment.nuisance_strategy
-        ):
-            return (
-                f"The packaged reference profile validates {self.profile_nuisance_strategy} "
-                f"nuisance learning; this declaration uses {assignment.nuisance_strategy}"
-            )
         return None
 
     def to_dict(self) -> dict[str, Any]:
