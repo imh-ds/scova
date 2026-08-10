@@ -9,7 +9,11 @@ from typing import Any
 
 
 def _table(summaries: dict[str, Any], *, estimand: str) -> list[str]:
-    lines = ["| Method | Bias | RMSE | Coverage | Failure rate | Retention |", "| --- | ---: | ---: | ---: | ---: | ---: |"]
+    del estimand
+    lines = [
+        "| Method | Bias | RMSE | Coverage | Failure rate | Retention |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
     for name, summary in sorted(summaries.items()):
         lines.append(
             "| {name} | {bias} | {rmse} | {coverage} | {failure} | {retention} |".format(
@@ -48,7 +52,10 @@ def render(artifact: dict[str, Any]) -> str:
         "",
         "## Matched-treated ATT estimator",
         "",
-        "PSM estimates the ATT among retained matched treated units; it is not ranked against the ATE estimators.",
+        (
+            "PSM estimates the ATT among retained matched treated units; it is not ranked "
+            "against the ATE estimators."
+        ),
         "",
         *_table(artifact["att_summaries"], estimand="att"),
         "",

@@ -7,15 +7,15 @@ from typing import Any
 
 import numpy as np
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
-from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold
 
 from benchmarks.cf_comparative_simulation import ComparativeData
 from scova import ContrastSpec
 from scova.cf import (
+    SCOVACF,
     AnalysisMode,
     EstimatedAssignment,
-    SCOVACF,
     SCOVACFDeclaration,
     SCOVACFRefusal,
 )
@@ -158,9 +158,17 @@ def fit_matching_att(dgp: ComparativeData, seed: int) -> MethodEstimate:
         "psm-att",
         "att",
         float(np.mean(differences)),
-        float(np.std(differences, ddof=1) / np.sqrt(len(differences))) if len(differences) > 1 else None,
+        (
+            float(np.std(differences, ddof=1) / np.sqrt(len(differences)))
+            if len(differences) > 1
+            else None
+        ),
         "ok",
-        {"treated_retained_fraction": retained_fraction, "matched_pairs": len(pairs), "caliper": caliper},
+        {
+            "treated_retained_fraction": retained_fraction,
+            "matched_pairs": len(pairs),
+            "caliper": caliper,
+        },
     )
 
 
