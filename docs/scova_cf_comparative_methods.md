@@ -13,3 +13,7 @@ ATT and is displayed separately with its treated-retention fraction.
 This is performance evidence within these simulated DGPs only. It does not validate
 exchangeability, prove positivity, qualify SCOVA-CF, create a support profile, or
 certify causal validity in an applied dataset.
+
+The `SCOVA-CF two-group comparative methods smoke` GitHub Actions workflow is manual-only,
+defaults to five replications per cell, and accepts no more than 25. Its output is explicitly
+incomplete methods evidence; the frozen final design remains 1,000 replications per cell.

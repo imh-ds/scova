@@ -5,7 +5,6 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from benchmarks.cf_comparative_simulation import comparative_cells, simulate_comparative_cell
 from benchmarks.cf_comparative_estimators import (
     fit_independent_aipw,
     fit_linear_ancova,
@@ -14,6 +13,7 @@ from benchmarks.cf_comparative_estimators import (
     score_replication,
 )
 from benchmarks.cf_comparative_methods import comparative_artifact, run_comparative_study
+from benchmarks.cf_comparative_simulation import comparative_cells, simulate_comparative_cell
 
 
 def test_design_has_eight_two_group_cells() -> None:
@@ -89,3 +89,25 @@ def test_smoke_artifact_is_explicitly_incomplete() -> None:
     artifact = run_comparative_study(replications=1, max_cells=1)
 
     assert artifact["complete"] is False
+
+
+def test_numerical_support_warning_remains_in_ate_summary() -> None:
+    record = {
+        "cell_id": comparative_cells()[0]["cell_id"],
+        "method": "scova-cf",
+        "estimand": "ate",
+        "estimate": 1.1,
+        "standard_error": 0.2,
+        "truth": 1.0,
+        "status": "limited/unstable-support",
+        "details": {},
+    }
+    artifact = comparative_artifact(records=[record], replications=1)
+
+    assert artifact["ate_summaries"]["scova-cf"]["bias"] == pytest.approx(0.1)
+    assert artifact["ate_summaries"]["scova-cf"]["failure_rate"] == 0.0
+
+
+def test_run_rejects_more_than_frozen_final_replications() -> None:
+    with pytest.raises(ValueError, match="1 through 1000"):
+        run_comparative_study(replications=1001)

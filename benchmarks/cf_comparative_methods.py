@@ -18,7 +18,6 @@ from benchmarks.cf_comparative_simulation import comparative_cells, simulate_com
 from benchmarks.cf_reference_campaign import dependency_lock_checksum
 from scova.cf import canonical_checksum
 
-
 _PROTOCOL_PATH = Path(__file__).with_name("specs") / "cf_two_group_comparative_methods_v1.json"
 _METHODS = ("scova-cf", "linear-ancova", "independent-aipw", "psm-att", "econml-drlearner")
 _FORBIDDEN_FIELDS = frozenset({"profile", "calibration", "promotion", "qualification"})
@@ -44,7 +43,9 @@ def _interval(values: np.ndarray, *, seed: int = 1701) -> list[float] | None:
         value = float(values[0])
         return [value, value]
     rng = np.random.default_rng(seed)
-    draws = np.array([np.mean(rng.choice(values, size=len(values), replace=True)) for _ in range(400)])
+    draws = np.array(
+        [np.mean(rng.choice(values, size=len(values), replace=True)) for _ in range(400)]
+    )
     return [float(np.quantile(draws, 0.025)), float(np.quantile(draws, 0.975))]
 
 
@@ -63,7 +64,7 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     successful = [
         row
         for row in rows
-        if row["status"] == "ok" and row["estimate"] is not None and row["standard_error"] is not None
+        if row["estimate"] is not None and row["standard_error"] is not None
     ]
     completed = len(rows)
     failures = completed - len(successful)
@@ -118,7 +119,9 @@ def comparative_artifact(records: Iterable[dict[str, Any]], replications: int) -
     for record in values:
         forbidden = _FORBIDDEN_FIELDS.intersection(record)
         if forbidden:
-            raise ValueError(f"methods records cannot carry qualification fields: {sorted(forbidden)}")
+            raise ValueError(
+                f"methods records cannot carry qualification fields: {sorted(forbidden)}"
+            )
     by_estimand: dict[str, dict[str, list[dict[str, Any]]]] = {
         "ate": defaultdict(list),
         "att": defaultdict(list),

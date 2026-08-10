@@ -1,0 +1,54 @@
+name: SCOVA-CF two-group comparative methods smoke
+
+# This is bounded descriptive simulation evidence only. It cannot dispatch a
+# qualification, calibration, external-agreement, inference, or promotion lane.
+on:
+  workflow_dispatch:
+    inputs:
+      replications:
+        description: Smoke replications per cell (1 through 25)
+        required: false
+        default: "5"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  comparative-methods-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - name: Validate bounded smoke input
+        env:
+          REPLICATIONS: ${{ inputs.replications }}
+        run: |
+          case "$REPLICATIONS" in
+            ''|*[!0-9]*) echo "replications must be an integer"; exit 1 ;;
+          esac
+          if [ "$REPLICATIONS" -lt 1 ] || [ "$REPLICATIONS" -gt 25 ]; then
+            echo "replications must be between 1 and 25 for the smoke workflow"
+            exit 1
+          fi
+      - name: Run incomplete descriptive smoke
+        env:
+          REPLICATIONS: ${{ inputs.replications }}
+        run: >-
+          python -m benchmarks.cf_comparative_methods
+          --replications "$REPLICATIONS" --max-cells 8
+          --output evidence/cf-comparative-methods-smoke.json
+      - run: >-
+          python -m scripts.render_cf_comparative_methods_report
+          --artifact evidence/cf-comparative-methods-smoke.json
+          --output evidence/cf-comparative-methods-smoke.md
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cf-comparative-methods-smoke
+          path: evidence/
+          retention-days: 90

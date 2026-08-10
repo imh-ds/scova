@@ -15,6 +15,9 @@ software-certified. Its target and limits are defined in the
 [SCOVA-CF estimator contract](docs/scova_cf_methodological_contract.md).
 The randomized continuous-outcome reference slice, current limitations, and a
 full example are documented in [`docs/scova_cf.md`](docs/scova_cf.md).
+The manual-only [two-group comparative methods study](docs/scova_cf_comparative_methods.md)
+is descriptive simulation research: it compares estimators within frozen DGPs and cannot
+dispatch or supply an observational qualification lane.
 
 The `0.5.0` source tree also contains an experimental finite-grid smooth
 overlap path. It remains experimental pending the frozen directional calibration,
