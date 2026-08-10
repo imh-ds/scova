@@ -131,8 +131,9 @@ def comparative_artifact(records: Iterable[dict[str, Any]], replications: int) -
             raise ValueError("comparative records must identify ate or att")
         by_estimand[record["estimand"]][record["method"]].append(record)
     cells = comparative_cells()
-    expected_records = len(cells) * replications * len(_METHODS)
     protocol = _protocol()
+    final_replications = int(protocol["final_replications_per_cell"])
+    expected_records = len(cells) * final_replications * len(_METHODS)
     payload: dict[str, Any] = {
         "artifact_type": "scova-cf-comparative-methods",
         "program_type": "methods",
@@ -142,10 +143,15 @@ def comparative_artifact(records: Iterable[dict[str, Any]], replications: int) -
         "git_commit": _git_commit(),
         "planned_cells": len(cells),
         "completed_cells": len({record["cell_id"] for record in values}),
-        "planned_replications_per_cell": replications,
+        "planned_replications_per_cell": final_replications,
+        "requested_replications_per_cell": replications,
         "completed_records": len(values),
         "planned_records": expected_records,
-        "complete": len(values) == expected_records,
+        "complete": (
+            replications == final_replications
+            and len(values) == expected_records
+            and {record["cell_id"] for record in values} == {cell["cell_id"] for cell in cells}
+        ),
         "source_evidence_ids": [],
         "ate_summaries": {name: _summary(rows) for name, rows in by_estimand["ate"].items()},
         "att_summaries": {name: _summary(rows) for name, rows in by_estimand["att"].items()},

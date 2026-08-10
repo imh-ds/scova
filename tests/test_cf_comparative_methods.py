@@ -91,6 +91,37 @@ def test_smoke_artifact_is_explicitly_incomplete() -> None:
     assert artifact["complete"] is False
 
 
+def test_full_five_rep_smoke_is_incomplete_against_frozen_final_denominator() -> None:
+    records = []
+    for cell in comparative_cells():
+        for replication in range(5):
+            for method, estimand in (
+                ("scova-cf", "ate"),
+                ("linear-ancova", "ate"),
+                ("independent-aipw", "ate"),
+                ("econml-drlearner", "ate"),
+                ("psm-att", "att"),
+            ):
+                records.append(
+                    {
+                        "cell_id": cell["cell_id"],
+                        "seed": replication,
+                        "method": method,
+                        "estimand": estimand,
+                        "estimate": 1.0,
+                        "standard_error": 0.2,
+                        "truth": 1.0,
+                        "status": "ok",
+                        "details": {},
+                    }
+                )
+
+    artifact = comparative_artifact(records=records, replications=5)
+
+    assert artifact["completed_records"] == 200
+    assert artifact["complete"] is False
+
+
 def test_numerical_support_warning_remains_in_ate_summary() -> None:
     record = {
         "cell_id": comparative_cells()[0]["cell_id"],
