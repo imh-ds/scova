@@ -1,0 +1,15 @@
+{
+  "protocol_id": "cf-two-group-comparative-methods-v1",
+  "program_type": "methods",
+  "estimand": "study-population-ate",
+  "n_groups": 2,
+  "n_covariates": 5,
+  "units_per_replication": 1000,
+  "final_replications_per_cell": 1000,
+  "factors": {
+    "outcome_surface": ["linear", "interaction"],
+    "confounding_surface": ["linear", "nonlinear"],
+    "overlap": ["adequate", "poor"]
+  },
+  "interpretation": "Descriptive methods evidence within declared simulated DGPs only; never qualification or causal-certification evidence."
+}
