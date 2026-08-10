@@ -13,6 +13,7 @@ from benchmarks.cf_comparative_estimators import (
     fit_scova_cf,
     score_replication,
 )
+from benchmarks.cf_comparative_methods import comparative_artifact, run_comparative_study
 
 
 def test_design_has_eight_two_group_cells() -> None:
@@ -52,3 +53,39 @@ def test_matching_never_enters_ate_rows() -> None:
     rows = score_replication(dgp, seed=23)
 
     assert {row["method"] for row in rows if row["estimand"] == "att"} == {"psm-att"}
+
+
+def test_artifact_separates_ate_and_att_summaries() -> None:
+    records = [
+        {
+            "cell_id": comparative_cells()[0]["cell_id"],
+            "method": "linear-ancova",
+            "estimand": "ate",
+            "estimate": 1.1,
+            "standard_error": 0.2,
+            "truth": 1.0,
+            "status": "ok",
+            "details": {},
+        },
+        {
+            "cell_id": comparative_cells()[0]["cell_id"],
+            "method": "psm-att",
+            "estimand": "att",
+            "estimate": 1.2,
+            "standard_error": 0.3,
+            "truth": 1.0,
+            "status": "ok",
+            "details": {"treated_retained_fraction": 0.8},
+        },
+    ]
+    artifact = comparative_artifact(records=records, replications=25)
+
+    assert artifact["program_type"] == "methods"
+    assert "psm-att" not in artifact["ate_summaries"]
+    assert set(artifact["att_summaries"]) == {"psm-att"}
+
+
+def test_smoke_artifact_is_explicitly_incomplete() -> None:
+    artifact = run_comparative_study(replications=1, max_cells=1)
+
+    assert artifact["complete"] is False
