@@ -21,6 +21,12 @@ def main() -> None:
     profile = json.loads(
         (args.evidence_root / "cf-reference-support-profile.json").read_text(encoding="utf-8")
     )
+    compatibility = profile.get("compatibility", {})
+    if compatibility.get("mode") == "observational-causal":
+        raise SystemExit(
+            "SCOVA-CF profile packaging blocked: observational qualification is retired; "
+            "observational results remain assumption-dependent."
+        )
     manifest = {"schema_version": 1, "profiles": [profile]}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(

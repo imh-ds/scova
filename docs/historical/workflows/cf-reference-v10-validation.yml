@@ -1,11 +1,7 @@
-name: SCOVA-CF v11 observational validation
+# Historical workflow, retired from active GitHub Actions discovery.
+name: HISTORICAL — SCOVA-CF v10 observational validation
 
-# v11 supersedes v10 outright. The propensity is fitted one arm at a time above
-# two arms, and src/scova/estimator.py is a core numerical path, so every v10
-# fingerprint moved and none of its evidence carries over -- including the
-# calibration lane v10 was able to reuse across its own refreezes.
-#
-# Like v10 this campaign generates every evidence lane itself. v3-v9
+# v10 is the first campaign that generates every evidence lane itself. v3-v9
 # were randomized and each inherited frozen external-agreement and
 # simultaneous-inference evidence from an earlier run; that evidence says
 # nothing about estimated assignment, so none of it carries over. The tier
@@ -41,7 +37,7 @@ on:
           - aggregate
       # promotion_patch, release_audit and release are deliberately absent.
       # Offering a tier with no job behind it looks like a successful dispatch
-      # while doing nothing. They also need decisions v11 has not reached:
+      # while doing nothing. They also need decisions v10 has not reached:
       # promote_cf_reference.py still describes the promoted profile as "the
       # randomized continuous unnormalized-AIPW profile", and a signed release
       # needs GPG secrets this repository does not yet hold.
@@ -49,16 +45,16 @@ on:
         description: Run containing this campaign's aggregated calibration lane
         required: false
       calibration_run_id:
-        description: Run containing the checksum-bound v11 candidate profile
+        description: Run containing the checksum-bound v10 candidate profile
         required: false
       validation_run_id:
         description: Run containing the held-out validation campaign
         required: false
       inference_run_id:
-        description: Run containing v11 simultaneous-inference evidence
+        description: Run containing v10 simultaneous-inference evidence
         required: false
       external_run_id:
-        description: Run containing v11 external-agreement evidence
+        description: Run containing v10 external-agreement evidence
         required: false
       recovery_run_id:
         description: Optional prior run containing shard checkpoints to resume
@@ -68,14 +64,14 @@ on:
         required: true
         # Keep this at the current freeze. A stale default means a dispatch
         # from the web UI silently runs a superseded one.
-        default: scova-cf-reference-v11-freeze-r3
+        default: scova-cf-reference-v10-freeze-r10
 
 permissions:
   actions: read
   contents: read
 
 env:
-  SPEC: benchmarks/specs/cf_reference_v11.json
+  SPEC: benchmarks/specs/cf_reference_v10.json
   # An input, not a constant: a refreeze would otherwise need a commit to
   # change it, and that commit moves the very tag it is trying to point at.
   FREEZE_TAG: ${{ inputs.freeze_tag }}
@@ -131,8 +127,8 @@ jobs:
           retention-days: 90
 
   prerequisite_lock:
-    # v11 declares no reusable sources, so this gate requires every input to
-    # carry the v11 protocol checksum and the frozen commit. That is stricter
+    # v10 declares no reusable sources, so this gate requires every input to
+    # carry the v10 protocol checksum and the frozen commit. That is stricter
     # than v9, where sourced evidence was allowed to differ.
     if: >-
       inputs.tier == 'external_agreement' || inputs.tier == 'simultaneous_inference' ||
@@ -272,8 +268,7 @@ jobs:
           retention-days: 90
 
   campaign_shard:
-    # Run here rather than inherited. v10's lane cannot be reused at all: the
-    # estimator change moved the campaign fingerprint from c08952ca.
+    # Unlike v9, the calibration lane is run here rather than inherited.
     if: >-
       always() && (inputs.tier == 'calibration' || inputs.tier == 'validation') &&
       needs.prepare.result == 'success' && needs.campaign_freeze.result == 'success' &&
@@ -315,26 +310,6 @@ jobs:
           --output "artifacts/${LANE}-${{ matrix.shard }}.ndjson.gz"
           --shard-index ${{ matrix.shard }} --shard-count 128 --resume
           ${{ inputs.tier == 'validation' && '--candidate-profile candidate/cf-reference-candidate-profile.json' || '' }}
-      - name: Verify checkpoint replay is byte-stable
-        # The pilot lane has carried this since v3; the lanes that actually
-        # take hours did not. A shard replayed against its own completed
-        # checkpoint must reproduce itself exactly, or `--resume` cannot be
-        # trusted to recover a lost runner -- and at 128 shards of tens of
-        # minutes each, losing one is routine rather than hypothetical.
-        # Cheap: --resume skips every completed record, so this re-reads the
-        # checkpoint rather than recomputing the shard.
-        shell: bash
-        env:
-          LANE: ${{ inputs.tier }}
-        run: |
-          artifact="artifacts/${LANE}-${{ matrix.shard }}.ndjson.gz"
-          before=$(sha256sum "$artifact" | cut -d' ' -f1)
-          python -m benchmarks.cf_reference_campaign --spec "$SPEC" --lane "$LANE" \
-            --output "$artifact" \
-            --shard-index ${{ matrix.shard }} --shard-count 128 --resume \
-            ${{ inputs.tier == 'validation' && '--candidate-profile candidate/cf-reference-candidate-profile.json' || '' }}
-          after=$(sha256sum "$artifact" | cut -d' ' -f1)
-          test "$before" = "$after"
       - uses: actions/upload-artifact@v6
         if: always()
         with:
@@ -374,7 +349,7 @@ jobs:
 
   calibrate_support:
     # Takes this campaign's own calibration lane. v9 copied a sourced bundle
-    # here and asserted it matched protocol.calibration_source; v11 has no
+    # here and asserted it matched protocol.calibration_source; v10 has no
     # such source, so the artifact is consumed directly and the prerequisite
     # gate checks its protocol checksum and commit downstream.
     if: inputs.tier == 'calibrate_support'
@@ -401,7 +376,7 @@ jobs:
           with gzip.open("evidence/cf-reference-calibration-campaign.json.gz", "rt") as stream:
               evidence = json.load(stream)
           protocol = CFValidationProtocol.load(os.environ["SPEC"])
-          assert protocol.calibration_source is None, "v11 must not inherit calibration evidence"
+          assert protocol.calibration_source is None, "v10 must not inherit calibration evidence"
           assert evidence["lane"] == "calibration", evidence["lane"]
           assert evidence["protocol_checksum"] == protocol.checksum
           PY
@@ -419,12 +394,9 @@ jobs:
           retention-days: 90
 
   external_agreement:
-    # The comparators estimate their own propensities AND cross-fit on their
-    # own folds. Handed SCOVA's folds they reproduced its nuisances exactly
-    # once both sides fitted the propensity one arm at a time, so every cell
-    # went degenerate and the lane could only agree with itself. The gate now
-    # scores a standardized offset per stratum; see benchmarks/
-    # cf_external_agreement.py and the spec's external_agreement block.
+    # DoubleML and EconML now estimate propensities themselves rather than
+    # being handed the known design, which makes agreement a materially
+    # stronger claim here than in the randomized campaigns.
     # The smoke tier deliberately skips the prerequisite gate, so it cannot be
     # expressed as a plain `needs` dependency: a skipped prerequisite_lock
     # would skip this job too. Gate on the results explicitly instead.

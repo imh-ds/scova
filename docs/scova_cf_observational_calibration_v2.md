@@ -1,6 +1,6 @@
 # Prospective observational calibration v2 — completed result
 
-**Status:** completed; no candidate profile selected  
+**Status:** completed historical calibration; no candidate profile selected
 **Run:** [GitHub Actions 31302416116](https://github.com/imh-ds/scova/actions/runs/31302416116)  
 **Commit:** `934f97b789bee1df6cc645e6f4fe546007387fcf`  
 **Protocol:** `cf-observational-adaptive-qualification-v2`  
@@ -38,11 +38,10 @@ relaxing the rule after the result is known.
 
 ## Consequence
 
-This is a successful measurement with a negative qualification outcome, not a
-software failure and not a profile rejection. The v2 program has not produced
-a support policy to send to external agreement, simultaneous inference, or
-held-out validation. Those lanes must not be dispatched until a future,
-prospectively frozen calibration produces a candidate.
+This was a successful measurement with a negative historical qualification
+outcome, not a software failure. The v2 program did not produce a support
+policy. Observational qualification is now retired, so this result must not be
+used to create, promote, or imply a new observational support profile.
 
 The complete compressed evidence and per-shard records are retained as the
 `cf-observational-calibration-aggregate` Actions artifact on the linked run.

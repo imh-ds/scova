@@ -14,7 +14,6 @@ from .._aipw import assemble_aipw, validate_probability_matrix
 from .._version import __version__
 from ..declaration import JsonLabel
 from ..estimator import SCOVA
-from .applicability import assess_observational_applicability
 from .benchmarks import lin_interacted_benchmark, unadjusted_benchmark
 from .declaration import (
     AnalysisMode,
@@ -104,20 +103,14 @@ class SCOVACF:
                 ),
             )
         if declaration.mode is AnalysisMode.OBSERVATIONAL_CAUSAL:
-            assignment = declaration.assignment
-            if (
-                not isinstance(assignment, EstimatedAssignment)
-                or assignment.nuisance_strategy != "adaptive"
-                or declaration.outcome_nuisance_strategy != "adaptive"
-            ):
-                return replace(
-                    status,
-                    qualification_status=QualificationStatus.INELIGIBLE,
-                    qualification_reason=(
-                        "Only the default adaptive nuisance strategy is eligible for "
-                        "observational qualification"
-                    ),
-                )
+            return replace(
+                status,
+                qualification_status=QualificationStatus.UNQUALIFIED,
+                qualification_reason=(
+                    "Observational qualification is retired; this result is "
+                    "assumption-dependent and is not software-certified"
+                ),
+            )
         if not declaration.support_policy.calibrated:
             return replace(
                 status,
@@ -498,23 +491,6 @@ class SCOVACF:
             assignment_source=("known-design" if known_propensity is not None else "estimated"),
         )
         status = support.status
-        if (
-            declaration.mode is AnalysisMode.OBSERVATIONAL_CAUSAL
-            and not declaration.sensitivity_analysis
-        ):
-            status = SCOVACFStatus(
-                support=SupportStatus.UNSTABLE,
-                code="limited/required-sensitivity-analysis",
-                reason=(
-                    f"{status.reason}; observational-causal promotion requires a prespecified "
-                    "quantitative sensitivity analysis"
-                ),
-                qualification_status=QualificationStatus.UNQUALIFIED,
-                qualification_reason=(
-                    "A required observational sensitivity analysis was not "
-                    "declared"
-                ),
-            )
         status = self._qualify_status(declaration, status)
         try:
             means, influence, covariance = assemble_aipw(
@@ -531,15 +507,6 @@ class SCOVACF:
             "influence_concentration": influence_concentration(influence, labels),
             "design_stratified_folds": design_stratified,
         }
-        applicability = (
-            None
-            if declaration.mode is not AnalysisMode.OBSERVATIONAL_CAUSAL
-            else assess_observational_applicability(
-                n_groups=len(labels),
-                n_covariates=len(declaration.covariates),
-                nuisance_strategy=declaration.outcome_nuisance_strategy,
-            ).to_dict()
-        )
         benchmarks = {
             "unadjusted": unadjusted_benchmark(outcome, group_codes, labels),
             "lin_interacted": lin_interacted_benchmark(outcome, x, group_codes, labels),
@@ -571,7 +538,7 @@ class SCOVACF:
             "support_status": status.to_dict(),
             "qualification_status": status.qualification_status.value,
             "qualification_reason": status.qualification_reason,
-            "applicability_matrix": applicability,
+            "applicability_matrix": None,
             "independent_unit": "row",
             "estimator": declaration.estimator,
             "missingness": declaration.missing_outcome_policy,

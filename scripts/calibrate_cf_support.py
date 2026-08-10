@@ -629,6 +629,11 @@ def _candidate_usefulness(
 
 
 def calibrate(protocol: CFValidationProtocol, evidence: dict[str, Any]) -> dict[str, Any]:
+    if protocol.reference_profile.get("mode") == "observational-causal":
+        raise ValueError(
+            "Observational qualification is retired; calibration cannot create a new "
+            "observational support profile"
+        )
     # Legacy reference evidence predates explicit program provenance.  New
     # artifacts must declare qualification; methods studies are never a source
     # of support thresholds or a candidate profile.

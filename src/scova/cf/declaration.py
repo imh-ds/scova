@@ -140,7 +140,6 @@ def assignment_lock(assignment: AssignmentSpecification) -> str:
 SUPPORTED_PROFILE_REGIMES: frozenset[tuple[str, str]] = frozenset(
     {
         ("randomized", "known-constant"),
-        ("observational-causal", "estimated"),
     }
 )
 
@@ -236,6 +235,11 @@ class SupportPolicy:
         if any(compatibility.get(name) != value for name, value in invariant.items()):
             raise ValueError("Packaged support profile has an incompatible analysis lock")
         regime = (compatibility.get("mode"), compatibility.get("assignment"))
+        if regime[0] == AnalysisMode.OBSERVATIONAL_CAUSAL.value:
+            raise ValueError(
+                "Observational packaged support profiles are retired; observational "
+                "results remain assumption-dependent and cannot be software-certified"
+            )
         if regime not in SUPPORTED_PROFILE_REGIMES:
             raise ValueError(
                 "Packaged support profile has an incompatible analysis lock: "
@@ -243,26 +247,9 @@ class SupportPolicy:
                 "regime this release can govern"
             )
         nuisance_strategy = compatibility.get("nuisance_strategy")
-        if regime[0] == AnalysisMode.OBSERVATIONAL_CAUSAL.value:
-            if nuisance_strategy != "adaptive":
-                raise ValueError(
-                    "Observational packaged profiles require "
-                    "compatibility nuisance_strategy='adaptive'"
-                )
-            maximum_covariate_count = compatibility.get("maximum_covariate_count")
-            if (
-                isinstance(maximum_covariate_count, bool)
-                or not isinstance(maximum_covariate_count, int)
-                or not 1 <= maximum_covariate_count <= 5
-            ):
-                raise ValueError(
-                    "Observational packaged profiles require an integer "
-                    "maximum_covariate_count from 1 through 5"
-                )
-        elif nuisance_strategy is not None:
+        if nuisance_strategy is not None:
             raise ValueError("Randomized packaged profiles must not lock a nuisance strategy")
-        else:
-            maximum_covariate_count = None
+        maximum_covariate_count = None
         thresholds = profile.thresholds
         return cls(
             min_group_count=int(compatibility.get("minimum_group_count", 20)),
@@ -319,6 +306,11 @@ class SupportPolicy:
         """
         if not self.calibrated:
             return None
+        if mode is AnalysisMode.OBSERVATIONAL_CAUSAL:
+            return (
+                "Observational packaged support profiles are retired; observational "
+                "results remain assumption-dependent and cannot be software-certified"
+            )
         if self.profile_mode != mode.value:
             return (
                 f"The packaged {self.profile_mode} reference profile cannot govern "

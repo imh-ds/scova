@@ -7,12 +7,12 @@ among naturally occurring groups. The stable `0.2.0` core implements a
 fixed-study-population (`h(x) = 1`), cross-fitted, multi-group AIPW estimator
 for continuous outcomes with simultaneous finite-family inference.
 
-SCOVA-CF is a distinct, opt-in feature under `scova.cf`. It builds on the base
-SCOVA engine to estimate governed population counterfactual means for a common
-declared population; it does not replace base SCOVA or identify person-specific
-missing outcomes. Its target, analysis-mode assumptions, and the distinction
-between assumption-conditional output and future evidence-qualified claims are
-defined in the [SCOVA-CF methodological contract](docs/scova_cf_methodological_contract.md).
+SCOVA-CF is a distinct, opt-in feature under `scova.cf`. It uses flexible,
+cross-fitted AIPW standardization to estimate group means for a common declared
+population; it does not replace base SCOVA or identify person-specific missing
+outcomes. Observational causal results are assumption-dependent and are never
+software-certified. Its target and limits are defined in the
+[SCOVA-CF estimator contract](docs/scova_cf_methodological_contract.md).
 The randomized continuous-outcome reference slice, current limitations, and a
 full example are documented in [`docs/scova_cf.md`](docs/scova_cf.md).
 

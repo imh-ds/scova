@@ -70,7 +70,10 @@ def _git_commit() -> str:
 
 
 def dependency_lock_checksum() -> str:
-    return sha256(DEPENDENCY_LOCK.read_bytes()).hexdigest()
+    # Frozen protocol checksums are computed from repository LF bytes.  Git may
+    # materialize this text file with CRLF on Windows, which must not make the
+    # same declared dependency stack appear to be a different one.
+    return sha256(DEPENDENCY_LOCK.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def write_deterministic_gzip(path: Path, text: str, *, compresslevel: int = 6) -> None:

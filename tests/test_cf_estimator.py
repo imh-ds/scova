@@ -135,12 +135,11 @@ def test_associational_and_observational_claim_gates() -> None:
     assert associational.status.qualification_status is QualificationStatus.INELIGIBLE
     observational = oracle_result(AnalysisMode.OBSERVATIONAL_CAUSAL)
     assert observational.claim_class is ClaimClass.ASSUMPTION_DEPENDENT_CAUSAL
-    assert observational.status.code == "limited/required-sensitivity-analysis"
+    assert observational.status.code == "limited/unstable-support"
     assert observational.status.confirmatory is False
-    assert observational.status.qualification_status is QualificationStatus.INELIGIBLE
-    applicability = observational.evidence_card["applicability_matrix"]
-    assert applicability["matrix_id"] == "cf-observational-provisional-v1"
-    assert applicability["classification"] == "known-limitation"
+    assert observational.status.qualification_status is QualificationStatus.UNQUALIFIED
+    assert "qualification is retired" in observational.status.qualification_reason
+    assert observational.evidence_card["applicability_matrix"] is None
 
 
 def test_qualification_classification_covers_policy_support_and_nuisance_paths() -> None:
@@ -166,6 +165,14 @@ def test_qualification_classification_covers_policy_support_and_nuisance_paths()
         SCOVACF._qualify_status(observational, status).qualification_status
         is QualificationStatus.UNQUALIFIED
     )
+    linear_observational = replace(
+        observational,
+        assignment=EstimatedAssignment(nuisance_strategy="linear"),
+        outcome_nuisance_strategy="linear",
+    )
+    retired = SCOVACF._qualify_status(linear_observational, status)
+    assert retired.qualification_status is QualificationStatus.UNQUALIFIED
+    assert "qualification is retired" in retired.qualification_reason
 
     packaged = replace(
         declaration(),
@@ -181,6 +188,41 @@ def test_qualification_classification_covers_policy_support_and_nuisance_paths()
     unqualified = SCOVACF._qualify_status(packaged, unsupported)
     assert unqualified.qualification_status is QualificationStatus.UNQUALIFIED
     assert unqualified.qualification_reason == "support failed"
+
+
+def test_observational_dimension_diagnostics_do_not_apply_a_qualification_envelope() -> None:
+    simulation = generate_data("observational", n=360, seed=28)
+    data = simulation.data.copy()
+    data["x4"] = data["x1"] ** 2
+    data["x5"] = data["x2"] ** 2
+    data["x6"] = data["x3"] ** 2
+    observational = replace(
+        declaration(mode=AnalysisMode.OBSERVATIONAL_CAUSAL, sensitivity_analysis="declared"),
+        covariates=("x1", "x2", "x3", "x4", "x5", "x6"),
+        covariate_rationales=(
+            ("x1", "baseline"),
+            ("x2", "baseline"),
+            ("x3", "baseline"),
+            ("x4", "baseline"),
+            ("x5", "baseline"),
+            ("x6", "baseline"),
+        ),
+        assignment=EstimatedAssignment(nuisance_strategy="adaptive"),
+        outcome_nuisance_strategy="adaptive",
+    )
+    result = SCOVACF().analyze(
+        data,
+        observational,
+        nuisance_predictions=SCOVACFNuisancePredictions(
+            simulation.outcome_regression, simulation.group_labels, simulation.propensity
+        ),
+    )
+    assert isinstance(result, SCOVACFResult)
+    assert result.status.qualification_status is QualificationStatus.UNQUALIFIED
+    assert result.evidence_card["applicability_matrix"] is None
+    assert result.diagnostics["support"]["number_of_groups"] == 3
+    warnings = result.diagnostics["support"]["warnings"]
+    assert all("validated predictor scope" not in warning for warning in warnings)
 
 
 def test_labelled_inference_and_cf_artifact_round_trip(tmp_path: Path) -> None:

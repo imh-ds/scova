@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass
 from hashlib import sha256
 from itertools import pairwise
 from pathlib import Path
@@ -584,7 +584,7 @@ class CFValidationProtocol:
 
 @dataclass(frozen=True, slots=True)
 class CFSupportProfile:
-    """Immutable candidate or promoted support profile with evidence identities."""
+    """Immutable support-profile artifact; new observational profiles are retired."""
 
     profile_id: str
     protocol_checksum: str
@@ -594,8 +594,9 @@ class CFSupportProfile:
     compatibility: Mapping[str, Any] | None = None
     state: Literal["candidate", "promoted"] = "candidate"
     schema_version: int = 1
+    allow_historical_observational_profile: InitVar[bool] = False
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, allow_historical_observational_profile: bool) -> None:
         if not self.profile_id or not self.protocol_checksum:
             raise ValueError("Support profiles require identifiers and a protocol checksum")
         if not self.calibration_evidence_checksum:
@@ -608,6 +609,15 @@ class CFSupportProfile:
             not isinstance(value, (int, float)) for value in self.thresholds.values()
         ):
             raise ValueError("Support-profile thresholds must be nonempty numeric values")
+        if (
+            not allow_historical_observational_profile
+            and self.compatibility is not None
+            and self.compatibility.get("mode") == "observational-causal"
+        ):
+            raise ValueError(
+                "Observational qualification is retired; new observational support profiles "
+                "cannot be created"
+            )
 
     def payload(self) -> dict[str, Any]:
         return {
@@ -645,6 +655,7 @@ class CFSupportProfile:
                 None if not values.get("compatibility") else dict(values["compatibility"])
             ),
             state=str(values["state"]),  # type: ignore[arg-type]
+            allow_historical_observational_profile=True,
         )
         if values.get("profile_checksum") != profile.checksum:
             raise ValueError("Support-profile checksum does not match its payload")

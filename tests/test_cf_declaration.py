@@ -129,7 +129,7 @@ def test_packaged_support_policy_requires_exact_promoted_compatibility(
         SupportPolicy.packaged("packaged-test")
 
 
-def test_packaged_arm_density_enforces_the_declared_scope_not_only_the_threshold(
+def test_historical_observational_profile_cannot_be_loaded_as_packaged_policy(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A profile must screen at the density it claims to have been validated at.
@@ -169,46 +169,15 @@ def test_packaged_arm_density_enforces_the_declared_scope_not_only_the_threshold
         thresholds=thresholds,
         compatibility=compatibility,
         state="promoted",
+        allow_historical_observational_profile=True,
     )
     monkeypatch.setattr(
         SupportPolicy,
         "_trusted_profile",
         staticmethod(lambda _profile_id: profile.to_dict()),
     )
-    assert SupportPolicy.packaged("density-test").min_arm_units_per_covariate == 10.0
-
-    # The calibrated floor still binds when it is the stricter of the two.
-    stricter = replace(
-        profile,
-        thresholds={**thresholds, "minimum_arm_units_per_covariate": 24.0},
-    )
-    monkeypatch.setattr(
-        SupportPolicy,
-        "_trusted_profile",
-        staticmethod(lambda _profile_id: stricter.to_dict()),
-    )
-    assert SupportPolicy.packaged("density-test").min_arm_units_per_covariate == 24.0
-
-    # v3-v9 declare neither key, so the bound stays inactive for them.
-    legacy = replace(
-        profile,
-        compatibility={
-            name: value
-            for name, value in compatibility.items()
-            if name != "minimum_arm_units_per_covariate"
-        },
-        thresholds={
-            name: value
-            for name, value in thresholds.items()
-            if name != "minimum_arm_units_per_covariate"
-        },
-    )
-    monkeypatch.setattr(
-        SupportPolicy,
-        "_trusted_profile",
-        staticmethod(lambda _profile_id: legacy.to_dict()),
-    )
-    assert SupportPolicy.packaged("density-test").min_arm_units_per_covariate == 0.0
+    with pytest.raises(ValueError, match="Observational packaged support profiles are retired"):
+        SupportPolicy.packaged("density-test")
 
 
 def test_associational_claim_is_derived_not_user_selected() -> None:
@@ -389,6 +358,7 @@ def _profile(mode: str, assignment: str, profile_id: str = "regime-test") -> CFS
             **({"maximum_covariate_count": 5} if mode == "observational-causal" else {}),
         },
         state="promoted",
+        allow_historical_observational_profile=mode == "observational-causal",
     )
 
 
@@ -398,17 +368,12 @@ def _install(monkeypatch: pytest.MonkeyPatch, profile: CFSupportProfile) -> None
     )
 
 
-def test_packaged_policy_accepts_an_observational_regime(
+def test_packaged_policy_rejects_an_observational_regime(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _install(monkeypatch, _profile("observational-causal", "estimated"))
-    policy = SupportPolicy.packaged("regime-test")
-    assert policy.calibrated is True
-    assert (policy.profile_mode, policy.profile_assignment) == (
-        "observational-causal",
-        "estimated",
-    )
-    assert policy.profile_nuisance_strategy == "adaptive"
+    with pytest.raises(ValueError, match="Observational packaged support profiles are retired"):
+        SupportPolicy.packaged("regime-test")
 
 
 def test_observational_packaged_profile_requires_an_adaptive_nuisance_lock(
@@ -426,9 +391,10 @@ def test_observational_packaged_profile_requires_an_adaptive_nuisance_lock(
         thresholds=profile.thresholds,
         compatibility=values["compatibility"],
         state="promoted",
+        allow_historical_observational_profile=True,
     )
     _install(monkeypatch, missing)
-    with pytest.raises(ValueError, match="nuisance_strategy='adaptive'"):
+    with pytest.raises(ValueError, match="Observational packaged support profiles are retired"):
         SupportPolicy.packaged("regime-test")
 
 
@@ -437,14 +403,8 @@ def test_observational_packaged_profile_requires_a_conservative_predictor_cap(
     monkeypatch: pytest.MonkeyPatch, maximum_covariate_count: int | None
 ) -> None:
     profile = _profile("observational-causal", "estimated")
-    compatibility = dict(profile.compatibility or {})
-    if maximum_covariate_count is None:
-        compatibility.pop("maximum_covariate_count")
-    else:
-        compatibility["maximum_covariate_count"] = maximum_covariate_count
-    capped = replace(profile, compatibility=compatibility)
-    _install(monkeypatch, capped)
-    with pytest.raises(ValueError, match="maximum_covariate_count"):
+    _install(monkeypatch, profile)
+    with pytest.raises(ValueError, match="Observational packaged support profiles are retired"):
         SupportPolicy.packaged("regime-test")
 
 
@@ -459,7 +419,12 @@ def test_packaged_policy_refuses_a_regime_the_release_cannot_govern(
         ("observational-causal", "known-constant"),
     ):
         _install(monkeypatch, _profile(mode, assignment))
-        with pytest.raises(ValueError, match="incompatible analysis lock"):
+        expected = (
+            "Observational packaged support profiles are retired"
+            if mode == "observational-causal"
+            else "incompatible analysis lock"
+        )
+        with pytest.raises(ValueError, match=expected):
             SupportPolicy.packaged("regime-test")
 
 
@@ -473,7 +438,7 @@ def test_a_calibrated_profile_only_governs_its_own_regime(
     estimated = EstimatedAssignment()
 
     assert randomized_policy.governs(AnalysisMode.RANDOMIZED, known) is None
-    assert "cannot govern" in (
+    assert "Observational packaged support profiles are retired" in (
         randomized_policy.governs(AnalysisMode.OBSERVATIONAL_CAUSAL, estimated) or ""
     )
     # Stratified randomization is a different validated object from constant.
@@ -486,9 +451,8 @@ def test_a_calibrated_profile_only_governs_its_own_regime(
     )
 
     _install(monkeypatch, _profile("observational-causal", "estimated"))
-    observational_policy = SupportPolicy.packaged("regime-test")
-    assert observational_policy.governs(AnalysisMode.OBSERVATIONAL_CAUSAL, estimated) is None
-    assert "cannot govern" in (observational_policy.governs(AnalysisMode.RANDOMIZED, known) or "")
+    with pytest.raises(ValueError, match="Observational packaged support profiles are retired"):
+        SupportPolicy.packaged("regime-test")
 
 
 def test_uncalibrated_policy_governs_every_mode() -> None:

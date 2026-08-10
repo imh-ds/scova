@@ -85,7 +85,7 @@ def test_methods_artifact_is_complete_only_when_every_frozen_replication_exists(
 
 
 def test_calibration_rejects_a_methods_artifact_before_any_profile_logic() -> None:
-    with pytest.raises(ValueError, match="Methods-study evidence"):
+    with pytest.raises(ValueError, match="Observational qualification is retired"):
         calibrate(qualification_protocol(), {"program_type": "methods", "evidence_checksum": "x"})
 
 

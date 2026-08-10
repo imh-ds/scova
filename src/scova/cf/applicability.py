@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum
@@ -106,6 +107,12 @@ def _matrix_from_dict(values: Mapping[str, Any]) -> ApplicabilityMatrix:
 
 
 def observational_applicability_matrix() -> ApplicabilityMatrix:
+    """Load the retired observational qualification matrix for historical artifacts."""
+    warnings.warn(
+        "The observational applicability matrix is retired and does not govern new analyses",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     resource = files("scova.cf").joinpath("data").joinpath("applicability_matrices.json")
     payload = json.loads(resource.read_text(encoding="utf-8"))
     if set(payload) != {"schema_version", "matrices"} or payload["schema_version"] != 1:
@@ -119,7 +126,7 @@ def observational_applicability_matrix() -> ApplicabilityMatrix:
 def assess_observational_applicability(
     *, n_groups: int, n_covariates: int, nuisance_strategy: str
 ) -> ApplicabilityAssessment:
-    """Describe the provisional matrix boundary without qualifying an analysis."""
+    """Describe a retired matrix boundary for historical artifact readers only."""
     matrix = observational_applicability_matrix()
     if nuisance_strategy != matrix.nuisance_strategy:
         return ApplicabilityAssessment(

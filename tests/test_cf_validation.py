@@ -19,6 +19,7 @@ from benchmarks.cf_external_validation import (
 )
 from benchmarks.cf_reference_campaign import (
     _declaration,
+    dependency_lock_checksum,
     plasmode_source_checksum,
     run_campaign,
     run_shard,
@@ -52,6 +53,7 @@ from scripts.calibrate_cf_support import (
     _screening_cell_gate,
     _selection_z,
     _unstable_enrichment,
+    calibrate,
 )
 from scripts.check_cf_campaign_prerequisites import prerequisite_reasons
 from scripts.validate_cf_support import (
@@ -778,6 +780,27 @@ def test_support_profile_checksum_and_promotion_evidence_are_enforced() -> None:
         )
 
 
+def test_observational_calibration_cannot_create_a_new_support_profile() -> None:
+    protocol = replace(
+        CFValidationProtocol.load(SPEC),
+        reference_profile={"mode": "observational-causal", "assignment": "estimated"},
+    )
+    with pytest.raises(ValueError, match="Observational qualification is retired"):
+        calibrate(protocol, {})
+
+
+def test_new_observational_support_profile_creation_is_retired() -> None:
+    with pytest.raises(ValueError, match="Observational qualification is retired"):
+        CFSupportProfile(
+            profile_id="new-observational-candidate",
+            protocol_checksum="a" * 64,
+            calibration_evidence_checksum="b" * 64,
+            validation_evidence_checksum=None,
+            thresholds={"minimum_ess_ratio": 0.25},
+            compatibility={"mode": "observational-causal", "assignment": "estimated"},
+        )
+
+
 def test_fixed_nuisance_reference_matches_shared_engine_to_machine_precision() -> None:
     simulation = generate_data("observational", n=180, seed=41)
     labels = simulation.group_labels
@@ -853,6 +876,18 @@ def test_compressed_campaign_payload_is_byte_reproducible(tmp_path: Path) -> Non
     write_deterministic_gzip(first, '{"record":1}\n')
     write_deterministic_gzip(second, '{"record":1}\n')
     assert first.read_bytes() == second.read_bytes()
+
+
+def test_dependency_lock_checksum_is_stable_across_worktree_line_endings(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from benchmarks import cf_reference_campaign
+
+    lock = tmp_path / "requirements-cf-validation.txt"
+    lock.write_bytes(b"numpy==2.2.6\r\npandas==2.2.3\r\n")
+    monkeypatch.setattr(cf_reference_campaign, "DEPENDENCY_LOCK", lock)
+    expected = "eb26f69e6189ba6ca1e4e9753844c41493b80574d89555e01731ccdbedcbe7dc"
+    assert dependency_lock_checksum() == expected
 
 
 def test_heldout_shard_requires_and_records_candidate_lock(tmp_path: Path) -> None:

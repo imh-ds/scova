@@ -1,256 +1,46 @@
-# SCOVA-CF methodological contract
+# SCOVA-CF estimator contract
 
-**Version:** 1.0.0  
-**Effective date:** 2026-08-03  
-**Human owner:** Hohjin (Henry) Im  
-**Independent human reviewer:** unassigned — required before profile promotion, not development work
+**Version:** 2.0
+**Effective date:** 2026-08-10
+**Owner:** package maintainer
 
-## Status and governance
+SCOVA-CF is a flexible, cross-fitted estimator for standardized group means. This contract describes what its software computes; it does not certify an observational causal conclusion.
 
-This is the normative methodological contract for SCOVA-CF. It describes what
-the current implementation computes, the assumptions required for each
-interpretation, and the boundary between assumption-conditional analysis and a
-future evidence-qualified operating regime. It does **not** itself establish
-that the observational v11 protocol is valid, promotable, or complete.
+## Target and output
 
-The owner records approval before a development campaign freeze. An independent
-human reviewer is required before a resulting profile is promoted or presented
-as `qualified`. A change to the estimand, an identification
-assumption, the qualification of a nuisance strategy, or an allowed
-interpretation requires a new contract version and a new protocol freeze before
-new evidence may support that changed claim.
+For each declared group `g`, SCOVA-CF estimates \(\psi_g = E_{P_X}[E(Y \mid G=g, X)]\), where `P_X` is the declared eligible study population. Every reported contrast is a declared linear combination of these standardized group means. The estimator uses group-specific outcome models, propensity models where assignment is estimated, cross-fitting, and the unnormalized multi-group AIPW correction.
 
-## Estimand and reported contrasts
+It does not produce person-specific counterfactuals or individual treatment effects. It does not match and discard rows, silently trim or clip weights, or change the target population.
 
-For each declared group \(g\), SCOVA-CF estimates the standardized conditional
-mean
+## Analysis modes
 
-\[
-\psi_g = E_{P_X}\!\left[E(Y \mid G=g, X)\right],
-\]
+| Mode | What the result means |
+| --- | --- |
+| `randomized` | A causal interpretation relies on the declared assignment mechanism, consistency, positivity, and correct implementation of the design. The existing promoted randomized profile may yield `qualified` output when explicitly selected and all of its support gates pass. |
+| `observational-causal` | An assumption-dependent causal standardized comparison. Its interpretation additionally requires conditional exchangeability given the declared, pre-assignment covariates. New observational results are always `unqualified`; software does not certify this assumption. |
+| `standardized-associational` | The standardized conditional-mean parameter without a causal claim. It is `ineligible` for causal qualification. |
 
-where \(P_X\) is the covariate distribution of the declared eligible study
-population. The implemented reference target is therefore the common declared
-eligible population; it is not an implicitly trimmed, overlap-weighted, or
-externally transported population.
+## Assumptions and diagnostics
 
-Every reported contrast is a predeclared linear combination
-\(\sum_g c_g\psi_g\) of these group-specific standardized means. SCOVA-CF does
-not estimate a person's unobserved outcome, an individual treatment effect,
-within-person covariance, or an effect for a population outside the declared
-eligible study population.
+The user, not the package, supplies the scientific and identification claims: independent analysis units, temporal ordering, pre-assignment covariates, consistency, the eligible population, and—when using observational-causal mode—conditional exchangeability and overlap.
 
-## Interpretation by analysis mode
+Finite-sample operation also needs adequate overlap, regularity and variance, successful cross-fitting, and sufficiently accurate nuisance estimation. AIPW's useful robustness properties depend on both outcome and propensity nuisance errors being adequately controlled, including a sufficiently small product of those errors. Predictive loss, balance, propensity calibration, weights, effective sample size, stability, and simulations can reveal warning signs; they cannot prove exchangeability, positivity, nuisance adequacy in an applied dataset, or causal validity.
 
-### Randomized
+Covariate count, units per covariate, arm sizes, weights, balance, and influence concentration remain visible diagnostics. They are warnings, not a universal observational scope boundary.
 
-`randomized` analyses may use causal language when the declared assignment
-mechanism is correct, consistency holds, every group has positive assignment
-probability in the target population, and the design has been implemented and
-declared correctly. Known constant and known stratified assignment mechanisms
-are part of that declaration. A causal interpretation does not by itself make
-an analysis confirmatory; confirmatory support additionally requires an
-eligible promoted support policy.
+## Qualification status
 
-### Observational-causal
+| Status | Meaning |
+| --- | --- |
+| `qualified` | Only a matching explicitly selected promoted randomized profile passed its gates. This is operating-regime coverage, not proof of causal assumptions in a dataset. |
+| `unqualified` | A numerical causal-capable result whose support or profile is not qualified. Every new observational-causal result has this status and states that observational qualification is retired. |
+| `ineligible` | A successful standardized-associational result, which does not make a causal claim. |
+| `unavailable` | A refusal; no numerical estimate was produced. |
 
-`observational-causal` analyses are assumption-dependent. In addition to
-consistency and positivity, their causal interpretation requires conditional
-exchangeability given the declared, pre-assignment covariates: within covariate
-levels, group assignment must carry no residual information about the relevant
-potential outcomes. The software cannot test this condition or rule out
-unmeasured confounding.
+`confirmatory` remains a backward-compatible alias for `qualified`.
 
-### Standardized-associational
+## Historical qualification record
 
-`standardized-associational` analyses estimate the standardized conditional
-mean parameter above, but make no causal-effect claim. The mode does not become
-causal because diagnostics, predictive performance, or a simulation campaign
-look favorable.
+Observational qualification and promotion are retired product objectives. The historical v1/v2 protocols, decision records, workflows, and calibration result remain available for provenance only. The completed v2 calibration selected no candidate profile; see [the historical calibration result](scova_cf_observational_calibration_v2.md) and [archived workflows](historical/workflows/). They must not be used to relabel a new observational result as software-certified.
 
-## Assumptions, estimability, and qualification
-
-Identification assumptions describe the scientific and design conditions under
-which a mode's estimand has its stated causal interpretation. They include
-correctly declared groups, eligibility population, outcome timing, and
-pre-assignment covariates; consistency; the mode-specific assignment condition;
-and positivity in the target population.
-
-Estimability conditions concern whether the fitted analysis can reliably
-estimate that target. They include independent analysis units (unless a future
-clustered extension is explicitly used), finite outcome variance and applicable
-regularity conditions, adequate overlap, valid fold construction, successful
-cross-fitting, and nuisance estimates sufficiently accurate for the AIPW
-remainder to be negligible at the intended precision. In the usual AIPW
-formulation, this requires the product of outcome-regression and propensity
-estimation errors to be sufficiently small. These are not consequences of
-declaring a causal mode.
-
-Support, balance, effective-sample-size, calibration, and predictive-loss
-diagnostics assess observable warning signs. They neither verify
-exchangeability nor prove positivity, structural-model correctness, or the
-AIPW nuisance-error condition in an applied dataset. Simulations establish
-performance only for their frozen data-generating regimes; they cannot broaden
-this contract after the fact.
-
-## Nuisance-model policy
-
-The default `adaptive` strategy is the only observational nuisance strategy
-eligible for a future **validated operating regime** label. That label remains
-unavailable until an approved, frozen protocol supplies the required evidence.
-
-`linear` and `custom` strategies remain supported interfaces. Their results are
-assumption-conditional and are not eligible for that future observational
-validated-regime label under this contract. Selecting a linear model does not
-establish that the true nuisance functions are linear; providing a custom model
-does not establish its adequacy. Predictive loss, balance, propensity
-calibration, and support diagnostics cannot upgrade either strategy into a
-validated structural model.
-
-## Output classes
-
-Every SCOVA-CF artifact reports a `qualification_status` and
-`qualification_reason` in addition to its analysis mode, claim class, and
-support status. `confirmatory` is retained only as a compatibility alias for
-`qualification_status == "qualified"`.
-
-| Status | Meaning | Prohibited interpretation |
-| --- | --- | --- |
-| `qualified` | A causal-capable analysis passed all matching promoted-profile, support, and applicability gates. | Proof that exchangeability or positivity holds in the applied data. |
-| `unqualified` | A causal-capable numerical analysis is available, but a required promoted profile or gate is absent, provisional, or failed. | A validated-operating-regime claim. |
-| `ineligible` | A numerical analysis is available but cannot qualify under this contract, including associational analyses and observational `linear`/`custom` strategies. | A causal qualification claim. |
-| `unavailable` | A typed refusal prevented a numerical result. | That an estimate or interval was produced. |
-
-Unqualified and ineligible outputs retain their declared estimand, estimates,
-diagnostics, and available intervals. The taxonomy changes interpretation, not
-the numerical target or the data used to estimate it.
-
-## Provisional observational applicability matrix
-
-`cf-observational-provisional-v1` is a machine-readable governance matrix, not
-a promoted support profile. It has no observational `in-scope` entries, so it
-cannot make an observational result `qualified`. Its candidate qualification
-envelope is limited to estimated assignment, adaptive nuisance learning, two or
-three groups, and at most five declared covariates.
-
-| Condition | Current classification | Evidence | Runtime-checkable |
-| --- | --- | --- | --- |
-| Randomized known-constant, promoted v9 profile | In scope for its separate randomized regime | v9 promoted profile | Yes |
-| Observational adaptive, 2–3 groups, ≤5 covariates | Untested candidate envelope | v11 calibration `30781945289` has no candidate profile | Yes |
-| Observational >5 covariates | Untested | v11 has no profile-eligible simulated 20/50-covariate scenario | Yes |
-| Adaptive cell-2 configuration | Known limitation | calibration `30781945289`; ablation `30843098640` | No — its nuisance truth is not observable before analysis |
-| Linear/custom observational nuisances | Contract-ineligible | this contract, § Nuisance-model policy | Yes |
-| Overlap, outcome surface, confounding, and noise | No observational qualification boundary | v11 calibration and misspecification study `30848263665` do not identify a user-observable boundary | Partly/No |
-| Plasmode sources (10 and 30 covariates) | Partially represented, not a dimensional qualification | v11 calibration design | No |
-
-The 10-units-per-covariate quantity is a calibration feature and support
-diagnostic. It is not a universal dimension rule or evidence that a
-high-dimensional observational analysis is qualified. A future observational
-profile must declare an explicit maximum covariate count and may not exceed five
-until direct evidence is approved.
-
-Moving an `untested` or `known-limitation` entry to `in-scope` requires a new
-matrix/contract version, an approved protocol freeze, and direct qualification
-evidence. It cannot be changed by interpreting a passing subset after the fact.
-
-## Simulation-program separation
-
-`cf-observational-adaptive-qualification-v1` is historical execution evidence
-only: its enrichment screen was incompletely declared, so it cannot support a
-qualification claim. `cf-observational-adaptive-qualification-v2` is the
-prospective, frozen, adaptive-only qualification program. It covers two or
-three groups and at most five covariates, uses 2,000 replications per cell,
-retains its difficult small-arm, poor-overlap, nonlinear, and heavy-tailed
-scenarios, and begins unpromoted. Its enrichment thresholds are explicitly
-frozen. Its evidence may create a candidate profile only; promotion still
-requires independent held-out validation plus recorded owner and independent
-human-reviewer approval.
-
-`cf-observational-factorial-methods-v1` is a separate 64-cell resolution-VII
-fractional factorial methods program with 1,000 replications per cell. Its
-primary interaction-surface block and supplemental smooth-nonlinear and
-threshold blocks report continuous performance summaries and Monte-Carlo
-uncertainty. Methods evidence explains behaviour only within its simulated
-DGPs. It cannot alter a qualification denominator, create a support profile,
-or establish a mechanism in applied data.
-
-Every artifact declares its program type, design checksum, dependency-lock
-checksum, frozen commit, planned/completed replications, and source evidence
-identifiers. Qualification consumers reject methods artifacts, and methods
-reports must not present qualification conclusions.
-
-## Prospective scope-change decisions
-
-Material failures and contradictions are governed through the checksum-bound
-[scope-decision log](scova_cf_scope_decisions.md). A record must retain the
-evidence and competing explanations, state uncertainty, select one prospective
-path (improve the method, exclude through a pre-outcome observable rule, or
-retain a limitation), and state what prior evidence remains unable to claim.
-
-Every qualification freeze has a decision manifest binding its protocol and
-design checksums, this contract version, the applicability-matrix checksum, the
-dependency lock, and its required records. A dispatch fails unless each linked
-record is resolved and approved by the owner. Independent review remains
-required before profile promotion. A resolved record documents governance; it does not prove
-exchangeability, positivity, or causal validity in an applied dataset.
-
-Estimator, estimand/target, declaration semantics, nuisance eligibility,
-factor grid, gates/metrics/multiplicity, scope predicate, dependency stack, or
-artifact interpretation require a new protocol checksum and freeze. A change
-to the estimand, identification assumptions, nuisance-strategy qualification,
-or allowed interpretation additionally requires a new contract version. An
-observational applicability classification or envelope change additionally
-requires a new matrix version.
-
-## Verification-lane roles and limits
-
-| Lane | Permitted claim | Prohibited claim |
-| --- | --- | --- |
-| Calibration | Selects a predeclared candidate policy in development simulations. | Validation or causal identification. |
-| Boundary diagnostic | Describes post-candidate density information. | Changing scope, thresholds, or promotion. |
-| External agreement | Detects systematic implementation divergence under independent folds. | Exchangeability, positivity, or causal validity. |
-| Simultaneous inference | Evaluates family-wise inferential behavior in frozen simulations. | Causal assumptions or applied-data nuisance adequacy. |
-| Held-out validation | Evaluates the frozen qualification claim on untouched simulations. | Causal validity beyond the simulated designs. |
-| Aggregate | Checks whether required frozen evidence is present and passing. | Turning diagnostic completion into identification evidence. |
-
-The external smoke lane is an execution canary only: one replication cannot
-estimate a systematic offset. A full external lane requires every frozen cell
-to be informative under independent comparator folds; degeneracy, incomplete
-cells, or missing artifacts fail closed. Comparator agreement cannot test
-exchangeability, positivity in an applied population, or nuisance-model
-adequacy beyond the frozen simulated designs.
-
-The prospective boundary diagnostic requires a candidate profile and separately
-records design adequacy and realized-fit adequacy. It is informative only when
-its 95% log10 density interval is no wider than a factor of two. It remains
-report-only even when informative.
-
-## Explicit non-claims
-
-SCOVA-CF does not:
-
-- test for unmeasured confounding or empirically prove exchangeability;
-- empirically prove positivity throughout an applied target population;
-- estimate individual counterfactual outcomes or individual effects;
-- silently trim observations, clip propensities, retarget the population, or
-  select a more favorable estimator; or
-- extend a validated-operating-regime claim beyond conditions directly covered
-  by an approved qualification protocol.
-
-## Documentation review checklist
-
-Review this contract before approving a pull request that changes the SCOVA-CF
-estimator, declaration semantics, support-policy scope, or validation protocol.
-The review record must answer all of the following:
-
-1. Does the change alter the estimand, target population, identification
-   assumptions, nuisance-strategy qualification, or allowed interpretation?
-2. If yes, has the contract version been updated and has a new protocol freeze
-   been planned before evidence is interpreted under the changed claim?
-3. Do `docs/scova_cf.md` and the SCOVA-CF overview in `README.md` still agree
-   with this contract?
-4. Has the human owner recorded approval? If promoting a profile, has an
-   independent human reviewer also recorded approval?
-
-Until all applicable answers are recorded, the change may be exploratory but
-must not be presented as evidence for a governing or promoted SCOVA-CF claim.
+A future comparative methods program may report performance against ANCOVA, matching, standard AIPW, and TMLE/DR learners; it cannot itself create a universal observational safety certificate.

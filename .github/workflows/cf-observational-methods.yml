@@ -1,7 +1,7 @@
 name: SCOVA-CF observational factorial methods study
 
-# Methods artifacts are intentionally isolated from qualification calibration
-# and promotion.  This workflow can be dispatched without a campaign freeze.
+# This descriptive methods workflow reports performance within its simulated
+# designs. It cannot certify observational causal validity or create a profile.
 on:
   workflow_dispatch:
     inputs:

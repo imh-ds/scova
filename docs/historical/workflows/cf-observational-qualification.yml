@@ -1,4 +1,6 @@
-name: SCOVA-CF prospective observational qualification
+# Historical workflow, retired from active GitHub Actions discovery.
+# It is retained solely as provenance for the v2 calibration no-candidate result.
+name: HISTORICAL — SCOVA-CF prospective observational qualification
 
 # This is intentionally undispatched. A run fails closed unless the frozen
 # decision manifest links every material blocker to recorded independent review.
