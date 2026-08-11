@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -142,3 +144,10 @@ def test_numerical_support_warning_remains_in_ate_summary() -> None:
 def test_run_rejects_more_than_frozen_final_replications() -> None:
     with pytest.raises(ValueError, match="1 through 1000"):
         run_comparative_study(replications=1001)
+
+
+def test_methods_workflow_allows_the_descriptive_pilot_limit() -> None:
+    workflow = Path(".github/workflows/cf-comparative-methods.yml").read_text(encoding="utf-8")
+
+    assert "1 through 50" in workflow
+    assert '"$REPLICATIONS" -gt 50' in workflow

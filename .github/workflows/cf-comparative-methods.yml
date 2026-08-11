@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       replications:
-        description: Smoke replications per cell (1 through 25)
+        description: Descriptive pilot replications per cell (1 through 50)
         required: false
         default: "5"
         type: string
@@ -32,8 +32,8 @@ jobs:
           case "$REPLICATIONS" in
             ''|*[!0-9]*) echo "replications must be an integer"; exit 1 ;;
           esac
-          if [ "$REPLICATIONS" -lt 1 ] || [ "$REPLICATIONS" -gt 25 ]; then
-            echo "replications must be between 1 and 25 for the smoke workflow"
+          if [ "$REPLICATIONS" -lt 1 ] || [ "$REPLICATIONS" -gt 50 ]; then
+            echo "replications must be between 1 and 50 for the descriptive pilot workflow"
             exit 1
           fi
       - name: Run incomplete descriptive smoke
