@@ -39,6 +39,9 @@ sharding and checksum-bound aggregation as the pilot.
 The next evidence set is the separately frozen [v3 stress-study design](superpowers/specs/2026-08-12-v3-comparative-stress-study-design.md).
 It changes the functional-form stressors, not SCOVA-CF's estimator or applied-data claims,
 and will not be pooled with v1 or v2.
+The manual `SCOVA-CF two-group comparative methods v3 pilot` workflow runs one to 50
+replications per v3 cell, aggregates only matching v3 shards, and is explicitly incomplete
+evidence until a future separately dispatched final denominator is complete.
 
 ## Completed v2 50-replication pilot
 

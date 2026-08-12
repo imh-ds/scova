@@ -1,0 +1,94 @@
+name: SCOVA-CF two-group comparative methods v3 pilot
+
+# Bounded descriptive simulation evidence only. This workflow cannot dispatch a
+# qualification, calibration, external-agreement, inference, or promotion lane.
+on:
+  workflow_dispatch:
+    inputs:
+      replications:
+        description: Descriptive v3 pilot replications per cell (1 through 50)
+        required: false
+        default: "5"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  comparative-methods-v3-shard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        cell_id:
+          - cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate
+          - cmp-v3-smooth-nonlinear-smooth-nonlinear-poor
+          - cmp-v3-smooth-nonlinear-threshold-adequate
+          - cmp-v3-smooth-nonlinear-threshold-poor
+          - cmp-v3-threshold-smooth-nonlinear-adequate
+          - cmp-v3-threshold-smooth-nonlinear-poor
+          - cmp-v3-threshold-threshold-adequate
+          - cmp-v3-threshold-threshold-poor
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - name: Validate bounded v3 pilot input
+        env:
+          REPLICATIONS: ${{ inputs.replications }}
+        run: |
+          case "$REPLICATIONS" in
+            ''|*[!0-9]*) echo "replications must be an integer"; exit 1 ;;
+          esac
+          if [ "$REPLICATIONS" -lt 1 ] || [ "$REPLICATIONS" -gt 50 ]; then
+            echo "replications must be between 1 and 50 for the descriptive v3 pilot"
+            exit 1
+          fi
+      - name: Run incomplete v3 descriptive shard
+        env:
+          REPLICATIONS: ${{ inputs.replications }}
+          CELL_ID: ${{ matrix.cell_id }}
+        run: >-
+          python -m benchmarks.cf_comparative_methods
+          --protocol-version v3 --replications "$REPLICATIONS" --cell-id "$CELL_ID"
+          --output "evidence/shards/$CELL_ID.json"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cf-comparative-v3-pilot-shard-${{ matrix.cell_id }}
+          path: evidence/shards/${{ matrix.cell_id }}.json
+          retention-days: 90
+
+  comparative-methods-v3-aggregate:
+    needs: comparative-methods-v3-shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: cf-comparative-v3-pilot-shard-*
+          path: evidence/shards
+          merge-multiple: true
+      - name: Aggregate v3 descriptive shards
+        run: >-
+          python -m benchmarks.cf_comparative_methods
+          --protocol-version v3 --aggregate-input evidence/shards/*.json
+          --output evidence/cf-comparative-methods-v3-pilot.json
+      - run: >-
+          python -m scripts.render_cf_comparative_methods_report
+          --artifact evidence/cf-comparative-methods-v3-pilot.json
+          --output evidence/cf-comparative-methods-v3-pilot.md
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cf-comparative-methods-v3-pilot
+          path: evidence/cf-comparative-methods-v3-pilot.*
+          retention-days: 90

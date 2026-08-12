@@ -18,7 +18,11 @@ from benchmarks.cf_comparative_simulation import comparative_cells, simulate_com
 from benchmarks.cf_reference_campaign import dependency_lock_checksum
 from scova.cf import canonical_checksum
 
-_PROTOCOL_PATH = Path(__file__).with_name("specs") / "cf_two_group_comparative_methods_v2.json"
+_PROTOCOL_DIRECTORY = Path(__file__).with_name("specs")
+_PROTOCOL_FILES = {
+    "v2": "cf_two_group_comparative_methods_v2.json",
+    "v3": "cf_two_group_comparative_methods_v3.json",
+}
 _METHODS = (
     "scova-cf",
     "linear-ancova",
@@ -30,8 +34,12 @@ _METHODS = (
 _FORBIDDEN_FIELDS = frozenset({"profile", "calibration", "promotion", "qualification"})
 
 
-def _protocol() -> dict[str, Any]:
-    return json.loads(_PROTOCOL_PATH.read_text(encoding="utf-8"))
+def _protocol(protocol_version: str = "v2") -> dict[str, Any]:
+    try:
+        path = _PROTOCOL_DIRECTORY / _PROTOCOL_FILES[protocol_version]
+    except KeyError as error:
+        raise ValueError(f"unknown comparative protocol version {protocol_version!r}") from error
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _git_commit() -> str:
@@ -149,7 +157,9 @@ def cell_level_summaries(records: Iterable[dict[str, Any]]) -> dict[str, dict[st
     }
 
 
-def comparative_artifact(records: Iterable[dict[str, Any]], replications: int) -> dict[str, Any]:
+def comparative_artifact(
+    records: Iterable[dict[str, Any]], replications: int, protocol_version: str = "v2"
+) -> dict[str, Any]:
     """Build a provenance-bound descriptive artifact from per-method records."""
     if not 1 <= replications <= 1000:
         raise ValueError("replications must lie between 1 through 1000")
@@ -169,8 +179,8 @@ def comparative_artifact(records: Iterable[dict[str, Any]], replications: int) -
             raise ValueError("comparative records must identify ate or att")
         by_estimand[record["estimand"]][record["method"]].append(record)
     cell_summaries = cell_level_summaries(values)
-    cells = comparative_cells()
-    protocol = _protocol()
+    cells = comparative_cells(protocol_version)
+    protocol = _protocol(protocol_version)
     final_replications = int(protocol["final_replications_per_cell"])
     expected_records = len(cells) * final_replications * len(_METHODS)
     payload: dict[str, Any] = {
@@ -206,13 +216,15 @@ def comparative_artifact(records: Iterable[dict[str, Any]], replications: int) -
     return payload
 
 
-def aggregate_comparative_shards(shards: Iterable[dict[str, Any]]) -> dict[str, Any]:
-    """Combine one checksum-compatible artifact per frozen v2 cell."""
+def aggregate_comparative_shards(
+    shards: Iterable[dict[str, Any]], protocol_version: str = "v2"
+) -> dict[str, Any]:
+    """Combine one checksum-compatible artifact per frozen protocol cell."""
     values = list(shards)
     if not values:
         raise ValueError("at least one comparative shard is required")
-    protocol = _protocol()
-    expected_cell_ids = {str(cell["cell_id"]) for cell in comparative_cells()}
+    protocol = _protocol(protocol_version)
+    expected_cell_ids = {str(cell["cell_id"]) for cell in comparative_cells(protocol_version)}
     expected_checksum = canonical_checksum(protocol)
     replications = values[0].get("requested_replications_per_cell")
     dependency_checksum = values[0].get("dependency_lock_checksum")
@@ -250,7 +262,7 @@ def aggregate_comparative_shards(shards: Iterable[dict[str, Any]]) -> dict[str, 
         shard_checksums.append(str(shard["artifact_checksum"]))
     if seen_cells != expected_cell_ids:
         raise ValueError("comparative aggregation requires every frozen cell exactly once")
-    artifact = comparative_artifact(records, replications)
+    artifact = comparative_artifact(records, replications, protocol_version)
     artifact["source_shard_checksums"] = sorted(shard_checksums)
     artifact["source_shard_frozen_commit"] = frozen_commit
     artifact["artifact_checksum"] = canonical_checksum(
@@ -263,11 +275,13 @@ def run_comparative_study(
     replications: int,
     max_cells: int | None = None,
     cell_ids: tuple[str, ...] | None = None,
+    protocol_version: str = "v2",
 ) -> dict[str, Any]:
     """Execute a bounded subset or the complete frozen 1,000-replication study."""
     if not 1 <= replications <= 1000:
         raise ValueError("replications must lie between 1 through 1000")
-    cells = comparative_cells()
+    cells = comparative_cells(protocol_version)
+    protocol = _protocol(protocol_version)
     if cell_ids is not None and max_cells is not None:
         raise ValueError("cell_ids and max_cells cannot be supplied together")
     if cell_ids is None:
@@ -285,10 +299,10 @@ def run_comparative_study(
     for cell in selected:
         cell_index = cell_indices[str(cell["cell_id"])]
         for replication in range(replications):
-            seed = 830_000_000 + cell_index * 10_000 + replication
+            seed = int(protocol.get("seed_base", 830_000_000)) + cell_index * 10_000 + replication
             for row in score_replication(simulate_comparative_cell(cell, seed), seed):
                 records.append({"cell_id": cell["cell_id"], "seed": seed, **row})
-    return comparative_artifact(records, replications)
+    return comparative_artifact(records, replications, protocol_version)
 
 
 def main() -> None:
@@ -297,6 +311,7 @@ def main() -> None:
     parser.add_argument("--max-cells", type=int)
     parser.add_argument("--cell-id", action="append")
     parser.add_argument("--aggregate-input", type=Path, nargs="+")
+    parser.add_argument("--protocol-version", choices=tuple(_PROTOCOL_FILES), default="v2")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.aggregate_input:
@@ -310,13 +325,15 @@ def main() -> None:
         if not input_paths:
             parser.error("aggregation input did not match any shard artifacts")
         artifact = aggregate_comparative_shards(
-            [json.loads(path.read_text(encoding="utf-8")) for path in input_paths]
+            [json.loads(path.read_text(encoding="utf-8")) for path in input_paths],
+            args.protocol_version,
         )
     else:
         artifact = run_comparative_study(
             args.replications,
             args.max_cells,
             tuple(args.cell_id) if args.cell_id else None,
+            args.protocol_version,
         )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(artifact, indent=2, sort_keys=True), encoding="utf-8")

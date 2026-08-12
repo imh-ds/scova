@@ -56,6 +56,24 @@ def test_v3_stress_protocol_freezes_eight_nonlinear_threshold_cells() -> None:
     assert '"final_replications_per_cell": 1000' in protocol
 
 
+def test_v3_cells_and_truth_use_the_v3_protocol() -> None:
+    cells = comparative_cells(protocol_version="v3")
+    dgp = simulate_comparative_cell(cells[0], seed=31)
+
+    assert len(cells) == 8
+    assert {cell["protocol_version"] for cell in cells} == {"v3"}
+    assert {cell["outcome_surface"] for cell in cells} == {"smooth-nonlinear", "threshold"}
+    assert dgp.source_metadata["protocol_id"] == "cf-two-group-comparative-methods-v3"
+    assert dgp.ate == pytest.approx(np.mean(dgp.mu1 - dgp.mu0))
+
+
+def test_v3_artifact_is_separate_from_v2() -> None:
+    artifact = run_comparative_study(replications=1, max_cells=1, protocol_version="v3")
+
+    assert artifact["protocol_id"] == "cf-two-group-comparative-methods-v3"
+    assert artifact["records"][0]["cell_id"].startswith("cmp-v3-")
+
+
 def test_final_workflow_is_fixed_at_the_frozen_denominator() -> None:
     workflow = Path(".github/workflows/cf-comparative-methods-final.yml").read_text(
         encoding="utf-8"
@@ -66,6 +84,18 @@ def test_final_workflow_is_fixed_at_the_frozen_denominator() -> None:
     assert "timeout-minutes: 300" in workflow
     assert "cf-comparative-methods-v2-final" in workflow
     assert "cf-comparative-methods-v2-pilot" not in workflow
+
+
+def test_v3_pilot_workflow_uses_only_v3_artifacts() -> None:
+    workflow = Path(".github/workflows/cf-comparative-methods-v3.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "--protocol-version v3" in workflow
+    assert "cf-comparative-v3-pilot-shard-" in workflow
+    assert "cf-comparative-methods-v3-pilot" in workflow
+    assert "cmp-v3-threshold-threshold-poor" in workflow
+    assert "cf-comparative-methods-v2" not in workflow
 
 
 def test_new_artifacts_identify_the_v2_protocol() -> None:
