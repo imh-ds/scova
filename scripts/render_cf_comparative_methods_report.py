@@ -10,20 +10,42 @@ from typing import Any
 from benchmarks.cf_comparative_methods import cell_level_summaries
 
 
-def _table(summaries: dict[str, Any], *, estimand: str) -> list[str]:
-    del estimand
+def _warning_rates(records: list[dict[str, Any]], *, estimand: str) -> dict[str, float | None]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for record in records:
+        if record["estimand"] == estimand:
+            grouped.setdefault(str(record["method"]), []).append(record)
+    return {
+        method: (
+            sum(row["status"] != "ok" for row in rows if row["estimate"] is not None)
+            / sum(row["estimate"] is not None for row in rows)
+            if any(row["estimate"] is not None for row in rows)
+            else None
+        )
+        for method, rows in grouped.items()
+    }
+
+
+def _table(
+    summaries: dict[str, Any], *, estimand: str, records: list[dict[str, Any]]
+) -> list[str]:
+    warning_rates = _warning_rates(records, estimand=estimand)
     lines = [
-        "| Method | Bias | RMSE | Coverage | Failure rate | Retention |",
-        "| --- | ---: | ---: | ---: | ---: | ---: |",
+        "| Method | Bias | RMSE | Coverage | Failure rate | Warning rate | Retention |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for name, summary in sorted(summaries.items()):
         lines.append(
-            "| {name} | {bias} | {rmse} | {coverage} | {failure} | {retention} |".format(
+            (
+                "| {name} | {bias} | {rmse} | {coverage} | {failure} | {warning} | "
+                "{retention} |"
+            ).format(
                 name=name,
                 bias=_format(summary["bias"]),
                 rmse=_format(summary["rmse"]),
                 coverage=_format(summary["coverage"]),
                 failure=_format(summary["failure_rate"]),
+                warning=_format(summary.get("warning_rate", warning_rates.get(name))),
                 retention=_format(summary["treated_retained_fraction"]),
             )
         )
@@ -74,7 +96,13 @@ def render(artifact: dict[str, Any]) -> str:
         "",
         "## Study-population ATE estimators",
         "",
-        *_table(artifact["ate_summaries"], estimand="ate"),
+        (
+            "Failure rate counts records with no numerical estimate or standard error. "
+            "Warning rate counts retained estimates whose status is not `ok`; it is a "
+            "diagnostic, not a numerical failure."
+        ),
+        "",
+        *_table(artifact["ate_summaries"], estimand="ate", records=artifact["records"]),
         "",
         "## Matched-treated ATT estimator",
         "",
@@ -83,7 +111,7 @@ def render(artifact: dict[str, Any]) -> str:
             "against the ATE estimators."
         ),
         "",
-        *_table(artifact["att_summaries"], estimand="att"),
+        *_table(artifact["att_summaries"], estimand="att", records=artifact["records"]),
         "",
         "## Cell-level ATE diagnostics",
         "",

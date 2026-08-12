@@ -11,7 +11,9 @@ study-population ATE. One-to-one propensity-score matching targets the matched-t
 ATT and is displayed separately with its treated-retention fraction.
 
 Reports present pooled summaries and cell-level bias, RMSE, median absolute error,
-95th-percentile absolute error, and maximum absolute error. The tail-error columns
+95th-percentile absolute error, and maximum absolute error. They separately report
+numerical failure rate and retained-estimate warning rate: a warning is a diagnostic
+flag on an estimate that was still computed, not a refusal. The tail-error columns
 are descriptive diagnostics, not qualification gates.
 
 The historical v1 pilot used EconML's auto/2-fold/`min_propensity=1e-6` recipe. The
@@ -23,6 +25,20 @@ This is performance evidence within these simulated DGPs only. It does not valid
 exchangeability, prove positivity, qualify SCOVA-CF, create a support profile, or
 certify causal validity in an applied dataset.
 
-The `SCOVA-CF two-group comparative methods smoke` GitHub Actions workflow is manual-only,
-defaults to five replications per cell, and accepts no more than 25. Its output is explicitly
+The `SCOVA-CF two-group comparative methods pilot` GitHub Actions workflow is manual-only,
+defaults to five replications per cell, and accepts no more than 50. Its output is explicitly
 incomplete methods evidence; the frozen final design remains 1,000 replications per cell.
+
+## Completed v2 50-replication pilot
+
+The completed [run 31563232342](https://github.com/imh-ds/scova/actions/runs/31563232342)
+executed 50 replications in each of the eight frozen cells (2,400 method records). Its
+aggregate artifact checksum is `d28f26b9f4c1bd42bb0ea013a560fbef13351683dfe1e141616f977a33fe6499`.
+It is incomplete relative to the predeclared 1,000-replication final denominator and must
+not be treated as a definitive ranking.
+
+In this pilot, SCOVA-CF had a 0% numerical failure rate and a 100% retained-estimate warning
+rate. The latter is expected: the reset deliberately leaves the default observational support
+policy uncalibrated, which produces a support warning without suppressing the estimate. It does
+not indicate 400 failed fits. The artifact remains available from the run's
+`cf-comparative-methods-v2-pilot` Actions artifact.

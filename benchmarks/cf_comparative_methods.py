@@ -75,11 +75,14 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     ]
     completed = len(rows)
     failures = completed - len(successful)
+    warnings = sum(row["status"] != "ok" for row in successful)
     if not successful:
         return {
             "completed_records": completed,
             "failure_rate": 1.0 if completed else None,
             "failure_rate_interval": _wilson_interval(failures, completed),
+            "warning_rate": None,
+            "warning_rate_interval": None,
             "bias": None,
             "rmse": None,
             "empirical_sd": None,
@@ -108,6 +111,8 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "completed_records": completed,
         "failure_rate": failures / completed if completed else None,
         "failure_rate_interval": _wilson_interval(failures, completed),
+        "warning_rate": warnings / len(successful),
+        "warning_rate_interval": _wilson_interval(warnings, len(successful)),
         "bias": float(np.mean(errors)),
         "bias_interval": _interval(errors),
         "rmse": float(np.sqrt(np.mean(errors**2))),

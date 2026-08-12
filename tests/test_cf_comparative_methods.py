@@ -135,6 +135,65 @@ def test_artifact_separates_ate_and_att_summaries() -> None:
     assert set(artifact["att_summaries"]) == {"psm-att"}
 
 
+def test_retained_warning_is_separate_from_a_numerical_failure() -> None:
+    cell_id = comparative_cells()[0]["cell_id"]
+    artifact = comparative_artifact(
+        records=[
+            {
+                "cell_id": cell_id,
+                "method": "scova-cf",
+                "estimand": "ate",
+                "estimate": 1.0,
+                "standard_error": 0.2,
+                "truth": 1.0,
+                "status": "limited/unstable-support",
+                "details": {},
+            },
+            {
+                "cell_id": cell_id,
+                "method": "scova-cf",
+                "estimand": "ate",
+                "estimate": 1.1,
+                "standard_error": 0.2,
+                "truth": 1.0,
+                "status": "ok",
+                "details": {},
+            },
+        ],
+        replications=1,
+    )
+
+    summary = artifact["ate_summaries"]["scova-cf"]
+
+    assert summary["failure_rate"] == 0.0
+    assert summary["warning_rate"] == 0.5
+    assert "Warning rate" in render(artifact)
+
+
+def test_report_derives_warning_rate_for_a_pre_warning_artifact() -> None:
+    artifact = comparative_artifact(
+        records=[
+            {
+                "cell_id": comparative_cells()[0]["cell_id"],
+                "method": "scova-cf",
+                "estimand": "ate",
+                "estimate": 1.0,
+                "standard_error": 0.2,
+                "truth": 1.0,
+                "status": "limited/unstable-support",
+                "details": {},
+            }
+        ],
+        replications=1,
+    )
+    artifact["ate_summaries"]["scova-cf"].pop("warning_rate")
+    artifact["ate_summaries"]["scova-cf"].pop("warning_rate_interval")
+
+    report = render(artifact)
+
+    assert "| scova-cf | 0.000 | 0.000 | 1.000 | 0.000 | 1.000 |" in report
+
+
 def test_artifact_includes_cell_level_tail_error_summaries() -> None:
     first, second = comparative_cells()[:2]
     records = [
