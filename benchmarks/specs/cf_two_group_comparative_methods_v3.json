@@ -1,0 +1,40 @@
+{
+  "protocol_id": "cf-two-group-comparative-methods-v3",
+  "program_type": "methods",
+  "supersedes": "cf-two-group-comparative-methods-v2",
+  "evidence_relationship": "v3 is a separate stress-study evidence set and must not be pooled with v1 or v2.",
+  "estimand": "study-population-ate",
+  "n_groups": 2,
+  "n_covariates": 5,
+  "units_per_replication": 1000,
+  "final_replications_per_cell": 1000,
+  "seed_base": 840000000,
+  "factors": {
+    "outcome_surface": ["smooth-nonlinear", "threshold"],
+    "confounding_surface": ["smooth-nonlinear", "threshold"],
+    "overlap": ["adequate", "poor"]
+  },
+  "dgp_contract": {
+    "covariates": "Five independent standard-normal baseline covariates x1 through x5.",
+    "assignment_smooth_nonlinear": "sin(1.4*x1) + 0.7*x2^2 - 0.5*abs(x3) + 0.35*x4*x5.",
+    "assignment_threshold": "1.1*I(x1>0) - 0.9*I(x2>0.5) + 0.7*I(x3*x4>0) - 0.4*I(x5<-0.5).",
+    "overlap_scaling": {"adequate": 0.7, "poor": 2.0},
+    "outcome_smooth_nonlinear": "m0 = 0.7*sin(1.2*x1) - 0.45*x2^2 + 0.35*x3*x4 + 0.2*x5; tau = 1.0 + 0.3*sin(x1*x2) + 0.2*x3^2.",
+    "outcome_threshold": "m0 = 0.8*I(x1>0) - 0.6*I(x2+x3>0) + 0.4*I(x4*x5>0); tau = 1.0 + 0.4*I(x1>0,x2>0) - 0.25*I(x3<-0.5).",
+    "observed_outcome": "Y = mG(X) + Normal(0, 1) noise."
+  },
+  "comparators": {
+    "scova-cf": {"target": "study-population-ate", "inference": "influence-function"},
+    "linear-ancova": {"target": "study-population-ate", "inference": "model-based"},
+    "independent-aipw": {"target": "study-population-ate", "inference": "influence-function"},
+    "psm-att": {"target": "matched-treated-att", "inference": "point-estimation-only"},
+    "econml-drlearner": {"target": "study-population-ate", "inference": "point-estimation-only"},
+    "econml-drlearner-conservative": {"target": "study-population-ate", "inference": "point-estimation-only"}
+  },
+  "primary_metrics": ["bias", "rmse", "median-absolute-error", "absolute-error-p95", "maximum-absolute-error", "numerical-failure-rate", "warning-rate"],
+  "coverage_metrics": {
+    "included": ["scova-cf", "linear-ancova", "independent-aipw"],
+    "excluded": ["psm-att", "econml-drlearner", "econml-drlearner-conservative"]
+  },
+  "interpretation": "Descriptive performance evidence within these frozen simulated DGPs only; never qualification or causal-certification evidence. No output changes SCOVA-CF observational interpretation."
+}

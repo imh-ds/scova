@@ -43,6 +43,19 @@ def test_current_design_is_v2_with_two_distinct_drlearner_recipes() -> None:
     assert "econml-drlearner-conservative" in protocol
 
 
+def test_v3_stress_protocol_freezes_eight_nonlinear_threshold_cells() -> None:
+    protocol = Path("benchmarks/specs/cf_two_group_comparative_methods_v3.json").read_text(
+        encoding="utf-8"
+    )
+
+    assert "cf-two-group-comparative-methods-v3" in protocol
+    assert '"outcome_surface": ["smooth-nonlinear", "threshold"]' in protocol
+    assert '"confounding_surface": ["smooth-nonlinear", "threshold"]' in protocol
+    assert '"overlap": ["adequate", "poor"]' in protocol
+    assert '"units_per_replication": 1000' in protocol
+    assert '"final_replications_per_cell": 1000' in protocol
+
+
 def test_final_workflow_is_fixed_at_the_frozen_denominator() -> None:
     workflow = Path(".github/workflows/cf-comparative-methods-final.yml").read_text(
         encoding="utf-8"

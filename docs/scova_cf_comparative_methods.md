@@ -36,6 +36,10 @@ The separate `SCOVA-CF two-group comparative methods final study` workflow has n
 input and always runs that frozen 1,000-replication denominator. It uses the same eight-cell
 sharding and checksum-bound aggregation as the pilot.
 
+The next evidence set is the separately frozen [v3 stress-study design](superpowers/specs/2026-08-12-v3-comparative-stress-study-design.md).
+It changes the functional-form stressors, not SCOVA-CF's estimator or applied-data claims,
+and will not be pooled with v1 or v2.
+
 ## Completed v2 50-replication pilot
 
 The completed [run 31563232342](https://github.com/imh-ds/scova/actions/runs/31563232342)
