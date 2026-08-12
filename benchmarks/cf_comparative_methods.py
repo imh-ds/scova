@@ -81,10 +81,14 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "coverage": None,
             "coverage_interval": None,
             "treated_retained_fraction": None,
+            "median_absolute_error": None,
+            "absolute_error_p95": None,
+            "maximum_absolute_error": None,
         }
     estimates = np.array([float(row["estimate"]) for row in successful])
     truth = np.array([float(row["truth"]) for row in successful])
     errors = estimates - truth
+    absolute_errors = np.abs(errors)
     standard_errors = np.array([float(row["standard_error"]) for row in successful])
     covered = np.abs(errors) <= 1.96 * standard_errors
     empirical_sd = float(np.std(estimates, ddof=1)) if len(estimates) > 1 else 0.0
@@ -108,6 +112,28 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "coverage_interval": _wilson_interval(int(np.sum(covered)), len(covered)),
         "treated_retained_fraction": float(np.mean(retention)) if retention else None,
         "treated_retained_fraction_interval": _interval(np.asarray(retention)),
+        "median_absolute_error": float(np.median(absolute_errors)),
+        "absolute_error_p95": float(np.quantile(absolute_errors, 0.95)),
+        "maximum_absolute_error": float(np.max(absolute_errors)),
+    }
+
+
+def cell_level_summaries(records: Iterable[dict[str, Any]]) -> dict[str, dict[str, dict[str, Any]]]:
+    """Return ATE and ATT method summaries separately for every observed DGP cell."""
+    grouped: dict[str, dict[str, dict[str, list[dict[str, Any]]]]] = {}
+    for record in records:
+        cell_id = str(record["cell_id"])
+        estimand = str(record["estimand"])
+        grouped.setdefault(cell_id, {"ate": defaultdict(list), "att": defaultdict(list)})[
+            estimand
+        ][str(record["method"])].append(record)
+    return {
+        estimand: {
+            cell_id: {method: _summary(rows) for method, rows in methods.items()}
+            for cell_id, summaries in grouped.items()
+            for methods in [summaries[estimand]]
+        }
+        for estimand in ("ate", "att")
     }
 
 
@@ -130,6 +156,7 @@ def comparative_artifact(records: Iterable[dict[str, Any]], replications: int) -
         if record["estimand"] not in by_estimand:
             raise ValueError("comparative records must identify ate or att")
         by_estimand[record["estimand"]][record["method"]].append(record)
+    cell_summaries = cell_level_summaries(values)
     cells = comparative_cells()
     protocol = _protocol()
     final_replications = int(protocol["final_replications_per_cell"])
@@ -155,6 +182,8 @@ def comparative_artifact(records: Iterable[dict[str, Any]], replications: int) -
         "source_evidence_ids": [],
         "ate_summaries": {name: _summary(rows) for name, rows in by_estimand["ate"].items()},
         "att_summaries": {name: _summary(rows) for name, rows in by_estimand["att"].items()},
+        "cell_ate_summaries": cell_summaries["ate"],
+        "cell_att_summaries": cell_summaries["att"],
         "records": values,
         "interpretation": (
             "Descriptive methods evidence within frozen simulated DGPs only. It does not "

@@ -10,6 +10,14 @@ poor overlap. SCOVA-CF, ANCOVA, independent AIPW, and DRLearner target the eligi
 study-population ATE. One-to-one propensity-score matching targets the matched-treated
 ATT and is displayed separately with its treated-retention fraction.
 
+Reports present pooled summaries and cell-level bias, RMSE, median absolute error,
+95th-percentile absolute error, and maximum absolute error. The tail-error columns
+are descriptive diagnostics, not qualification gates.
+
+The current EconML baseline records its exact v0.16 recipe: automatic propensity and
+outcome nuisance models, two internal cross-fitting folds, and `min_propensity=1e-6`.
+It is a frozen baseline recipe, not a claim that it is optimal or stable in every DGP.
+
 This is performance evidence within these simulated DGPs only. It does not validate
 exchangeability, prove positivity, qualify SCOVA-CF, create a support profile, or
 certify causal validity in an applied dataset.

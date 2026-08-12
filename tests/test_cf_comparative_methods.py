@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 from benchmarks.cf_comparative_estimators import (
+    fit_econml_drlearner,
     fit_independent_aipw,
     fit_linear_ancova,
     fit_matching_att,
@@ -16,6 +17,7 @@ from benchmarks.cf_comparative_estimators import (
 )
 from benchmarks.cf_comparative_methods import comparative_artifact, run_comparative_study
 from benchmarks.cf_comparative_simulation import comparative_cells, simulate_comparative_cell
+from scripts.render_cf_comparative_methods_report import render
 
 
 def test_design_has_eight_two_group_cells() -> None:
@@ -57,6 +59,18 @@ def test_matching_never_enters_ate_rows() -> None:
     assert {row["method"] for row in rows if row["estimand"] == "att"} == {"psm-att"}
 
 
+def test_drlearner_records_its_frozen_recipe() -> None:
+    dgp = simulate_comparative_cell(comparative_cells()[0], seed=24)
+    result = fit_econml_drlearner(dgp, seed=24)
+
+    assert result.details["recipe"] == {
+        "model_propensity": "auto",
+        "model_regression": "auto",
+        "cv": 2,
+        "min_propensity": 1e-6,
+    }
+
+
 def test_artifact_separates_ate_and_att_summaries() -> None:
     records = [
         {
@@ -85,6 +99,40 @@ def test_artifact_separates_ate_and_att_summaries() -> None:
     assert artifact["program_type"] == "methods"
     assert "psm-att" not in artifact["ate_summaries"]
     assert set(artifact["att_summaries"]) == {"psm-att"}
+
+
+def test_artifact_includes_cell_level_tail_error_summaries() -> None:
+    first, second = comparative_cells()[:2]
+    records = [
+        {
+            "cell_id": first["cell_id"],
+            "method": "scova-cf",
+            "estimand": "ate",
+            "estimate": 1.0,
+            "standard_error": 0.2,
+            "truth": 1.0,
+            "status": "ok",
+            "details": {},
+        },
+        {
+            "cell_id": second["cell_id"],
+            "method": "scova-cf",
+            "estimand": "ate",
+            "estimate": 3.0,
+            "standard_error": 0.2,
+            "truth": 1.0,
+            "status": "ok",
+            "details": {},
+        },
+    ]
+    artifact = comparative_artifact(records=records, replications=1)
+
+    first_summary = artifact["cell_ate_summaries"][first["cell_id"]]["scova-cf"]
+    second_summary = artifact["cell_ate_summaries"][second["cell_id"]]["scova-cf"]
+    assert first_summary["maximum_absolute_error"] == 0.0
+    assert second_summary["maximum_absolute_error"] == 2.0
+    assert second_summary["absolute_error_p95"] == 2.0
+    assert "Cell-level ATE diagnostics" in render(artifact)
 
 
 def test_smoke_artifact_is_explicitly_incomplete() -> None:

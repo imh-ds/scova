@@ -20,6 +20,13 @@ from scova.cf import (
     SCOVACFRefusal,
 )
 
+_DRLEARNER_RECIPE = {
+    "model_propensity": "auto",
+    "model_regression": "auto",
+    "cv": 2,
+    "min_propensity": 1e-6,
+}
+
 
 @dataclass(frozen=True, slots=True)
 class MethodEstimate:
@@ -177,9 +184,16 @@ def fit_econml_drlearner(dgp: ComparativeData, seed: int) -> MethodEstimate:
     try:
         from econml.dr import DRLearner
     except ImportError:
-        return MethodEstimate("econml-drlearner", "ate", None, None, "blocked/missing-econml", {})
+        return MethodEstimate(
+            "econml-drlearner",
+            "ate",
+            None,
+            None,
+            "blocked/missing-econml",
+            {"recipe": dict(_DRLEARNER_RECIPE)},
+        )
     x, group, outcome = _arrays(dgp)
-    learner = DRLearner(random_state=seed)
+    learner = DRLearner(**_DRLEARNER_RECIPE, random_state=seed)
     learner.fit(outcome, group, X=x)
     effects = learner.effect(x)
     return MethodEstimate(
@@ -188,7 +202,7 @@ def fit_econml_drlearner(dgp: ComparativeData, seed: int) -> MethodEstimate:
         float(np.mean(effects)),
         float(np.std(effects, ddof=1) / np.sqrt(len(effects))),
         "ok",
-        {},
+        {"recipe": dict(_DRLEARNER_RECIPE)},
     )
 
 

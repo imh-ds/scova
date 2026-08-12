@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from benchmarks.cf_comparative_methods import cell_level_summaries
+
 
 def _table(summaries: dict[str, Any], *, estimand: str) -> list[str]:
     del estimand
@@ -32,10 +34,34 @@ def _format(value: float | None) -> str:
     return "—" if value is None else f"{value:.3f}"
 
 
+def _cell_table(summaries: dict[str, dict[str, Any]]) -> list[str]:
+    lines = [
+        "| Cell | Method | Bias | RMSE | Median | 95th pct. | Maximum |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for cell_id, methods in sorted(summaries.items()):
+        for method, summary in sorted(methods.items()):
+            lines.append(
+                "| {cell} | {method} | {bias} | {rmse} | {median} | {p95} | {maximum} |".format(
+                    cell=cell_id,
+                    method=method,
+                    bias=_format(summary["bias"]),
+                    rmse=_format(summary["rmse"]),
+                    median=_format(summary["median_absolute_error"]),
+                    p95=_format(summary["absolute_error_p95"]),
+                    maximum=_format(summary["maximum_absolute_error"]),
+                )
+            )
+    return lines
+
+
 def render(artifact: dict[str, Any]) -> str:
     """Render a methods-only report without qualification language."""
     if artifact.get("program_type") != "methods":
         raise ValueError("comparative report requires a methods artifact")
+    cell_summaries = cell_level_summaries(artifact["records"])
+    cell_ate_summaries = artifact.get("cell_ate_summaries", cell_summaries["ate"])
+    cell_att_summaries = artifact.get("cell_att_summaries", cell_summaries["att"])
     lines = [
         "# SCOVA-CF two-group comparative methods study",
         "",
@@ -58,6 +84,16 @@ def render(artifact: dict[str, Any]) -> str:
         ),
         "",
         *_table(artifact["att_summaries"], estimand="att"),
+        "",
+        "## Cell-level ATE diagnostics",
+        "",
+        "Tail-error columns are descriptive diagnostics, not pass/fail criteria.",
+        "",
+        *_cell_table(cell_ate_summaries),
+        "",
+        "## Cell-level ATT diagnostics",
+        "",
+        *_cell_table(cell_att_summaries),
         "",
         "Incomplete smoke output is incomplete methods evidence, not a narrowed conclusion.",
     ]
