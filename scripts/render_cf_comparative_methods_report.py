@@ -9,6 +9,15 @@ from typing import Any
 
 from benchmarks.cf_comparative_methods import cell_level_summaries
 
+_INTERVAL_BASIS: dict[str, tuple[str, bool]] = {
+    "scova-cf": ("influence-function", True),
+    "linear-ancova": ("model-based", True),
+    "independent-aipw": ("influence-function", True),
+    "psm-att": ("not evaluated", False),
+    "econml-drlearner": ("not evaluated", False),
+    "econml-drlearner-conservative": ("not evaluated", False),
+}
+
 
 def _warning_rates(records: list[dict[str, Any]], *, estimand: str) -> dict[str, float | None]:
     grouped: dict[str, list[dict[str, Any]]] = {}
@@ -31,19 +40,24 @@ def _table(
 ) -> list[str]:
     warning_rates = _warning_rates(records, estimand=estimand)
     lines = [
-        "| Method | Bias | RMSE | Coverage | Failure rate | Warning rate | Retention |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        (
+            "| Method | Interval basis | Bias | RMSE | Coverage | Failure rate | Warning rate | "
+            "Retention |"
+        ),
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for name, summary in sorted(summaries.items()):
+        interval_basis, coverage_evaluable = _INTERVAL_BASIS.get(name, ("not evaluated", False))
         lines.append(
             (
-                "| {name} | {bias} | {rmse} | {coverage} | {failure} | {warning} | "
-                "{retention} |"
+                "| {name} | {interval_basis} | {bias} | {rmse} | {coverage} | {failure} | "
+                "{warning} | {retention} |"
             ).format(
                 name=name,
+                interval_basis=interval_basis,
                 bias=_format(summary["bias"]),
                 rmse=_format(summary["rmse"]),
-                coverage=_format(summary["coverage"]),
+                coverage=_format(summary["coverage"]) if coverage_evaluable else "â€”",
                 failure=_format(summary["failure_rate"]),
                 warning=_format(summary.get("warning_rate", warning_rates.get(name))),
                 retention=_format(summary["treated_retained_fraction"]),
@@ -100,6 +114,11 @@ def render(artifact: dict[str, Any]) -> str:
             "Failure rate counts records with no numerical estimate or standard error. "
             "Warning rate counts retained estimates whose status is not `ok`; it is a "
             "diagnostic, not a numerical failure."
+        ),
+        (
+            "Coverage is reported only when the adapter's standard error is an ATE/ATT "
+            "sampling-uncertainty estimate. DRLearner CATE-spread and matched-pair proxy "
+            "intervals are retained in the raw artifact but are not evaluated as coverage."
         ),
         "",
         *_table(artifact["ate_summaries"], estimand="ate", records=artifact["records"]),

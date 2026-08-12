@@ -203,7 +203,41 @@ def test_report_derives_warning_rate_for_a_pre_warning_artifact() -> None:
 
     report = render(artifact)
 
-    assert "| scova-cf | 0.000 | 0.000 | 1.000 | 0.000 | 1.000 |" in report
+    assert "| scova-cf | influence-function | 0.000 | 0.000 | 1.000 | 0.000 | 1.000 |" in report
+
+
+def test_report_marks_proxy_interval_coverage_as_not_evaluated() -> None:
+    cell_id = comparative_cells()[0]["cell_id"]
+    artifact = comparative_artifact(
+        records=[
+            {
+                "cell_id": cell_id,
+                "method": "econml-drlearner",
+                "estimand": "ate",
+                "estimate": 1.0,
+                "standard_error": 0.01,
+                "truth": 1.0,
+                "status": "ok",
+                "details": {},
+            },
+            {
+                "cell_id": cell_id,
+                "method": "scova-cf",
+                "estimand": "ate",
+                "estimate": 1.0,
+                "standard_error": 0.2,
+                "truth": 1.0,
+                "status": "ok",
+                "details": {},
+            },
+        ],
+        replications=1,
+    )
+
+    report = render(artifact)
+
+    assert "econml-drlearner | not evaluated | 0.000 | 0.000 | â€”" in report
+    assert "scova-cf | influence-function | 0.000 | 0.000 | 1.000" in report
 
 
 def test_artifact_includes_cell_level_tail_error_summaries() -> None:

@@ -25,6 +25,10 @@ This is performance evidence within these simulated DGPs only. It does not valid
 exchangeability, prove positivity, qualify SCOVA-CF, create a support profile, or
 certify causal validity in an applied dataset.
 
+See the [comparative inference audit](scova_cf_comparative_inference_audit.md) for
+which interval calculations support coverage reporting. In particular, DRLearner
+and matched-pair proxy intervals are excluded from coverage comparisons.
+
 The `SCOVA-CF two-group comparative methods pilot` GitHub Actions workflow is manual-only,
 defaults to five replications per cell, and accepts no more than 50. Its output is explicitly
 incomplete methods evidence; the frozen final design remains 1,000 replications per cell.
