@@ -28,6 +28,9 @@ certify causal validity in an applied dataset.
 The `SCOVA-CF two-group comparative methods pilot` GitHub Actions workflow is manual-only,
 defaults to five replications per cell, and accepts no more than 50. Its output is explicitly
 incomplete methods evidence; the frozen final design remains 1,000 replications per cell.
+The separate `SCOVA-CF two-group comparative methods final study` workflow has no replication
+input and always runs that frozen 1,000-replication denominator. It uses the same eight-cell
+sharding and checksum-bound aggregation as the pilot.
 
 ## Completed v2 50-replication pilot
 

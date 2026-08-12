@@ -43,6 +43,18 @@ def test_current_design_is_v2_with_two_distinct_drlearner_recipes() -> None:
     assert "econml-drlearner-conservative" in protocol
 
 
+def test_final_workflow_is_fixed_at_the_frozen_denominator() -> None:
+    workflow = Path(".github/workflows/cf-comparative-methods-final.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "workflow_dispatch:" in workflow
+    assert "--replications 1000" in workflow
+    assert "timeout-minutes: 300" in workflow
+    assert "cf-comparative-methods-v2-final" in workflow
+    assert "cf-comparative-methods-v2-pilot" not in workflow
+
+
 def test_new_artifacts_identify_the_v2_protocol() -> None:
     artifact = comparative_artifact(records=[], replications=1)
 
