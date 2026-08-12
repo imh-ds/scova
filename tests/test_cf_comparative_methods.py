@@ -98,6 +98,18 @@ def test_v3_pilot_workflow_uses_only_v3_artifacts() -> None:
     assert "cf-comparative-methods-v2" not in workflow
 
 
+def test_v3_final_workflow_is_fixed_and_separate() -> None:
+    workflow = Path(".github/workflows/cf-comparative-methods-v3-final.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "--protocol-version v3 --replications 1000" in workflow
+    assert "cmp-v3-threshold-threshold-poor" in workflow
+    assert "cf-comparative-v3-final-shard-" in workflow
+    assert "cf-comparative-methods-v3-final" in workflow
+    assert "cf-comparative-methods-v2" not in workflow
+
+
 def test_new_artifacts_identify_the_v2_protocol() -> None:
     artifact = comparative_artifact(records=[], replications=1)
 

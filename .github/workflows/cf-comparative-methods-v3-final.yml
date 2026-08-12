@@ -1,0 +1,76 @@
+name: SCOVA-CF two-group comparative methods v3 final study
+
+# Frozen descriptive simulation evidence only. This workflow cannot dispatch a
+# qualification, calibration, external-agreement, inference, or promotion lane.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  comparative-methods-v3-final-shard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        cell_id:
+          - cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate
+          - cmp-v3-smooth-nonlinear-smooth-nonlinear-poor
+          - cmp-v3-smooth-nonlinear-threshold-adequate
+          - cmp-v3-smooth-nonlinear-threshold-poor
+          - cmp-v3-threshold-smooth-nonlinear-adequate
+          - cmp-v3-threshold-smooth-nonlinear-poor
+          - cmp-v3-threshold-threshold-adequate
+          - cmp-v3-threshold-threshold-poor
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - name: Run frozen v3 final descriptive shard
+        env:
+          CELL_ID: ${{ matrix.cell_id }}
+        run: >-
+          python -m benchmarks.cf_comparative_methods
+          --protocol-version v3 --replications 1000 --cell-id "$CELL_ID"
+          --output "evidence/shards/$CELL_ID.json"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cf-comparative-v3-final-shard-${{ matrix.cell_id }}
+          path: evidence/shards/${{ matrix.cell_id }}.json
+          retention-days: 365
+
+  comparative-methods-v3-final-aggregate:
+    needs: comparative-methods-v3-final-shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: cf-comparative-v3-final-shard-*
+          path: evidence/shards
+          merge-multiple: true
+      - name: Aggregate frozen v3 final shards
+        run: >-
+          python -m benchmarks.cf_comparative_methods
+          --protocol-version v3 --aggregate-input evidence/shards/*.json
+          --output evidence/cf-comparative-methods-v3-final.json
+      - run: >-
+          python -m scripts.render_cf_comparative_methods_report
+          --artifact evidence/cf-comparative-methods-v3-final.json
+          --output evidence/cf-comparative-methods-v3-final.md
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cf-comparative-methods-v3-final
+          path: evidence/cf-comparative-methods-v3-final.*
+          retention-days: 365

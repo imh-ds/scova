@@ -42,6 +42,8 @@ and will not be pooled with v1 or v2.
 The manual `SCOVA-CF two-group comparative methods v3 pilot` workflow runs one to 50
 replications per v3 cell, aggregates only matching v3 shards, and is explicitly incomplete
 evidence until a future separately dispatched final denominator is complete.
+The separate `SCOVA-CF two-group comparative methods v3 final study` workflow fixes the
+v3 denominator at 1,000 replications per cell and retains its complete artifact for 365 days.
 
 ## Completed v2 50-replication pilot
 
