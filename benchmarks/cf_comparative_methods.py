@@ -201,16 +201,84 @@ def comparative_artifact(records: Iterable[dict[str, Any]], replications: int) -
     return payload
 
 
-def run_comparative_study(replications: int, max_cells: int | None = None) -> dict[str, Any]:
+def aggregate_comparative_shards(shards: Iterable[dict[str, Any]]) -> dict[str, Any]:
+    """Combine one checksum-compatible artifact per frozen v2 cell."""
+    values = list(shards)
+    if not values:
+        raise ValueError("at least one comparative shard is required")
+    protocol = _protocol()
+    expected_cell_ids = {str(cell["cell_id"]) for cell in comparative_cells()}
+    expected_checksum = canonical_checksum(protocol)
+    replications = values[0].get("requested_replications_per_cell")
+    dependency_checksum = values[0].get("dependency_lock_checksum")
+    frozen_commit = values[0].get("git_commit")
+    if not isinstance(replications, int):
+        raise ValueError("comparative shard is missing requested replication count")
+    records: list[dict[str, Any]] = []
+    shard_checksums: list[str] = []
+    seen_cells: set[str] = set()
+    for shard in values:
+        recorded_checksum = shard.get("artifact_checksum")
+        computed_checksum = canonical_checksum(
+            {name: value for name, value in shard.items() if name != "artifact_checksum"}
+        )
+        if recorded_checksum != computed_checksum:
+            raise ValueError("comparative shard has a mismatched artifact checksum")
+        if shard.get("program_type") != "methods":
+            raise ValueError("comparative aggregation requires methods artifacts")
+        if shard.get("protocol_checksum") != expected_checksum:
+            raise ValueError("comparative shard has a mismatched protocol checksum")
+        if shard.get("requested_replications_per_cell") != replications:
+            raise ValueError("comparative shards must use the same replication count")
+        if shard.get("dependency_lock_checksum") != dependency_checksum:
+            raise ValueError("comparative shards must use the same dependency lock")
+        if shard.get("git_commit") != frozen_commit:
+            raise ValueError("comparative shards must use the same frozen commit")
+        shard_cells = {str(record["cell_id"]) for record in shard.get("records", [])}
+        if len(shard_cells) != 1:
+            raise ValueError("each comparative shard must contain exactly one cell")
+        cell_id = next(iter(shard_cells))
+        if cell_id in seen_cells:
+            raise ValueError("comparative aggregation received a duplicate cell shard")
+        seen_cells.add(cell_id)
+        records.extend(shard["records"])
+        shard_checksums.append(str(shard["artifact_checksum"]))
+    if seen_cells != expected_cell_ids:
+        raise ValueError("comparative aggregation requires every frozen cell exactly once")
+    artifact = comparative_artifact(records, replications)
+    artifact["source_shard_checksums"] = sorted(shard_checksums)
+    artifact["source_shard_frozen_commit"] = frozen_commit
+    artifact["artifact_checksum"] = canonical_checksum(
+        {name: value for name, value in artifact.items() if name != "artifact_checksum"}
+    )
+    return artifact
+
+
+def run_comparative_study(
+    replications: int,
+    max_cells: int | None = None,
+    cell_ids: tuple[str, ...] | None = None,
+) -> dict[str, Any]:
     """Execute a bounded subset or the complete frozen 1,000-replication study."""
     if not 1 <= replications <= 1000:
         raise ValueError("replications must lie between 1 through 1000")
     cells = comparative_cells()
-    selected = cells if max_cells is None else cells[:max_cells]
+    if cell_ids is not None and max_cells is not None:
+        raise ValueError("cell_ids and max_cells cannot be supplied together")
+    if cell_ids is None:
+        selected = cells if max_cells is None else cells[:max_cells]
+    else:
+        requested = set(cell_ids)
+        known = {str(cell["cell_id"]) for cell in cells}
+        if not requested or requested.difference(known):
+            raise ValueError("cell_ids must name one or more frozen comparative cells")
+        selected = tuple(cell for cell in cells if str(cell["cell_id"]) in requested)
     if not selected:
         raise ValueError("max_cells must select at least one frozen cell")
+    cell_indices = {str(cell["cell_id"]): index for index, cell in enumerate(cells)}
     records: list[dict[str, Any]] = []
-    for cell_index, cell in enumerate(selected):
+    for cell in selected:
+        cell_index = cell_indices[str(cell["cell_id"])]
         for replication in range(replications):
             seed = 830_000_000 + cell_index * 10_000 + replication
             for row in score_replication(simulate_comparative_cell(cell, seed), seed):
@@ -222,9 +290,29 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--replications", type=int, default=1000)
     parser.add_argument("--max-cells", type=int)
+    parser.add_argument("--cell-id", action="append")
+    parser.add_argument("--aggregate-input", type=Path, nargs="+")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    artifact = run_comparative_study(args.replications, args.max_cells)
+    if args.aggregate_input:
+        if args.cell_id or args.max_cells is not None:
+            parser.error("aggregation cannot be combined with cell selection")
+        input_paths = [
+            match
+            for path in args.aggregate_input
+            for match in sorted(path.parent.glob(path.name))
+        ]
+        if not input_paths:
+            parser.error("aggregation input did not match any shard artifacts")
+        artifact = aggregate_comparative_shards(
+            [json.loads(path.read_text(encoding="utf-8")) for path in input_paths]
+        )
+    else:
+        artifact = run_comparative_study(
+            args.replications,
+            args.max_cells,
+            tuple(args.cell_id) if args.cell_id else None,
+        )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(artifact, indent=2, sort_keys=True), encoding="utf-8")
 

@@ -1,4 +1,4 @@
-name: SCOVA-CF two-group comparative methods smoke
+name: SCOVA-CF two-group comparative methods pilot
 
 # This is bounded descriptive simulation evidence only. It cannot dispatch a
 # qualification, calibration, external-agreement, inference, or promotion lane.
@@ -15,9 +15,21 @@ permissions:
   contents: read
 
 jobs:
-  comparative-methods-smoke:
+  comparative-methods-shard:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        cell_id:
+          - cmp-v1-linear-linear-adequate
+          - cmp-v1-linear-linear-poor
+          - cmp-v1-linear-nonlinear-adequate
+          - cmp-v1-linear-nonlinear-poor
+          - cmp-v1-interaction-linear-adequate
+          - cmp-v1-interaction-linear-poor
+          - cmp-v1-interaction-nonlinear-adequate
+          - cmp-v1-interaction-nonlinear-poor
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -36,19 +48,47 @@ jobs:
             echo "replications must be between 1 and 50 for the descriptive pilot workflow"
             exit 1
           fi
-      - name: Run incomplete descriptive smoke
+      - name: Run incomplete descriptive shard
         env:
           REPLICATIONS: ${{ inputs.replications }}
+          CELL_ID: ${{ matrix.cell_id }}
         run: >-
           python -m benchmarks.cf_comparative_methods
-          --replications "$REPLICATIONS" --max-cells 8
-          --output evidence/cf-comparative-methods-smoke.json
-      - run: >-
-          python -m scripts.render_cf_comparative_methods_report
-          --artifact evidence/cf-comparative-methods-smoke.json
-          --output evidence/cf-comparative-methods-smoke.md
+          --replications "$REPLICATIONS" --cell-id "$CELL_ID"
+          --output "evidence/shards/$CELL_ID.json"
       - uses: actions/upload-artifact@v6
         with:
-          name: cf-comparative-methods-smoke
-          path: evidence/
+          name: cf-comparative-v2-shard-${{ matrix.cell_id }}
+          path: evidence/shards/${{ matrix.cell_id }}.json
+          retention-days: 90
+
+  comparative-methods-aggregate:
+    needs: comparative-methods-shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
+      - run: python -m pip install -e . --no-deps
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: cf-comparative-v2-shard-*
+          path: evidence/shards
+          merge-multiple: true
+      - name: Aggregate descriptive shards
+        run: >-
+          python -m benchmarks.cf_comparative_methods
+          --aggregate-input evidence/shards/*.json
+          --output evidence/cf-comparative-methods-v2-pilot.json
+      - run: >-
+          python -m scripts.render_cf_comparative_methods_report
+          --artifact evidence/cf-comparative-methods-v2-pilot.json
+          --output evidence/cf-comparative-methods-v2-pilot.md
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cf-comparative-methods-v2-pilot
+          path: evidence/cf-comparative-methods-v2-pilot.*
           retention-days: 90

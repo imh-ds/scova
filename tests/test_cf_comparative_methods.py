@@ -16,7 +16,11 @@ from benchmarks.cf_comparative_estimators import (
     fit_scova_cf,
     score_replication,
 )
-from benchmarks.cf_comparative_methods import comparative_artifact, run_comparative_study
+from benchmarks.cf_comparative_methods import (
+    aggregate_comparative_shards,
+    comparative_artifact,
+    run_comparative_study,
+)
 from benchmarks.cf_comparative_simulation import comparative_cells, simulate_comparative_cell
 from scripts.render_cf_comparative_methods_report import render
 
@@ -169,6 +173,99 @@ def test_smoke_artifact_is_explicitly_incomplete() -> None:
     artifact = run_comparative_study(replications=1, max_cells=1)
 
     assert artifact["complete"] is False
+
+
+def test_cell_shard_runs_only_its_declared_cell() -> None:
+    cell_id = comparative_cells()[3]["cell_id"]
+    artifact = run_comparative_study(replications=1, cell_ids=(cell_id,))
+
+    assert artifact["completed_cells"] == 1
+    assert {row["cell_id"] for row in artifact["records"]} == {cell_id}
+
+
+def test_cell_shard_preserves_the_frozen_seed_partition() -> None:
+    cell_index = 3
+    cell_id = comparative_cells()[cell_index]["cell_id"]
+
+    artifact = run_comparative_study(replications=1, cell_ids=(cell_id,))
+
+    assert {row["seed"] for row in artifact["records"]} == {
+        830_000_000 + cell_index * 10_000
+    }
+
+
+def test_aggregation_rejects_incomplete_cell_shard_set() -> None:
+    cell = comparative_cells()[0]
+    shard = comparative_artifact(
+        records=[
+            {
+                "cell_id": cell["cell_id"],
+                "method": "scova-cf",
+                "estimand": "ate",
+                "estimate": 1.0,
+                "standard_error": 0.2,
+                "truth": 1.0,
+                "status": "ok",
+                "details": {},
+            }
+        ],
+        replications=1,
+    )
+
+    with pytest.raises(ValueError, match="every frozen cell"):
+        aggregate_comparative_shards([shard])
+
+
+def test_aggregation_combines_one_compatible_shard_per_cell() -> None:
+    shards = []
+    for cell in comparative_cells():
+        shards.append(
+            comparative_artifact(
+                records=[
+                    {
+                        "cell_id": cell["cell_id"],
+                        "method": "scova-cf",
+                        "estimand": "ate",
+                        "estimate": 1.0,
+                        "standard_error": 0.2,
+                        "truth": 1.0,
+                        "status": "ok",
+                        "details": {},
+                    }
+                ],
+                replications=1,
+            )
+        )
+
+    artifact = aggregate_comparative_shards(shards)
+
+    assert artifact["completed_cells"] == 8
+    assert len(artifact["source_shard_checksums"]) == 8
+
+
+def test_aggregation_rejects_a_tampered_shard() -> None:
+    shards = [
+        comparative_artifact(
+            records=[
+                {
+                    "cell_id": cell["cell_id"],
+                    "method": "scova-cf",
+                    "estimand": "ate",
+                    "estimate": 1.0,
+                    "standard_error": 0.2,
+                    "truth": 1.0,
+                    "status": "ok",
+                    "details": {},
+                }
+            ],
+            replications=1,
+        )
+        for cell in comparative_cells()
+    ]
+    shards[0]["records"][0]["estimate"] = 2.0
+
+    with pytest.raises(ValueError, match="checksum"):
+        aggregate_comparative_shards(shards)
 
 
 def test_full_five_rep_smoke_is_incomplete_against_frozen_final_denominator() -> None:
