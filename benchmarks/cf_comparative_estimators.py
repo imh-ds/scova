@@ -26,6 +26,12 @@ _DRLEARNER_RECIPE = {
     "cv": 2,
     "min_propensity": 1e-6,
 }
+_CONSERVATIVE_DRLEARNER_RECIPE = {
+    "model_propensity": "hist-gradient-boosting-classifier",
+    "model_regression": "hist-gradient-boosting-regressor",
+    "cv": 5,
+    "min_propensity": 0.01,
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -206,6 +212,39 @@ def fit_econml_drlearner(dgp: ComparativeData, seed: int) -> MethodEstimate:
     )
 
 
+def fit_econml_drlearner_conservative(dgp: ComparativeData, seed: int) -> MethodEstimate:
+    """Fit a separately declared DRLearner recipe with stricter overlap regularization."""
+    try:
+        from econml.dr import DRLearner
+    except ImportError:
+        return MethodEstimate(
+            "econml-drlearner-conservative",
+            "ate",
+            None,
+            None,
+            "blocked/missing-econml",
+            {"recipe": dict(_CONSERVATIVE_DRLEARNER_RECIPE)},
+        )
+    x, group, outcome = _arrays(dgp)
+    learner = DRLearner(
+        model_propensity=HistGradientBoostingClassifier(random_state=seed, max_iter=100),
+        model_regression=HistGradientBoostingRegressor(random_state=seed, max_iter=100),
+        cv=5,
+        min_propensity=0.01,
+        random_state=seed,
+    )
+    learner.fit(outcome, group, X=x)
+    effects = learner.effect(x)
+    return MethodEstimate(
+        "econml-drlearner-conservative",
+        "ate",
+        float(np.mean(effects)),
+        float(np.std(effects, ddof=1) / np.sqrt(len(effects))),
+        "ok",
+        {"recipe": dict(_CONSERVATIVE_DRLEARNER_RECIPE)},
+    )
+
+
 def score_replication(dgp: ComparativeData, seed: int) -> list[dict[str, Any]]:
     """Serialize comparator results while preserving each method's estimand."""
     methods = (
@@ -214,6 +253,7 @@ def score_replication(dgp: ComparativeData, seed: int) -> list[dict[str, Any]]:
         fit_independent_aipw,
         fit_matching_att,
         fit_econml_drlearner,
+        fit_econml_drlearner_conservative,
     )
     records: list[dict[str, Any]] = []
     for fit in methods:

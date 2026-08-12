@@ -11,7 +11,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-_SPEC_PATH = Path(__file__).with_name("specs") / "cf_two_group_comparative_methods_v1.json"
+_SPEC_PATH = Path(__file__).with_name("specs") / "cf_two_group_comparative_methods_v2.json"
 
 
 @dataclass(frozen=True, slots=True)

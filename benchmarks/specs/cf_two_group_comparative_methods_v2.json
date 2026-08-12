@@ -1,0 +1,30 @@
+{
+  "protocol_id": "cf-two-group-comparative-methods-v2",
+  "program_type": "methods",
+  "supersedes": "cf-two-group-comparative-methods-v1",
+  "estimand": "study-population-ate",
+  "n_groups": 2,
+  "n_covariates": 5,
+  "units_per_replication": 1000,
+  "final_replications_per_cell": 1000,
+  "factors": {
+    "outcome_surface": ["linear", "interaction"],
+    "confounding_surface": ["linear", "nonlinear"],
+    "overlap": ["adequate", "poor"]
+  },
+  "comparators": {
+    "econml-drlearner": {
+      "model_propensity": "auto",
+      "model_regression": "auto",
+      "cv": 2,
+      "min_propensity": 1e-06
+    },
+    "econml-drlearner-conservative": {
+      "model_propensity": "hist-gradient-boosting-classifier",
+      "model_regression": "hist-gradient-boosting-regressor",
+      "cv": 5,
+      "min_propensity": 0.01
+    }
+  },
+  "interpretation": "Descriptive methods evidence within declared simulated DGPs only; never qualification or causal-certification evidence. The v1 pilot remains historical and is not pooled with v2 results."
+}

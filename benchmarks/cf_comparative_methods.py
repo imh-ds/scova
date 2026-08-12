@@ -18,8 +18,15 @@ from benchmarks.cf_comparative_simulation import comparative_cells, simulate_com
 from benchmarks.cf_reference_campaign import dependency_lock_checksum
 from scova.cf import canonical_checksum
 
-_PROTOCOL_PATH = Path(__file__).with_name("specs") / "cf_two_group_comparative_methods_v1.json"
-_METHODS = ("scova-cf", "linear-ancova", "independent-aipw", "psm-att", "econml-drlearner")
+_PROTOCOL_PATH = Path(__file__).with_name("specs") / "cf_two_group_comparative_methods_v2.json"
+_METHODS = (
+    "scova-cf",
+    "linear-ancova",
+    "independent-aipw",
+    "psm-att",
+    "econml-drlearner",
+    "econml-drlearner-conservative",
+)
 _FORBIDDEN_FIELDS = frozenset({"profile", "calibration", "promotion", "qualification"})
 
 

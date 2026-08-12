@@ -4,7 +4,7 @@ This frozen, descriptive simulation compares SCOVA-CF with interacting linear AN
 an independently implemented cross-fitted AIPW estimator, propensity-score matching,
 and (where installed) EconML DRLearner.
 
-The study has two groups, five baseline covariates, and eight cells crossing linear or
+The current v2 study has two groups, five baseline covariates, and eight cells crossing linear or
 interaction outcome surfaces, linear or nonlinear confounding surfaces, and adequate or
 poor overlap. SCOVA-CF, ANCOVA, independent AIPW, and DRLearner target the eligible
 study-population ATE. One-to-one propensity-score matching targets the matched-treated
@@ -14,9 +14,10 @@ Reports present pooled summaries and cell-level bias, RMSE, median absolute erro
 95th-percentile absolute error, and maximum absolute error. The tail-error columns
 are descriptive diagnostics, not qualification gates.
 
-The current EconML baseline records its exact v0.16 recipe: automatic propensity and
-outcome nuisance models, two internal cross-fitting folds, and `min_propensity=1e-6`.
-It is a frozen baseline recipe, not a claim that it is optimal or stable in every DGP.
+The historical v1 pilot used EconML's auto/2-fold/`min_propensity=1e-6` recipe. The
+current v2 design retains that baseline and adds a separately named conservative recipe:
+histogram-gradient-boosting nuisance learners, five folds, and `min_propensity=0.01`.
+The v1 and v2 results are separate evidence sets and must not be pooled.
 
 This is performance evidence within these simulated DGPs only. It does not validate
 exchangeability, prove positivity, qualify SCOVA-CF, create a support profile, or

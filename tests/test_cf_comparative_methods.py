@@ -9,6 +9,7 @@ import pytest
 
 from benchmarks.cf_comparative_estimators import (
     fit_econml_drlearner,
+    fit_econml_drlearner_conservative,
     fit_independent_aipw,
     fit_linear_ancova,
     fit_matching_att,
@@ -27,6 +28,21 @@ def test_design_has_eight_two_group_cells() -> None:
     assert {cell["n_groups"] for cell in cells} == {2}
     assert {cell["n_covariates"] for cell in cells} == {5}
     assert len({cell["cell_id"] for cell in cells}) == 8
+
+
+def test_current_design_is_v2_with_two_distinct_drlearner_recipes() -> None:
+    protocol = Path("benchmarks/specs/cf_two_group_comparative_methods_v2.json").read_text(
+        encoding="utf-8"
+    )
+
+    assert "cf-two-group-comparative-methods-v2" in protocol
+    assert "econml-drlearner-conservative" in protocol
+
+
+def test_new_artifacts_identify_the_v2_protocol() -> None:
+    artifact = comparative_artifact(records=[], replications=1)
+
+    assert artifact["protocol_id"] == "cf-two-group-comparative-methods-v2"
 
 
 def test_returned_truth_matches_potential_outcomes() -> None:
@@ -68,6 +84,20 @@ def test_drlearner_records_its_frozen_recipe() -> None:
         "model_regression": "auto",
         "cv": 2,
         "min_propensity": 1e-6,
+    }
+
+
+def test_conservative_drlearner_is_a_distinct_explicit_comparator() -> None:
+    dgp = simulate_comparative_cell(comparative_cells()[0], seed=25)
+    result = fit_econml_drlearner_conservative(dgp, seed=25)
+
+    assert result.name == "econml-drlearner-conservative"
+    assert result.estimand == "ate"
+    assert result.details["recipe"] == {
+        "model_propensity": "hist-gradient-boosting-classifier",
+        "model_regression": "hist-gradient-boosting-regressor",
+        "cv": 5,
+        "min_propensity": 0.01,
     }
 
 
@@ -150,6 +180,7 @@ def test_full_five_rep_smoke_is_incomplete_against_frozen_final_denominator() ->
                 ("linear-ancova", "ate"),
                 ("independent-aipw", "ate"),
                 ("econml-drlearner", "ate"),
+                ("econml-drlearner-conservative", "ate"),
                 ("psm-att", "att"),
             ):
                 records.append(
@@ -168,7 +199,7 @@ def test_full_five_rep_smoke_is_incomplete_against_frozen_final_denominator() ->
 
     artifact = comparative_artifact(records=records, replications=5)
 
-    assert artifact["completed_records"] == 200
+    assert artifact["completed_records"] == 240
     assert artifact["complete"] is False
 
 
