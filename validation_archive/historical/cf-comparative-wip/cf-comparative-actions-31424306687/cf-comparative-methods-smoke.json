@@ -1,0 +1,2806 @@
+{
+  "artifact_checksum": "9db9e095c92e76fd3e5abd2582530af62ea3991c7cb65d1eddd9c156d4341f22",
+  "artifact_type": "scova-cf-comparative-methods",
+  "ate_summaries": {
+    "econml-drlearner": {
+      "bias": -18.071182353008417,
+      "bias_interval": [
+        -54.32968624762695,
+        0.08807951034709044
+      ],
+      "completed_records": 40,
+      "coverage": 0.075,
+      "coverage_interval": [
+        0.025836025774588198,
+        0.19864233524310543
+      ],
+      "empirical_sd": 114.62102621817884,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ],
+      "mean_reported_se": 0.6131012845057237,
+      "rmse": 114.61328962857515,
+      "rmse_interval": [
+        0.011026439929936372,
+        39408.58258408478
+      ],
+      "se_ratio": 0.005348942552116901,
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null
+    },
+    "independent-aipw": {
+      "bias": -1.1143677874250166,
+      "bias_interval": [
+        -1.4823318559207164,
+        -0.7193231638166804
+      ],
+      "completed_records": 40,
+      "coverage": 1.0,
+      "coverage_interval": [
+        0.9123783988027135,
+        1.0000000000000002
+      ],
+      "empirical_sd": 1.3395198196533173,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ],
+      "mean_reported_se": 1.216923458449752,
+      "rmse": 1.7299736438402438,
+      "rmse_interval": [
+        1.5760960033997096,
+        4.280513513373657
+      ],
+      "se_ratio": 0.9084773816670404,
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null
+    },
+    "linear-ancova": {
+      "bias": 0.058734655245052794,
+      "bias_interval": [
+        0.026929859336381902,
+        0.08990609250678783
+      ],
+      "completed_records": 40,
+      "coverage": 0.9,
+      "coverage_interval": [
+        0.7694822477247771,
+        0.9604204713173936
+      ],
+      "empirical_sd": 0.10148369225291956,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ],
+      "mean_reported_se": 0.0813810845205101,
+      "rmse": 0.11721654058948738,
+      "rmse_interval": [
+        0.0066388504041514215,
+        0.021663412437362035
+      ],
+      "se_ratio": 0.801912925257889,
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null
+    },
+    "scova-cf": {
+      "bias": 0.0074987777574064465,
+      "bias_interval": [
+        -0.024263839374024286,
+        0.03986617974047171
+      ],
+      "completed_records": 40,
+      "coverage": 0.975,
+      "coverage_interval": [
+        0.8711863103652591,
+        0.9955731684973186
+      ],
+      "empirical_sd": 0.1107339742930262,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ],
+      "mean_reported_se": 0.1157577720918351,
+      "rmse": 0.11023673260159038,
+      "rmse_interval": [
+        0.005948650745740948,
+        0.0188665843066987
+      ],
+      "se_ratio": 1.045368170255633,
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null
+    }
+  },
+  "att_summaries": {
+    "psm-att": {
+      "bias": -0.040009653434333214,
+      "bias_interval": [
+        -0.07763536223337034,
+        0.0033153356274276797
+      ],
+      "completed_records": 40,
+      "coverage": 0.85,
+      "coverage_interval": [
+        0.709276756335103,
+        0.9293881228267964
+      ],
+      "empirical_sd": 0.1136689681073292,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ],
+      "mean_reported_se": 0.1006964730781518,
+      "rmse": 0.13539173315593506,
+      "rmse_interval": [
+        0.011471120550149165,
+        0.02611102698229593
+      ],
+      "se_ratio": 0.8858747884741205,
+      "treated_retained_fraction": 0.6684794790169161,
+      "treated_retained_fraction_interval": [
+        0.6260887221449731,
+        0.7179195268284062
+      ]
+    }
+  },
+  "complete": true,
+  "completed_cells": 8,
+  "completed_records": 200,
+  "dependency_lock_checksum": "2131bd968e061c12847a100a896903ee1748baa4d5dcdd66d8bcd18a20559f09",
+  "git_commit": "3a614242e7f7b836f2b1fbb0df34dc2c003643bf",
+  "interpretation": "Descriptive methods evidence within frozen simulated DGPs only. It does not qualify SCOVA-CF, certify observational causal identification, or create a profile.",
+  "planned_cells": 8,
+  "planned_records": 200,
+  "planned_replications_per_cell": 5,
+  "program_type": "methods",
+  "protocol_checksum": "2c5d0646be4008dc9914451b60b786ac81348616abd6815037207552ad1b198f",
+  "protocol_id": "cf-two-group-comparative-methods-v1",
+  "records": [
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.1106206651286896,
+      "method": "scova-cf",
+      "seed": 830000000,
+      "standard_error": 0.08230951718967056,
+      "status": "limited/unstable-support",
+      "truth": 1.0032059795662498
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1192294316962426,
+      "method": "linear-ancova",
+      "seed": 830000000,
+      "standard_error": 0.0692877362611498,
+      "status": "ok",
+      "truth": 1.0032059795662498
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.0609133127136066,
+      "method": "independent-aipw",
+      "seed": 830000000,
+      "standard_error": 0.24422147925984833,
+      "status": "ok",
+      "truth": 1.0032059795662498
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "caliper": 0.11995697593102195,
+        "matched_pairs": 380,
+        "treated_retained_fraction": 0.8016877637130801
+      },
+      "estimand": "att",
+      "estimate": 1.0735319554207963,
+      "method": "psm-att",
+      "seed": 830000000,
+      "standard_error": 0.07645007505730188,
+      "status": "ok",
+      "truth": 1.0503910932817087
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.113204318733076,
+      "method": "econml-drlearner",
+      "seed": 830000000,
+      "standard_error": 0.0073068352583040685,
+      "status": "ok",
+      "truth": 1.0032059795662498
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.026542770030063,
+      "method": "scova-cf",
+      "seed": 830000001,
+      "standard_error": 0.08858592306584051,
+      "status": "limited/unstable-support",
+      "truth": 1.0050791916882345
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0554605384056717,
+      "method": "linear-ancova",
+      "seed": 830000001,
+      "standard_error": 0.06851559418550518,
+      "status": "ok",
+      "truth": 1.0050791916882345
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.4546178793566293,
+      "method": "independent-aipw",
+      "seed": 830000001,
+      "standard_error": 0.6541204851740797,
+      "status": "ok",
+      "truth": 1.0050791916882345
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "caliper": 0.1746329514102029,
+        "matched_pairs": 332,
+        "treated_retained_fraction": 0.649706457925636
+      },
+      "estimand": "att",
+      "estimate": 0.940518442011141,
+      "method": "psm-att",
+      "seed": 830000001,
+      "standard_error": 0.08792237975961963,
+      "status": "ok",
+      "truth": 1.0640088527859768
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0662020215108157,
+      "method": "econml-drlearner",
+      "seed": 830000001,
+      "standard_error": 0.010182452829034253,
+      "status": "ok",
+      "truth": 1.0050791916882345
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9886598979230387,
+      "method": "scova-cf",
+      "seed": 830000002,
+      "standard_error": 0.07859425829299664,
+      "status": "limited/unstable-support",
+      "truth": 1.003581916245039
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.004176967946027,
+      "method": "linear-ancova",
+      "seed": 830000002,
+      "standard_error": 0.06471049607432416,
+      "status": "ok",
+      "truth": 1.003581916245039
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.7904805707810336,
+      "method": "independent-aipw",
+      "seed": 830000002,
+      "standard_error": 0.2506339554938305,
+      "status": "ok",
+      "truth": 1.003581916245039
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "caliper": 0.14619826815819395,
+        "matched_pairs": 364,
+        "treated_retained_fraction": 0.7236580516898609
+      },
+      "estimand": "att",
+      "estimate": 0.9394843677403091,
+      "method": "psm-att",
+      "seed": 830000002,
+      "standard_error": 0.07643965109699313,
+      "status": "ok",
+      "truth": 1.066464680830001
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9922222985788715,
+      "method": "econml-drlearner",
+      "seed": 830000002,
+      "standard_error": 0.011114061320295658,
+      "status": "ok",
+      "truth": 1.003581916245039
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9776010916495077,
+      "method": "scova-cf",
+      "seed": 830000003,
+      "standard_error": 0.07767151272051129,
+      "status": "limited/unstable-support",
+      "truth": 0.9990893214724279
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9744462309379341,
+      "method": "linear-ancova",
+      "seed": 830000003,
+      "standard_error": 0.06340550565123992,
+      "status": "ok",
+      "truth": 0.9990893214724279
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.0347662587069297,
+      "method": "independent-aipw",
+      "seed": 830000003,
+      "standard_error": 0.3045700823670005,
+      "status": "ok",
+      "truth": 0.9990893214724279
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "caliper": 0.1311114355326138,
+        "matched_pairs": 365,
+        "treated_retained_fraction": 0.7156862745098039
+      },
+      "estimand": "att",
+      "estimate": 0.8889550030886231,
+      "method": "psm-att",
+      "seed": 830000003,
+      "standard_error": 0.0709458865056623,
+      "status": "ok",
+      "truth": 1.0540718718019109
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9773195170872296,
+      "method": "econml-drlearner",
+      "seed": 830000003,
+      "standard_error": 0.00514092156964384,
+      "status": "ok",
+      "truth": 0.9990893214724279
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.083276261688908,
+      "method": "scova-cf",
+      "seed": 830000004,
+      "standard_error": 0.0849919019500519,
+      "status": "limited/unstable-support",
+      "truth": 1.0039711742923811
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0711943244719946,
+      "method": "linear-ancova",
+      "seed": 830000004,
+      "standard_error": 0.06484207561223544,
+      "status": "ok",
+      "truth": 1.0039711742923811
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.6404008286576669,
+      "method": "independent-aipw",
+      "seed": 830000004,
+      "standard_error": 0.2672299372771708,
+      "status": "ok",
+      "truth": 1.0039711742923811
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {
+        "caliper": 0.12245445600893012,
+        "matched_pairs": 373,
+        "treated_retained_fraction": 0.7550607287449392
+      },
+      "estimand": "att",
+      "estimate": 0.9904945202311884,
+      "method": "psm-att",
+      "seed": 830000004,
+      "standard_error": 0.07338438551226335,
+      "status": "ok",
+      "truth": 1.0536674651230742
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.084277096252516,
+      "method": "econml-drlearner",
+      "seed": 830000004,
+      "standard_error": 0.007734015150265913,
+      "status": "ok",
+      "truth": 1.0039711742923811
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.0525252519351926,
+      "method": "scova-cf",
+      "seed": 830010000,
+      "standard_error": 0.14243630695691825,
+      "status": "limited/unstable-support",
+      "truth": 1.0099766936928185
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1138887828166222,
+      "method": "linear-ancova",
+      "seed": 830010000,
+      "standard_error": 0.08400422371092783,
+      "status": "ok",
+      "truth": 1.0099766936928185
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.1203420492805516,
+      "method": "independent-aipw",
+      "seed": 830010000,
+      "standard_error": 2.0084322009396924,
+      "status": "ok",
+      "truth": 1.0099766936928185
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "caliper": 0.4154593749402971,
+        "matched_pairs": 202,
+        "treated_retained_fraction": 0.3937621832358674
+      },
+      "estimand": "att",
+      "estimate": 0.9771084287606038,
+      "method": "psm-att",
+      "seed": 830010000,
+      "standard_error": 0.09824482626538708,
+      "status": "ok",
+      "truth": 1.1236014750885117
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1778758482813392,
+      "method": "econml-drlearner",
+      "seed": 830010000,
+      "standard_error": 0.009684072359291774,
+      "status": "ok",
+      "truth": 1.0099766936928185
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.0243365131912128,
+      "method": "scova-cf",
+      "seed": 830010001,
+      "standard_error": 0.15594515550888777,
+      "status": "limited/unstable-support",
+      "truth": 1.005221205811615
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9931614943037893,
+      "method": "linear-ancova",
+      "seed": 830010001,
+      "standard_error": 0.0788566903232294,
+      "status": "ok",
+      "truth": 1.005221205811615
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -1.5231664080873537,
+      "method": "independent-aipw",
+      "seed": 830010001,
+      "standard_error": 2.842646082043136,
+      "status": "ok",
+      "truth": 1.005221205811615
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "caliper": 0.4255689956369545,
+        "matched_pairs": 211,
+        "treated_retained_fraction": 0.4178217821782178
+      },
+      "estimand": "att",
+      "estimate": 0.9033142267304201,
+      "method": "psm-att",
+      "seed": 830010001,
+      "standard_error": 0.1005447001285162,
+      "status": "ok",
+      "truth": 1.1273834791391275
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0198053857619054,
+      "method": "econml-drlearner",
+      "seed": 830010001,
+      "standard_error": 0.0066937317103048285,
+      "status": "ok",
+      "truth": 1.005221205811615
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9342114896155957,
+      "method": "scova-cf",
+      "seed": 830010002,
+      "standard_error": 0.13772455787314897,
+      "status": "limited/unstable-support",
+      "truth": 1.0181874571589469
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0098353203413444,
+      "method": "linear-ancova",
+      "seed": 830010002,
+      "standard_error": 0.07933931783031017,
+      "status": "ok",
+      "truth": 1.0181874571589469
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -2.694837700658882,
+      "method": "independent-aipw",
+      "seed": 830010002,
+      "standard_error": 2.7043362759383247,
+      "status": "ok",
+      "truth": 1.0181874571589469
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "caliper": 0.4197593426006882,
+        "matched_pairs": 213,
+        "treated_retained_fraction": 0.43380855397148677
+      },
+      "estimand": "att",
+      "estimate": 0.9321639492331878,
+      "method": "psm-att",
+      "seed": 830010002,
+      "standard_error": 0.1001400386460043,
+      "status": "ok",
+      "truth": 1.1332806217536384
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9954675176324759,
+      "method": "econml-drlearner",
+      "seed": 830010002,
+      "standard_error": 0.00452068715679066,
+      "status": "ok",
+      "truth": 1.0181874571589469
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.0236808804711128,
+      "method": "scova-cf",
+      "seed": 830010003,
+      "standard_error": 0.16051697970358664,
+      "status": "limited/unstable-support",
+      "truth": 0.9963567138966519
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.027734515720434,
+      "method": "linear-ancova",
+      "seed": 830010003,
+      "standard_error": 0.08080369230879741,
+      "status": "ok",
+      "truth": 0.9963567138966519
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -1.4051404608543367,
+      "method": "independent-aipw",
+      "seed": 830010003,
+      "standard_error": 2.6074964835367105,
+      "status": "ok",
+      "truth": 0.9963567138966519
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "caliper": 0.40254982976378395,
+        "matched_pairs": 219,
+        "treated_retained_fraction": 0.42196531791907516
+      },
+      "estimand": "att",
+      "estimate": 0.9827595827306002,
+      "method": "psm-att",
+      "seed": 830010003,
+      "standard_error": 0.1036541067196129,
+      "status": "ok",
+      "truth": 1.1050597123703823
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.026236425328153,
+      "method": "econml-drlearner",
+      "seed": 830010003,
+      "standard_error": 0.004870048445944543,
+      "status": "ok",
+      "truth": 0.9963567138966519
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.0426276000063772,
+      "method": "scova-cf",
+      "seed": 830010004,
+      "standard_error": 0.1615746003685895,
+      "status": "limited/unstable-support",
+      "truth": 0.9952959589525071
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1191608702918365,
+      "method": "linear-ancova",
+      "seed": 830010004,
+      "standard_error": 0.07941752751454156,
+      "status": "ok",
+      "truth": 0.9952959589525071
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -2.5798869314959125,
+      "method": "independent-aipw",
+      "seed": 830010004,
+      "standard_error": 2.1680360186885,
+      "status": "ok",
+      "truth": 0.9952959589525071
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {
+        "caliper": 0.4443945963532021,
+        "matched_pairs": 195,
+        "treated_retained_fraction": 0.3869047619047619
+      },
+      "estimand": "att",
+      "estimate": 0.9756096768294177,
+      "method": "psm-att",
+      "seed": 830010004,
+      "standard_error": 0.0956897716001382,
+      "status": "ok",
+      "truth": 1.1092228811843026
+    },
+    {
+      "cell_id": "cmp-v1-linear-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1122754278668368,
+      "method": "econml-drlearner",
+      "seed": 830010004,
+      "standard_error": 0.005739719937589428,
+      "status": "ok",
+      "truth": 0.9952959589525071
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9690276207223399,
+      "method": "scova-cf",
+      "seed": 830020000,
+      "standard_error": 0.07608669763176551,
+      "status": "limited/unstable-support",
+      "truth": 1.0179700890213437
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9698359887616257,
+      "method": "linear-ancova",
+      "seed": 830020000,
+      "standard_error": 0.06285505327774454,
+      "status": "ok",
+      "truth": 1.0179700890213437
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.8298160710919253,
+      "method": "independent-aipw",
+      "seed": 830020000,
+      "standard_error": 0.20793942872335927,
+      "status": "ok",
+      "truth": 1.0179700890213437
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "caliper": 0.057125543979163876,
+        "matched_pairs": 405,
+        "treated_retained_fraction": 0.8526315789473684
+      },
+      "estimand": "att",
+      "estimate": 0.942700349615453,
+      "method": "psm-att",
+      "seed": 830020000,
+      "standard_error": 0.08421348365772056,
+      "status": "ok",
+      "truth": 1.0479325985346453
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.940410257400082,
+      "method": "econml-drlearner",
+      "seed": 830020000,
+      "standard_error": 0.010884129092658632,
+      "status": "ok",
+      "truth": 1.0179700890213437
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9955765505512849,
+      "method": "scova-cf",
+      "seed": 830020001,
+      "standard_error": 0.07640665090651204,
+      "status": "limited/unstable-support",
+      "truth": 1.0039011747415323
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9796013789715987,
+      "method": "linear-ancova",
+      "seed": 830020001,
+      "standard_error": 0.06392962095092311,
+      "status": "ok",
+      "truth": 1.0039011747415323
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.9576933843217276,
+      "method": "independent-aipw",
+      "seed": 830020001,
+      "standard_error": 0.2090996062960896,
+      "status": "ok",
+      "truth": 1.0039011747415323
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "caliper": 0.062492771683842596,
+        "matched_pairs": 412,
+        "treated_retained_fraction": 0.8530020703933747
+      },
+      "estimand": "att",
+      "estimate": 0.9393146332901767,
+      "method": "psm-att",
+      "seed": 830020001,
+      "standard_error": 0.07678393448035763,
+      "status": "ok",
+      "truth": 1.036975260664485
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0138522947997073,
+      "method": "econml-drlearner",
+      "seed": 830020001,
+      "standard_error": 0.008539516816146316,
+      "status": "ok",
+      "truth": 1.0039011747415323
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.1342694937588138,
+      "method": "scova-cf",
+      "seed": 830020002,
+      "standard_error": 0.08260970682918625,
+      "status": "limited/unstable-support",
+      "truth": 1.0101307577694814
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1105397684255558,
+      "method": "linear-ancova",
+      "seed": 830020002,
+      "standard_error": 0.06409584523975553,
+      "status": "ok",
+      "truth": 1.0101307577694814
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.9772456619804323,
+      "method": "independent-aipw",
+      "seed": 830020002,
+      "standard_error": 0.3065008335628565,
+      "status": "ok",
+      "truth": 1.0101307577694814
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "caliper": 0.05561661881719582,
+        "matched_pairs": 412,
+        "treated_retained_fraction": 0.807843137254902
+      },
+      "estimand": "att",
+      "estimate": 1.105396759232793,
+      "method": "psm-att",
+      "seed": 830020002,
+      "standard_error": 0.07529658681041286,
+      "status": "ok",
+      "truth": 1.0449487474454584
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.110957752655529,
+      "method": "econml-drlearner",
+      "seed": 830020002,
+      "standard_error": 0.010178034697848655,
+      "status": "ok",
+      "truth": 1.0101307577694814
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9253195813959405,
+      "method": "scova-cf",
+      "seed": 830020003,
+      "standard_error": 0.07837380259142833,
+      "status": "limited/unstable-support",
+      "truth": 0.9933294328509367
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0101087106259132,
+      "method": "linear-ancova",
+      "seed": 830020003,
+      "standard_error": 0.06110941760693633,
+      "status": "ok",
+      "truth": 0.9933294328509367
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.679381494756417,
+      "method": "independent-aipw",
+      "seed": 830020003,
+      "standard_error": 0.19236892350660215,
+      "status": "ok",
+      "truth": 0.9933294328509367
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "caliper": 0.035000240264217046,
+        "matched_pairs": 448,
+        "treated_retained_fraction": 0.8784313725490196
+      },
+      "estimand": "att",
+      "estimate": 0.9029962597350778,
+      "method": "psm-att",
+      "seed": 830020003,
+      "standard_error": 0.07413063241074669,
+      "status": "ok",
+      "truth": 1.0108411839252558
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.96222123082748,
+      "method": "econml-drlearner",
+      "seed": 830020003,
+      "standard_error": 0.01108036915496743,
+      "status": "ok",
+      "truth": 0.9933294328509367
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.0968508050025387,
+      "method": "scova-cf",
+      "seed": 830020004,
+      "standard_error": 0.08188583636798681,
+      "status": "limited/unstable-support",
+      "truth": 0.989122150630978
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0411675799697455,
+      "method": "linear-ancova",
+      "seed": 830020004,
+      "standard_error": 0.06296182866063411,
+      "status": "ok",
+      "truth": 0.989122150630978
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.7300725343619517,
+      "method": "independent-aipw",
+      "seed": 830020004,
+      "standard_error": 0.5486095376546296,
+      "status": "ok",
+      "truth": 0.989122150630978
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {
+        "caliper": 0.06643281326338728,
+        "matched_pairs": 406,
+        "treated_retained_fraction": 0.8169014084507042
+      },
+      "estimand": "att",
+      "estimate": 0.9347503284954788,
+      "method": "psm-att",
+      "seed": 830020004,
+      "standard_error": 0.08506936174168953,
+      "status": "ok",
+      "truth": 1.0242977204295127
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0508938426356154,
+      "method": "econml-drlearner",
+      "seed": 830020004,
+      "standard_error": 0.010120079675586131,
+      "status": "ok",
+      "truth": 0.989122150630978
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9935626260721566,
+      "method": "scova-cf",
+      "seed": 830030000,
+      "standard_error": 0.14033021897748424,
+      "status": "limited/unstable-support",
+      "truth": 1.0080685531011953
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9810148614177849,
+      "method": "linear-ancova",
+      "seed": 830030000,
+      "standard_error": 0.06693076408278775,
+      "status": "ok",
+      "truth": 1.0080685531011953
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -1.1685167664876093,
+      "method": "independent-aipw",
+      "seed": 830030000,
+      "standard_error": 2.1636575351611844,
+      "status": "ok",
+      "truth": 1.0080685531011953
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "caliper": 0.11596317142711761,
+        "matched_pairs": 345,
+        "treated_retained_fraction": 0.7419354838709677
+      },
+      "estimand": "att",
+      "estimate": 1.0168493105448564,
+      "method": "psm-att",
+      "seed": 830030000,
+      "standard_error": 0.09487700262072424,
+      "status": "ok",
+      "truth": 1.0806265165401774
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0620125813803902,
+      "method": "econml-drlearner",
+      "seed": 830030000,
+      "standard_error": 0.009853136699893846,
+      "status": "ok",
+      "truth": 1.0080685531011953
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9500170215627071,
+      "method": "scova-cf",
+      "seed": 830030001,
+      "standard_error": 0.10104071488222326,
+      "status": "limited/unstable-support",
+      "truth": 0.9999755737364807
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9127076955326704,
+      "method": "linear-ancova",
+      "seed": 830030001,
+      "standard_error": 0.06519439322416587,
+      "status": "ok",
+      "truth": 0.9999755737364807
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -2.6095964158829767,
+      "method": "independent-aipw",
+      "seed": 830030001,
+      "standard_error": 2.7036293296259903,
+      "status": "ok",
+      "truth": 0.9999755737364807
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "caliper": 0.14260680667691847,
+        "matched_pairs": 318,
+        "treated_retained_fraction": 0.6973684210526315
+      },
+      "estimand": "att",
+      "estimate": 0.8761143525455428,
+      "method": "psm-att",
+      "seed": 830030001,
+      "standard_error": 0.08814448097844388,
+      "status": "ok",
+      "truth": 1.0842815259540524
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.205556938206738,
+      "method": "econml-drlearner",
+      "seed": 830030001,
+      "standard_error": 0.006247037368700962,
+      "status": "ok",
+      "truth": 0.9999755737364807
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.025893904097325,
+      "method": "scova-cf",
+      "seed": 830030002,
+      "standard_error": 0.0981578039304771,
+      "status": "limited/unstable-support",
+      "truth": 1.0094014528730568
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0279489745718007,
+      "method": "linear-ancova",
+      "seed": 830030002,
+      "standard_error": 0.06491934276578604,
+      "status": "ok",
+      "truth": 1.0094014528730568
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.0449085366344453,
+      "method": "independent-aipw",
+      "seed": 830030002,
+      "standard_error": 1.4782410874715985,
+      "status": "ok",
+      "truth": 1.0094014528730568
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "caliper": 0.12210746096687569,
+        "matched_pairs": 318,
+        "treated_retained_fraction": 0.6751592356687898
+      },
+      "estimand": "att",
+      "estimate": 0.9339803388947454,
+      "method": "psm-att",
+      "seed": 830030002,
+      "standard_error": 0.08289954393863724,
+      "status": "ok",
+      "truth": 1.0838002565244247
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0385614147503501,
+      "method": "econml-drlearner",
+      "seed": 830030002,
+      "standard_error": 0.0033502339712268574,
+      "status": "ok",
+      "truth": 1.0094014528730568
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.8648116883862291,
+      "method": "scova-cf",
+      "seed": 830030003,
+      "standard_error": 0.10818109434733837,
+      "status": "limited/unstable-support",
+      "truth": 1.0042197518872011
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9774455294420867,
+      "method": "linear-ancova",
+      "seed": 830030003,
+      "standard_error": 0.0658415726102843,
+      "status": "ok",
+      "truth": 1.0042197518872011
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -0.519946491024201,
+      "method": "independent-aipw",
+      "seed": 830030003,
+      "standard_error": 1.6344523369879564,
+      "status": "ok",
+      "truth": 1.0042197518872011
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "caliper": 0.12420565516786984,
+        "matched_pairs": 315,
+        "treated_retained_fraction": 0.6576200417536534
+      },
+      "estimand": "att",
+      "estimate": 0.8891421975821989,
+      "method": "psm-att",
+      "seed": 830030003,
+      "standard_error": 0.0984490853055711,
+      "status": "ok",
+      "truth": 1.075453496662491
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.8688285662920653,
+      "method": "econml-drlearner",
+      "seed": 830030003,
+      "standard_error": 0.017883522172485622,
+      "status": "ok",
+      "truth": 1.0042197518872011
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.8916318997140286,
+      "method": "scova-cf",
+      "seed": 830030004,
+      "standard_error": 0.11673789552969857,
+      "status": "limited/unstable-support",
+      "truth": 0.9881408526071429
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0103796634503066,
+      "method": "linear-ancova",
+      "seed": 830030004,
+      "standard_error": 0.06564518883282344,
+      "status": "ok",
+      "truth": 0.9881408526071429
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -0.5012726926623992,
+      "method": "independent-aipw",
+      "seed": 830030004,
+      "standard_error": 0.8276358109946005,
+      "status": "ok",
+      "truth": 0.9881408526071429
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {
+        "caliper": 0.09726365501361778,
+        "matched_pairs": 354,
+        "treated_retained_fraction": 0.7884187082405345
+      },
+      "estimand": "att",
+      "estimate": 0.9892112711007295,
+      "method": "psm-att",
+      "seed": 830030004,
+      "standard_error": 0.08728495440681426,
+      "status": "ok",
+      "truth": 1.050303766565303
+    },
+    {
+      "cell_id": "cmp-v1-linear-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.8412369386933033,
+      "method": "econml-drlearner",
+      "seed": 830030004,
+      "standard_error": 0.012904930001637163,
+      "status": "ok",
+      "truth": 0.9881408526071429
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9572436402495947,
+      "method": "scova-cf",
+      "seed": 830040000,
+      "standard_error": 0.10058946978110492,
+      "status": "limited/unstable-support",
+      "truth": 1.015303223843727
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1506313141545823,
+      "method": "linear-ancova",
+      "seed": 830040000,
+      "standard_error": 0.0910434503644833,
+      "status": "ok",
+      "truth": 1.015303223843727
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -1.362408216003828,
+      "method": "independent-aipw",
+      "seed": 830040000,
+      "standard_error": 1.9156966019725268,
+      "status": "ok",
+      "truth": 1.015303223843727
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "caliper": 0.13057927469259006,
+        "matched_pairs": 371,
+        "treated_retained_fraction": 0.7510121457489879
+      },
+      "estimand": "att",
+      "estimate": 1.0478594949760827,
+      "method": "psm-att",
+      "seed": 830040000,
+      "standard_error": 0.09553526407869994,
+      "status": "ok",
+      "truth": 1.0370728865567598
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0560262785695156,
+      "method": "econml-drlearner",
+      "seed": 830040000,
+      "standard_error": 0.009151355631489106,
+      "status": "ok",
+      "truth": 1.015303223843727
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9722293384088441,
+      "method": "scova-cf",
+      "seed": 830040001,
+      "standard_error": 0.09568866412526848,
+      "status": "limited/unstable-support",
+      "truth": 0.992363010553593
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0758743100966173,
+      "method": "linear-ancova",
+      "seed": 830040001,
+      "standard_error": 0.08791633931608939,
+      "status": "ok",
+      "truth": 0.992363010553593
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.2995513685634807,
+      "method": "independent-aipw",
+      "seed": 830040001,
+      "standard_error": 0.35987758620461796,
+      "status": "ok",
+      "truth": 0.992363010553593
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "caliper": 0.13664677262781136,
+        "matched_pairs": 349,
+        "treated_retained_fraction": 0.7240663900414938
+      },
+      "estimand": "att",
+      "estimate": 0.9701436796082926,
+      "method": "psm-att",
+      "seed": 830040001,
+      "standard_error": 0.10330974939450568,
+      "status": "ok",
+      "truth": 0.9884552215415838
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.044680121134376,
+      "method": "econml-drlearner",
+      "seed": 830040001,
+      "standard_error": 0.005693274039047122,
+      "status": "ok",
+      "truth": 0.992363010553593
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.8013731522883927,
+      "method": "scova-cf",
+      "seed": 830040002,
+      "standard_error": 0.12795977098836242,
+      "status": "limited/unstable-support",
+      "truth": 1.0218408215374295
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.8515852354896893,
+      "method": "linear-ancova",
+      "seed": 830040002,
+      "standard_error": 0.08854053005836955,
+      "status": "ok",
+      "truth": 1.0218408215374295
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.1600331541723388,
+      "method": "independent-aipw",
+      "seed": 830040002,
+      "standard_error": 0.6418091633252558,
+      "status": "ok",
+      "truth": 1.0218408215374295
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "caliper": 0.13294372217362502,
+        "matched_pairs": 365,
+        "treated_retained_fraction": 0.7448979591836735
+      },
+      "estimand": "att",
+      "estimate": 0.8365167093706044,
+      "method": "psm-att",
+      "seed": 830040002,
+      "standard_error": 0.09408368606673533,
+      "status": "ok",
+      "truth": 1.0029848334562768
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.861207821869089,
+      "method": "econml-drlearner",
+      "seed": 830040002,
+      "standard_error": 0.005272537310980572,
+      "status": "ok",
+      "truth": 1.0218408215374295
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9151240818373143,
+      "method": "scova-cf",
+      "seed": 830040003,
+      "standard_error": 0.09547888424263357,
+      "status": "limited/unstable-support",
+      "truth": 1.0042050535902083
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0346851840596396,
+      "method": "linear-ancova",
+      "seed": 830040003,
+      "standard_error": 0.08995953562354207,
+      "status": "ok",
+      "truth": 1.0042050535902083
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.3527247462631142,
+      "method": "independent-aipw",
+      "seed": 830040003,
+      "standard_error": 0.4429335687485145,
+      "status": "ok",
+      "truth": 1.0042050535902083
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "caliper": 0.13825041565163407,
+        "matched_pairs": 360,
+        "treated_retained_fraction": 0.6923076923076923
+      },
+      "estimand": "att",
+      "estimate": 1.063350342057807,
+      "method": "psm-att",
+      "seed": 830040003,
+      "standard_error": 0.096365505995147,
+      "status": "ok",
+      "truth": 1.0172763327243202
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0146732399734335,
+      "method": "econml-drlearner",
+      "seed": 830040003,
+      "standard_error": 0.004522694576345621,
+      "status": "ok",
+      "truth": 1.0042050535902083
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.022063050020398,
+      "method": "scova-cf",
+      "seed": 830040004,
+      "standard_error": 0.10214671230572063,
+      "status": "limited/unstable-support",
+      "truth": 0.9927662867712701
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1092104819643642,
+      "method": "linear-ancova",
+      "seed": 830040004,
+      "standard_error": 0.09201432938262319,
+      "status": "ok",
+      "truth": 0.9927662867712701
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.6860004541943595,
+      "method": "independent-aipw",
+      "seed": 830040004,
+      "standard_error": 0.3437447809435122,
+      "status": "ok",
+      "truth": 0.9927662867712701
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {
+        "caliper": 0.13960142695159358,
+        "matched_pairs": 350,
+        "treated_retained_fraction": 0.7099391480730223
+      },
+      "estimand": "att",
+      "estimate": 0.9814720144781537,
+      "method": "psm-att",
+      "seed": 830040004,
+      "standard_error": 0.1089767384114831,
+      "status": "ok",
+      "truth": 0.9879241863782806
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0613235623040433,
+      "method": "econml-drlearner",
+      "seed": 830040004,
+      "standard_error": 0.004520956987188717,
+      "status": "ok",
+      "truth": 0.9927662867712701
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.0390147335532236,
+      "method": "scova-cf",
+      "seed": 830050000,
+      "standard_error": 0.22917173936192597,
+      "status": "limited/unstable-support",
+      "truth": 1.0110353128975502
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.2358463854037738,
+      "method": "linear-ancova",
+      "seed": 830050000,
+      "standard_error": 0.10524911553778647,
+      "status": "ok",
+      "truth": 1.0110353128975502
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -2.838493371513534,
+      "method": "independent-aipw",
+      "seed": 830050000,
+      "standard_error": 3.1326949771974175,
+      "status": "ok",
+      "truth": 1.0110353128975502
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "caliper": 0.3941247187903662,
+        "matched_pairs": 208,
+        "treated_retained_fraction": 0.42362525458248473
+      },
+      "estimand": "att",
+      "estimate": 1.0907822125024222,
+      "method": "psm-att",
+      "seed": 830050000,
+      "standard_error": 0.12693513286337965,
+      "status": "ok",
+      "truth": 1.0035335989300223
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1808212266753693,
+      "method": "econml-drlearner",
+      "seed": 830050000,
+      "standard_error": 0.013196246277657869,
+      "status": "ok",
+      "truth": 1.0110353128975502
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9406721392092477,
+      "method": "scova-cf",
+      "seed": 830050001,
+      "standard_error": 0.1401170094520785,
+      "status": "limited/unstable-support",
+      "truth": 1.0003954615214241
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9832002982370396,
+      "method": "linear-ancova",
+      "seed": 830050001,
+      "standard_error": 0.10532770842035058,
+      "status": "ok",
+      "truth": 1.0003954615214241
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -2.736395856137462,
+      "method": "independent-aipw",
+      "seed": 830050001,
+      "standard_error": 2.0198592719345254,
+      "status": "ok",
+      "truth": 1.0003954615214241
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "caliper": 0.40845914947233963,
+        "matched_pairs": 221,
+        "treated_retained_fraction": 0.45850622406639
+      },
+      "estimand": "att",
+      "estimate": 0.9935004885899408,
+      "method": "psm-att",
+      "seed": 830050001,
+      "standard_error": 0.1169012753483077,
+      "status": "ok",
+      "truth": 0.9999755721969412
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.2518783337882067,
+      "method": "econml-drlearner",
+      "seed": 830050001,
+      "standard_error": 0.01598827686421662,
+      "status": "ok",
+      "truth": 1.0003954615214241
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.2154979729437463,
+      "method": "scova-cf",
+      "seed": 830050002,
+      "standard_error": 0.17273944592606247,
+      "status": "limited/unstable-support",
+      "truth": 1.016312077163405
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1177279819586803,
+      "method": "linear-ancova",
+      "seed": 830050002,
+      "standard_error": 0.10552203574792564,
+      "status": "ok",
+      "truth": 1.016312077163405
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.02651262948271051,
+      "method": "independent-aipw",
+      "seed": 830050002,
+      "standard_error": 3.076987565395793,
+      "status": "ok",
+      "truth": 1.016312077163405
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "caliper": 0.447842964593265,
+        "matched_pairs": 187,
+        "treated_retained_fraction": 0.3816326530612245
+      },
+      "estimand": "att",
+      "estimate": 0.9435866321050933,
+      "method": "psm-att",
+      "seed": 830050002,
+      "standard_error": 0.12706116213676064,
+      "status": "ok",
+      "truth": 1.0142814482618134
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.178808186806465,
+      "method": "econml-drlearner",
+      "seed": 830050002,
+      "standard_error": 0.015066715833248825,
+      "status": "ok",
+      "truth": 1.016312077163405
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.2824429431820383,
+      "method": "scova-cf",
+      "seed": 830050003,
+      "standard_error": 0.16365934690691755,
+      "status": "limited/unstable-support",
+      "truth": 0.9926582044654417
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.3483401956592538,
+      "method": "linear-ancova",
+      "seed": 830050003,
+      "standard_error": 0.10351254333082252,
+      "status": "ok",
+      "truth": 0.9926582044654417
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -2.6275299232994485,
+      "method": "independent-aipw",
+      "seed": 830050003,
+      "standard_error": 3.2146368105342673,
+      "status": "ok",
+      "truth": 0.9926582044654417
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "caliper": 0.41806223989941016,
+        "matched_pairs": 212,
+        "treated_retained_fraction": 0.42147117296222664
+      },
+      "estimand": "att",
+      "estimate": 1.2071919536672393,
+      "method": "psm-att",
+      "seed": 830050003,
+      "standard_error": 0.13264243586488303,
+      "status": "ok",
+      "truth": 1.0151289458065071
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.6076773887795488,
+      "method": "econml-drlearner",
+      "seed": 830050003,
+      "standard_error": 0.01951187164116659,
+      "status": "ok",
+      "truth": 0.9926582044654417
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.8944022941571284,
+      "method": "scova-cf",
+      "seed": 830050004,
+      "standard_error": 0.1356423485998799,
+      "status": "limited/unstable-support",
+      "truth": 0.9988693898538089
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0101339242190255,
+      "method": "linear-ancova",
+      "seed": 830050004,
+      "standard_error": 0.10172193014552348,
+      "status": "ok",
+      "truth": 0.9988693898538089
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -0.1584566752127843,
+      "method": "independent-aipw",
+      "seed": 830050004,
+      "standard_error": 1.2834667975689666,
+      "status": "ok",
+      "truth": 0.9988693898538089
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {
+        "caliper": 0.3753729237062716,
+        "matched_pairs": 235,
+        "treated_retained_fraction": 0.47
+      },
+      "estimand": "att",
+      "estimate": 0.935321480648741,
+      "method": "psm-att",
+      "seed": 830050004,
+      "standard_error": 0.11079245013474075,
+      "status": "ok",
+      "truth": 1.000024883580575
+    },
+    {
+      "cell_id": "cmp-v1-interaction-linear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.2173893116577952,
+      "method": "econml-drlearner",
+      "seed": 830050004,
+      "standard_error": 0.020079232853221347,
+      "status": "ok",
+      "truth": 0.9988693898538089
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9951149660296776,
+      "method": "scova-cf",
+      "seed": 830060000,
+      "standard_error": 0.09954204018934908,
+      "status": "limited/unstable-support",
+      "truth": 0.9936395032775432
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9877225111720945,
+      "method": "linear-ancova",
+      "seed": 830060000,
+      "standard_error": 0.09088262634824838,
+      "status": "ok",
+      "truth": 0.9936395032775432
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.7909268665014603,
+      "method": "independent-aipw",
+      "seed": 830060000,
+      "standard_error": 0.307259283524631,
+      "status": "ok",
+      "truth": 0.9936395032775432
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "caliper": 0.07146958823449026,
+        "matched_pairs": 412,
+        "treated_retained_fraction": 0.8459958932238193
+      },
+      "estimand": "att",
+      "estimate": 0.8765256814546136,
+      "method": "psm-att",
+      "seed": 830060000,
+      "standard_error": 0.10838676968196334,
+      "status": "ok",
+      "truth": 0.9700083377034978
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.100895332946158,
+      "method": "econml-drlearner",
+      "seed": 830060000,
+      "standard_error": 0.008248047956162501,
+      "status": "ok",
+      "truth": 0.9936395032775432
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.0664573020617372,
+      "method": "scova-cf",
+      "seed": 830060001,
+      "standard_error": 0.09464063427019466,
+      "status": "limited/unstable-support",
+      "truth": 0.9943922297225445
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0601619411890513,
+      "method": "linear-ancova",
+      "seed": 830060001,
+      "standard_error": 0.08727189746344001,
+      "status": "ok",
+      "truth": 0.9943922297225445
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.2316156209638394,
+      "method": "independent-aipw",
+      "seed": 830060001,
+      "standard_error": 0.23459866483631822,
+      "status": "ok",
+      "truth": 0.9943922297225445
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "caliper": 0.05842607119577797,
+        "matched_pairs": 406,
+        "treated_retained_fraction": 0.79296875
+      },
+      "estimand": "att",
+      "estimate": 1.0286549766563826,
+      "method": "psm-att",
+      "seed": 830060001,
+      "standard_error": 0.10753806682666397,
+      "status": "ok",
+      "truth": 0.9965983081864488
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0712936694766837,
+      "method": "econml-drlearner",
+      "seed": 830060001,
+      "standard_error": 0.0061838762170814765,
+      "status": "ok",
+      "truth": 0.9943922297225445
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9746649047726881,
+      "method": "scova-cf",
+      "seed": 830060002,
+      "standard_error": 0.09098430354896288,
+      "status": "limited/unstable-support",
+      "truth": 0.996501982597964
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0683556655660509,
+      "method": "linear-ancova",
+      "seed": 830060002,
+      "standard_error": 0.08942116964368593,
+      "status": "ok",
+      "truth": 0.996501982597964
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.1645332570784073,
+      "method": "independent-aipw",
+      "seed": 830060002,
+      "standard_error": 0.37383425168732687,
+      "status": "ok",
+      "truth": 0.996501982597964
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "caliper": 0.06596470801934844,
+        "matched_pairs": 403,
+        "treated_retained_fraction": 0.8360995850622407
+      },
+      "estimand": "att",
+      "estimate": 1.0367795128029145,
+      "method": "psm-att",
+      "seed": 830060002,
+      "standard_error": 0.11065452262129667,
+      "status": "ok",
+      "truth": 0.9821478785834685
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.005133414201401,
+      "method": "econml-drlearner",
+      "seed": 830060002,
+      "standard_error": 0.009476202802966079,
+      "status": "ok",
+      "truth": 0.996501982597964
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.0272316073748982,
+      "method": "scova-cf",
+      "seed": 830060003,
+      "standard_error": 0.09510799314433392,
+      "status": "limited/unstable-support",
+      "truth": 0.9913523634176693
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1349858245550628,
+      "method": "linear-ancova",
+      "seed": 830060003,
+      "standard_error": 0.09108038007649243,
+      "status": "ok",
+      "truth": 0.9913523634176693
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.425225625156149,
+      "method": "independent-aipw",
+      "seed": 830060003,
+      "standard_error": 0.29101998516115446,
+      "status": "ok",
+      "truth": 0.9913523634176693
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "caliper": 0.0798352947106128,
+        "matched_pairs": 390,
+        "treated_retained_fraction": 0.752895752895753
+      },
+      "estimand": "att",
+      "estimate": 1.0924341834074451,
+      "method": "psm-att",
+      "seed": 830060003,
+      "standard_error": 0.10630260693442485,
+      "status": "ok",
+      "truth": 0.9907841160220671
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0439065029185213,
+      "method": "econml-drlearner",
+      "seed": 830060003,
+      "standard_error": 0.006991959279970846,
+      "status": "ok",
+      "truth": 0.9913523634176693
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9288744278551851,
+      "method": "scova-cf",
+      "seed": 830060004,
+      "standard_error": 0.10127544361818526,
+      "status": "limited/unstable-support",
+      "truth": 1.0064209172188743
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9589954577712427,
+      "method": "linear-ancova",
+      "seed": 830060004,
+      "standard_error": 0.08891522192238965,
+      "status": "ok",
+      "truth": 1.0064209172188743
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.9403841955300831,
+      "method": "independent-aipw",
+      "seed": 830060004,
+      "standard_error": 0.336350194704465,
+      "status": "ok",
+      "truth": 1.0064209172188743
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {
+        "caliper": 0.07013497344149074,
+        "matched_pairs": 400,
+        "treated_retained_fraction": 0.8316008316008316
+      },
+      "estimand": "att",
+      "estimate": 0.8655908183516695,
+      "method": "psm-att",
+      "seed": 830060004,
+      "standard_error": 0.115433073693164,
+      "status": "ok",
+      "truth": 0.9971272593297023
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.899196285849664,
+      "method": "econml-drlearner",
+      "seed": 830060004,
+      "standard_error": 0.006742907511012316,
+      "status": "ok",
+      "truth": 1.0064209172188743
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.3156532372688745,
+      "method": "scova-cf",
+      "seed": 830070000,
+      "standard_error": 0.11641932956563793,
+      "status": "limited/unstable-support",
+      "truth": 1.0056353407551877
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.334803754880475,
+      "method": "linear-ancova",
+      "seed": 830070000,
+      "standard_error": 0.08603937432375396,
+      "status": "ok",
+      "truth": 1.0056353407551877
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.016003331556407,
+      "method": "independent-aipw",
+      "seed": 830070000,
+      "standard_error": 1.3835386136580903,
+      "status": "ok",
+      "truth": 1.0056353407551877
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "caliper": 0.11154086031856186,
+        "matched_pairs": 327,
+        "treated_retained_fraction": 0.6987179487179487
+      },
+      "estimand": "att",
+      "estimate": 1.3870281369505484,
+      "method": "psm-att",
+      "seed": 830070000,
+      "standard_error": 0.1230023534856777,
+      "status": "ok",
+      "truth": 1.0186693580959214
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": -723.8718610666373,
+      "method": "econml-drlearner",
+      "seed": 830070000,
+      "standard_error": 24.15605090083865,
+      "status": "ok",
+      "truth": 1.0056353407551877
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.2139048456226507,
+      "method": "scova-cf",
+      "seed": 830070001,
+      "standard_error": 0.1445670110827378,
+      "status": "limited/unstable-support",
+      "truth": 1.0074478608322939
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0306710027128547,
+      "method": "linear-ancova",
+      "seed": 830070001,
+      "standard_error": 0.09050322967008384,
+      "status": "ok",
+      "truth": 1.0074478608322939
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -0.34911657547934394,
+      "method": "independent-aipw",
+      "seed": 830070001,
+      "standard_error": 1.722639976032173,
+      "status": "ok",
+      "truth": 1.0074478608322939
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "caliper": 0.12262122469539782,
+        "matched_pairs": 346,
+        "treated_retained_fraction": 0.7253668763102725
+      },
+      "estimand": "att",
+      "estimate": 0.9654035893318568,
+      "method": "psm-att",
+      "seed": 830070001,
+      "standard_error": 0.1197658768611849,
+      "status": "ok",
+      "truth": 1.0035786830695907
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.975688930714967,
+      "method": "econml-drlearner",
+      "seed": 830070001,
+      "standard_error": 0.012191290142079056,
+      "status": "ok",
+      "truth": 1.0074478608322939
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.8276111437611035,
+      "method": "scova-cf",
+      "seed": 830070002,
+      "standard_error": 0.1318774912650613,
+      "status": "limited/unstable-support",
+      "truth": 0.998565277483747
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.15766067283818,
+      "method": "linear-ancova",
+      "seed": 830070002,
+      "standard_error": 0.08985903657650857,
+      "status": "ok",
+      "truth": 0.998565277483747
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -0.796647743904791,
+      "method": "independent-aipw",
+      "seed": 830070002,
+      "standard_error": 1.283894733382896,
+      "status": "ok",
+      "truth": 0.998565277483747
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "caliper": 0.1152396053508209,
+        "matched_pairs": 316,
+        "treated_retained_fraction": 0.6583333333333333
+      },
+      "estimand": "att",
+      "estimate": 0.9567781431316421,
+      "method": "psm-att",
+      "seed": 830070002,
+      "standard_error": 0.1277163286520554,
+      "status": "ok",
+      "truth": 1.0047841616290978
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.7460563014702112,
+      "method": "econml-drlearner",
+      "seed": 830070002,
+      "standard_error": 0.011135008324510922,
+      "status": "ok",
+      "truth": 0.998565277483747
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9842162179048954,
+      "method": "scova-cf",
+      "seed": 830070003,
+      "standard_error": 0.13423553543635713,
+      "status": "limited/unstable-support",
+      "truth": 0.9915780469342991
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0713837973176108,
+      "method": "linear-ancova",
+      "seed": 830070003,
+      "standard_error": 0.0936945850742714,
+      "status": "ok",
+      "truth": 0.9915780469342991
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -0.003008060430840004,
+      "method": "independent-aipw",
+      "seed": 830070003,
+      "standard_error": 1.126653434732339,
+      "status": "ok",
+      "truth": 0.9915780469342991
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "caliper": 0.13234249852127566,
+        "matched_pairs": 318,
+        "treated_retained_fraction": 0.6583850931677019
+      },
+      "estimand": "att",
+      "estimate": 1.1300675570957184,
+      "method": "psm-att",
+      "seed": 830070003,
+      "standard_error": 0.12663192496901282,
+      "status": "ok",
+      "truth": 0.9819489560879103
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0507937719139464,
+      "method": "econml-drlearner",
+      "seed": 830070003,
+      "standard_error": 0.009833964340280653,
+      "status": "ok",
+      "truth": 0.9915780469342991
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9213023944684785,
+      "method": "scova-cf",
+      "seed": 830070004,
+      "standard_error": 0.1283065742383268,
+      "status": "limited/unstable-support",
+      "truth": 1.01067912914272
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.2245585380327595,
+      "method": "linear-ancova",
+      "seed": 830070004,
+      "standard_error": 0.1001024550699111,
+      "status": "ok",
+      "truth": 1.01067912914272
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.9917458556062974,
+      "method": "independent-aipw",
+      "seed": 830070004,
+      "standard_error": 0.8615846457421299,
+      "status": "ok",
+      "truth": 1.01067912914272
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {
+        "caliper": 0.12654630814722517,
+        "matched_pairs": 328,
+        "treated_retained_fraction": 0.6919831223628692
+      },
+      "estimand": "att",
+      "estimate": 1.3054465722453035,
+      "method": "psm-att",
+      "seed": 830070004,
+      "standard_error": 0.1392591114633684,
+      "status": "ok",
+      "truth": 1.0102980958739154
+    },
+    {
+      "cell_id": "cmp-v1-interaction-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1038864861535391,
+      "method": "econml-drlearner",
+      "seed": 830070004,
+      "standard_error": 0.010166525413052269,
+      "status": "ok",
+      "truth": 1.01067912914272
+    }
+  ],
+  "source_evidence_ids": []
+}

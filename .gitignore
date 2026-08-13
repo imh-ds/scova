@@ -52,6 +52,8 @@ local-artifacts/
 # is version-controlled instead.
 validation_archive/*
 !validation_archive/cf-v9/
+!validation_archive/historical/
+!validation_archive/historical/**
 *.cover
 *.py,cover
 .hypothesis/

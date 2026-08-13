@@ -1,0 +1,561 @@
+{
+  "artifact_type": "scova-cf-comparative-methods",
+  "program_type": "methods",
+  "protocol_id": "cf-two-group-comparative-methods-v3",
+  "protocol_checksum": "d4c3ec0fa98131c4370d3a42b753f1f8c4ffb2ffb1f97021c617fd45404139fe",
+  "dependency_lock_checksum": "2131bd968e061c12847a100a896903ee1748baa4d5dcdd66d8bcd18a20559f09",
+  "git_commit": "7b857317c5d96ade56e342a7f05f3ed4be5441dc",
+  "planned_cells": 8,
+  "completed_cells": 1,
+  "planned_replications_per_cell": 1000,
+  "requested_replications_per_cell": 1,
+  "completed_records": 6,
+  "planned_records": 48000,
+  "complete": false,
+  "source_evidence_ids": [],
+  "ate_summaries": {
+    "scova-cf": {
+      "completed_records": 1,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "warning_rate": 1.0,
+      "warning_rate_interval": [
+        0.20654931437723745,
+        1.0
+      ],
+      "bias": -0.0032481538176853952,
+      "bias_interval": [
+        -0.0032481538176853952,
+        -0.0032481538176853952
+      ],
+      "rmse": 0.0032481538176853952,
+      "rmse_interval": [
+        1.0550503223344207e-05,
+        1.0550503223344207e-05
+      ],
+      "empirical_sd": 0.0,
+      "mean_reported_se": 0.11411139184584497,
+      "se_ratio": null,
+      "coverage": 1.0,
+      "coverage_interval": [
+        0.20654931437723745,
+        1.0
+      ],
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null,
+      "median_absolute_error": 0.0032481538176853952,
+      "absolute_error_p95": 0.0032481538176853952,
+      "maximum_absolute_error": 0.0032481538176853952
+    },
+    "linear-ancova": {
+      "completed_records": 1,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "warning_rate": 0.0,
+      "warning_rate_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "bias": 0.1542765397906538,
+      "bias_interval": [
+        0.1542765397906538,
+        0.1542765397906538
+      ],
+      "rmse": 0.1542765397906538,
+      "rmse_interval": [
+        0.02380125072977719,
+        0.02380125072977719
+      ],
+      "empirical_sd": 0.0,
+      "mean_reported_se": 0.06982716551243158,
+      "se_ratio": null,
+      "coverage": 0.0,
+      "coverage_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null,
+      "median_absolute_error": 0.1542765397906538,
+      "absolute_error_p95": 0.1542765397906538,
+      "maximum_absolute_error": 0.1542765397906538
+    },
+    "independent-aipw": {
+      "completed_records": 1,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "warning_rate": 0.0,
+      "warning_rate_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "bias": -3.229729707368869,
+      "bias_interval": [
+        -3.229729707368869,
+        -3.229729707368869
+      ],
+      "rmse": 3.229729707368869,
+      "rmse_interval": [
+        10.431153982661002,
+        10.431153982661002
+      ],
+      "empirical_sd": 0.0,
+      "mean_reported_se": 2.482228631247265,
+      "se_ratio": null,
+      "coverage": 1.0,
+      "coverage_interval": [
+        0.20654931437723745,
+        1.0
+      ],
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null,
+      "median_absolute_error": 3.229729707368869,
+      "absolute_error_p95": 3.229729707368869,
+      "maximum_absolute_error": 3.229729707368869
+    },
+    "econml-drlearner": {
+      "completed_records": 1,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "warning_rate": 0.0,
+      "warning_rate_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "bias": 0.07324709256420259,
+      "bias_interval": [
+        0.07324709256420259,
+        0.07324709256420259
+      ],
+      "rmse": 0.07324709256420259,
+      "rmse_interval": [
+        0.005365136569108862,
+        0.005365136569108862
+      ],
+      "empirical_sd": 0.0,
+      "mean_reported_se": 0.008638937227311924,
+      "se_ratio": null,
+      "coverage": 0.0,
+      "coverage_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null,
+      "median_absolute_error": 0.07324709256420259,
+      "absolute_error_p95": 0.07324709256420259,
+      "maximum_absolute_error": 0.07324709256420259
+    },
+    "econml-drlearner-conservative": {
+      "completed_records": 1,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "warning_rate": 0.0,
+      "warning_rate_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "bias": -0.2664333677128967,
+      "bias_interval": [
+        -0.2664333677128967,
+        -0.2664333677128967
+      ],
+      "rmse": 0.2664333677128967,
+      "rmse_interval": [
+        0.07098673943083564,
+        0.07098673943083564
+      ],
+      "empirical_sd": 0.0,
+      "mean_reported_se": 0.042322945948897746,
+      "se_ratio": null,
+      "coverage": 0.0,
+      "coverage_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null,
+      "median_absolute_error": 0.2664333677128967,
+      "absolute_error_p95": 0.2664333677128967,
+      "maximum_absolute_error": 0.2664333677128967
+    }
+  },
+  "att_summaries": {
+    "psm-att": {
+      "completed_records": 1,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "warning_rate": 0.0,
+      "warning_rate_interval": [
+        0.0,
+        0.7934506856227626
+      ],
+      "bias": 0.07321576456840173,
+      "bias_interval": [
+        0.07321576456840173,
+        0.07321576456840173
+      ],
+      "rmse": 0.07321576456840173,
+      "rmse_interval": [
+        0.00536054818133563,
+        0.00536054818133563
+      ],
+      "empirical_sd": 0.0,
+      "mean_reported_se": 0.08466251077248116,
+      "se_ratio": null,
+      "coverage": 1.0,
+      "coverage_interval": [
+        0.20654931437723745,
+        1.0
+      ],
+      "treated_retained_fraction": 0.6680942184154176,
+      "treated_retained_fraction_interval": [
+        0.6680942184154176,
+        0.6680942184154176
+      ],
+      "median_absolute_error": 0.07321576456840173,
+      "absolute_error_p95": 0.07321576456840173,
+      "maximum_absolute_error": 0.07321576456840173
+    }
+  },
+  "cell_ate_summaries": {
+    "cmp-v3-threshold-smooth-nonlinear-poor": {
+      "scova-cf": {
+        "completed_records": 1,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "warning_rate": 1.0,
+        "warning_rate_interval": [
+          0.20654931437723745,
+          1.0
+        ],
+        "bias": -0.0032481538176853952,
+        "bias_interval": [
+          -0.0032481538176853952,
+          -0.0032481538176853952
+        ],
+        "rmse": 0.0032481538176853952,
+        "rmse_interval": [
+          1.0550503223344207e-05,
+          1.0550503223344207e-05
+        ],
+        "empirical_sd": 0.0,
+        "mean_reported_se": 0.11411139184584497,
+        "se_ratio": null,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.20654931437723745,
+          1.0
+        ],
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "median_absolute_error": 0.0032481538176853952,
+        "absolute_error_p95": 0.0032481538176853952,
+        "maximum_absolute_error": 0.0032481538176853952
+      },
+      "linear-ancova": {
+        "completed_records": 1,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "bias": 0.1542765397906538,
+        "bias_interval": [
+          0.1542765397906538,
+          0.1542765397906538
+        ],
+        "rmse": 0.1542765397906538,
+        "rmse_interval": [
+          0.02380125072977719,
+          0.02380125072977719
+        ],
+        "empirical_sd": 0.0,
+        "mean_reported_se": 0.06982716551243158,
+        "se_ratio": null,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "median_absolute_error": 0.1542765397906538,
+        "absolute_error_p95": 0.1542765397906538,
+        "maximum_absolute_error": 0.1542765397906538
+      },
+      "independent-aipw": {
+        "completed_records": 1,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "bias": -3.229729707368869,
+        "bias_interval": [
+          -3.229729707368869,
+          -3.229729707368869
+        ],
+        "rmse": 3.229729707368869,
+        "rmse_interval": [
+          10.431153982661002,
+          10.431153982661002
+        ],
+        "empirical_sd": 0.0,
+        "mean_reported_se": 2.482228631247265,
+        "se_ratio": null,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.20654931437723745,
+          1.0
+        ],
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "median_absolute_error": 3.229729707368869,
+        "absolute_error_p95": 3.229729707368869,
+        "maximum_absolute_error": 3.229729707368869
+      },
+      "econml-drlearner": {
+        "completed_records": 1,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "bias": 0.07324709256420259,
+        "bias_interval": [
+          0.07324709256420259,
+          0.07324709256420259
+        ],
+        "rmse": 0.07324709256420259,
+        "rmse_interval": [
+          0.005365136569108862,
+          0.005365136569108862
+        ],
+        "empirical_sd": 0.0,
+        "mean_reported_se": 0.008638937227311924,
+        "se_ratio": null,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "median_absolute_error": 0.07324709256420259,
+        "absolute_error_p95": 0.07324709256420259,
+        "maximum_absolute_error": 0.07324709256420259
+      },
+      "econml-drlearner-conservative": {
+        "completed_records": 1,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "bias": -0.2664333677128967,
+        "bias_interval": [
+          -0.2664333677128967,
+          -0.2664333677128967
+        ],
+        "rmse": 0.2664333677128967,
+        "rmse_interval": [
+          0.07098673943083564,
+          0.07098673943083564
+        ],
+        "empirical_sd": 0.0,
+        "mean_reported_se": 0.042322945948897746,
+        "se_ratio": null,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "median_absolute_error": 0.2664333677128967,
+        "absolute_error_p95": 0.2664333677128967,
+        "maximum_absolute_error": 0.2664333677128967
+      }
+    }
+  },
+  "cell_att_summaries": {
+    "cmp-v3-threshold-smooth-nonlinear-poor": {
+      "psm-att": {
+        "completed_records": 1,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.7934506856227626
+        ],
+        "bias": 0.07321576456840173,
+        "bias_interval": [
+          0.07321576456840173,
+          0.07321576456840173
+        ],
+        "rmse": 0.07321576456840173,
+        "rmse_interval": [
+          0.00536054818133563,
+          0.00536054818133563
+        ],
+        "empirical_sd": 0.0,
+        "mean_reported_se": 0.08466251077248116,
+        "se_ratio": null,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.20654931437723745,
+          1.0
+        ],
+        "treated_retained_fraction": 0.6680942184154176,
+        "treated_retained_fraction_interval": [
+          0.6680942184154176,
+          0.6680942184154176
+        ],
+        "median_absolute_error": 0.07321576456840173,
+        "absolute_error_p95": 0.07321576456840173,
+        "maximum_absolute_error": 0.07321576456840173
+      }
+    }
+  },
+  "records": [
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "seed": 840050000,
+      "method": "scova-cf",
+      "estimand": "ate",
+      "estimate": 1.0187018461823147,
+      "standard_error": 0.11411139184584497,
+      "truth": 1.0219500000000001,
+      "status": "limited/unstable-support",
+      "details": {
+        "qualification_status": "unqualified",
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "support": "unstable"
+      }
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "seed": 840050000,
+      "method": "linear-ancova",
+      "estimand": "ate",
+      "estimate": 1.176226539790654,
+      "standard_error": 0.06982716551243158,
+      "truth": 1.0219500000000001,
+      "status": "ok",
+      "details": {}
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "seed": 840050000,
+      "method": "independent-aipw",
+      "estimand": "ate",
+      "estimate": -2.2077797073688687,
+      "standard_error": 2.482228631247265,
+      "truth": 1.0219500000000001,
+      "status": "ok",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      }
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "seed": 840050000,
+      "method": "psm-att",
+      "estimand": "att",
+      "estimate": 1.1352071992579094,
+      "standard_error": 0.08466251077248116,
+      "truth": 1.0619914346895076,
+      "status": "ok",
+      "details": {
+        "treated_retained_fraction": 0.6680942184154176,
+        "matched_pairs": 312,
+        "caliper": 0.1265975504189862
+      }
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "seed": 840050000,
+      "method": "econml-drlearner",
+      "estimand": "ate",
+      "estimate": 1.0951970925642027,
+      "standard_error": 0.008638937227311924,
+      "truth": 1.0219500000000001,
+      "status": "ok",
+      "details": {
+        "recipe": {
+          "model_propensity": "auto",
+          "model_regression": "auto",
+          "cv": 2,
+          "min_propensity": 1e-06
+        }
+      }
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "seed": 840050000,
+      "method": "econml-drlearner-conservative",
+      "estimand": "ate",
+      "estimate": 0.7555166322871034,
+      "standard_error": 0.042322945948897746,
+      "truth": 1.0219500000000001,
+      "status": "ok",
+      "details": {
+        "recipe": {
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor",
+          "cv": 5,
+          "min_propensity": 0.01
+        }
+      }
+    }
+  ],
+  "interpretation": "Descriptive methods evidence within frozen simulated DGPs only. It does not qualify SCOVA-CF, certify observational causal identification, or create a profile.",
+  "artifact_checksum": "dcfaa0103401cd02b22131ae75c557f626ab7deb3847a34376695a793badd0f9"
+}

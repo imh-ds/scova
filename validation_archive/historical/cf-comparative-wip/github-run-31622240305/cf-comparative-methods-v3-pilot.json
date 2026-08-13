@@ -1,0 +1,5682 @@
+{
+  "artifact_checksum": "078a12a74cd656a3d6b6bd6f7124ff43900c5cc72b11d85fecf320bab9a4ee0c",
+  "artifact_type": "scova-cf-comparative-methods",
+  "ate_summaries": {
+    "econml-drlearner": {
+      "absolute_error_p95": 517.3383643482581,
+      "bias": -10.564114536421537,
+      "bias_interval": [
+        -91.03207794269186,
+        64.78181718424554
+      ],
+      "completed_records": 40,
+      "coverage": 0.125,
+      "coverage_interval": [
+        0.05459500250945401,
+        0.261121198388511
+      ],
+      "empirical_sd": 283.4012912502336,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ],
+      "maximum_absolute_error": 1327.387495922598,
+      "mean_reported_se": 3.4276412314663376,
+      "median_absolute_error": 0.07630085735345682,
+      "rmse": 280.0322910497134,
+      "rmse_interval": [
+        4411.431836120773,
+        184314.84588679593
+      ],
+      "se_ratio": 0.012094656366402537,
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null,
+      "warning_rate": 0.0,
+      "warning_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ]
+    },
+    "econml-drlearner-conservative": {
+      "absolute_error_p95": 0.6790741624683552,
+      "bias": -0.00995290756645693,
+      "bias_interval": [
+        -0.12196645384360086,
+        0.10176067766762782
+      ],
+      "completed_records": 40,
+      "coverage": 0.1,
+      "coverage_interval": [
+        0.03957952868260638,
+        0.23051775227522298
+      ],
+      "empirical_sd": 0.4015955404066849,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ],
+      "maximum_absolute_error": 1.0197598284975804,
+      "mean_reported_se": 0.026544433115650502,
+      "median_absolute_error": 0.257162154736178,
+      "rmse": 0.36540347776859,
+      "rmse_interval": [
+        0.07997171758226777,
+        0.20177739860252314
+      ],
+      "se_ratio": 0.0660974299883153,
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null,
+      "warning_rate": 0.0,
+      "warning_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ]
+    },
+    "independent-aipw": {
+      "absolute_error_p95": 1.962338341301073,
+      "bias": -0.44240696797152745,
+      "bias_interval": [
+        -0.7854833791040641,
+        -0.12591383241815413
+      ],
+      "completed_records": 40,
+      "coverage": 0.925,
+      "coverage_interval": [
+        0.8013576647568946,
+        0.9741639742254119
+      ],
+      "empirical_sd": 1.081094746032595,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ],
+      "maximum_absolute_error": 4.335796804316749,
+      "mean_reported_se": 0.9380924392796135,
+      "median_absolute_error": 0.4890883456182399,
+      "rmse": 1.1446050974762785,
+      "rmse_interval": [
+        0.49589838205229314,
+        2.5415253910264033
+      ],
+      "se_ratio": 0.8677245382259309,
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null,
+      "warning_rate": 0.0,
+      "warning_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ]
+    },
+    "linear-ancova": {
+      "absolute_error_p95": 0.4587910055462584,
+      "bias": 0.05874260858916443,
+      "bias_interval": [
+        -0.012970694810625709,
+        0.1286888872659218
+      ],
+      "completed_records": 40,
+      "coverage": 0.35,
+      "coverage_interval": [
+        0.2213452887317629,
+        0.5049411916274231
+      ],
+      "empirical_sd": 0.230545860693589,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ],
+      "maximum_absolute_error": 0.5737632023146458,
+      "mean_reported_se": 0.07785866562485928,
+      "median_absolute_error": 0.18490834296269143,
+      "rmse": 0.2465267918364188,
+      "rmse_interval": [
+        0.04144429667279056,
+        0.08015932703823922
+      ],
+      "se_ratio": 0.3377144373385159,
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null,
+      "warning_rate": 0.0,
+      "warning_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ]
+    },
+    "scova-cf": {
+      "absolute_error_p95": 0.1862824806868476,
+      "bias": -0.003907465150482459,
+      "bias_interval": [
+        -0.03474012738215824,
+        0.023421869378361125
+      ],
+      "completed_records": 40,
+      "coverage": 0.975,
+      "coverage_interval": [
+        0.8711863103652591,
+        0.9955731684973186
+      ],
+      "empirical_sd": 0.14441191701214562,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ],
+      "maximum_absolute_error": 0.22878512034533238,
+      "mean_reported_se": 0.11075984442252092,
+      "median_absolute_error": 0.06384075000795053,
+      "rmse": 0.09821819996847019,
+      "rmse_interval": [
+        0.006315248124545332,
+        0.013871649266198284
+      ],
+      "se_ratio": 0.7669716372036358,
+      "treated_retained_fraction": null,
+      "treated_retained_fraction_interval": null,
+      "warning_rate": 1.0,
+      "warning_rate_interval": [
+        0.9123783988027135,
+        1.0000000000000002
+      ]
+    }
+  },
+  "att_summaries": {
+    "psm-att": {
+      "absolute_error_p95": 0.4522650817104941,
+      "bias": 0.009697354254433185,
+      "bias_interval": [
+        -0.0604496874029169,
+        0.07553870298343524
+      ],
+      "completed_records": 40,
+      "coverage": 0.55,
+      "coverage_interval": [
+        0.39829091798932054,
+        0.6929469218909508
+      ],
+      "empirical_sd": 0.24361482294842818,
+      "failure_rate": 0.0,
+      "failure_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ],
+      "maximum_absolute_error": 0.5763074961356228,
+      "mean_reported_se": 0.08969942720452613,
+      "median_absolute_error": 0.14342237471490593,
+      "rmse": 0.2374427612762417,
+      "rmse_interval": [
+        0.03238510101192566,
+        0.07890276017095353
+      ],
+      "se_ratio": 0.3682018446944625,
+      "treated_retained_fraction": 0.7119961691344392,
+      "treated_retained_fraction_interval": [
+        0.6787051487989246,
+        0.7434950680989935
+      ],
+      "warning_rate": 0.0,
+      "warning_rate_interval": [
+        0.0,
+        0.08762160119728664
+      ]
+    }
+  },
+  "cell_ate_summaries": {
+    "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate": {
+      "econml-drlearner": {
+        "absolute_error_p95": 0.11680369910271347,
+        "bias": 0.03586527814026841,
+        "bias_interval": [
+          -0.003712255593269287,
+          0.09169636000847511
+        ],
+        "completed_records": 5,
+        "coverage": 0.2,
+        "coverage_interval": [
+          0.03622410863243014,
+          0.6244653702374747
+        ],
+        "empirical_sd": 0.058427955758501994,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.13757122874126138,
+        "mean_reported_se": 0.007780480999653857,
+        "median_absolute_error": 0.02729978162924218,
+        "rmse": 0.06556931119004812,
+        "rmse_interval": [
+          0.0004218794911598382,
+          0.011611989507136244
+        ],
+        "se_ratio": 0.133163669662047,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "econml-drlearner-conservative": {
+        "absolute_error_p95": 0.8974288791753867,
+        "bias": 0.4307098218648441,
+        "bias_interval": [
+          0.22650435927100973,
+          0.7298851056688587
+        ],
+        "completed_records": 5,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "empirical_sd": 0.33614534597630497,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 1.0197598284975804,
+        "mean_reported_se": 0.012307478121493149,
+        "median_absolute_error": 0.2957970321837853,
+        "rmse": 0.5270211215743785,
+        "rmse_interval": [
+          0.05450520778170191,
+          0.6639071895371489
+        ],
+        "se_ratio": 0.03661356097537852,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "independent-aipw": {
+        "absolute_error_p95": 0.9613702333671102,
+        "bias": 0.35868367692399855,
+        "bias_interval": [
+          0.04500281725286537,
+          0.7323541167596659
+        ],
+        "completed_records": 5,
+        "coverage": 0.6,
+        "coverage_interval": [
+          0.2307242812760128,
+          0.882379225767352
+        ],
+        "empirical_sd": 0.4510395977277547,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 1.085034113273668,
+        "mean_reported_se": 0.2867412330611715,
+        "median_absolute_error": 0.2583250289465633,
+        "rmse": 0.5418338803366968,
+        "rmse_interval": [
+          0.01577288324947259,
+          0.7503692234223506
+        ],
+        "se_ratio": 0.6357340564015116,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "linear-ancova": {
+        "absolute_error_p95": 0.23122501110805246,
+        "bias": -0.1889079972824241,
+        "bias_interval": [
+          -0.22191060944788893,
+          -0.1559053851169593
+        ],
+        "completed_records": 5,
+        "coverage": 0.4,
+        "coverage_interval": [
+          0.11762077423264783,
+          0.769275718723987
+        ],
+        "empirical_sd": 0.03998842837902666,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.23291564123377873,
+        "mean_reported_se": 0.08179020551855012,
+        "median_absolute_error": 0.19479678356159225,
+        "rmse": 0.1926068153646861,
+        "rmse_interval": [
+          0.024752371024660914,
+          0.04944239962519166
+        ],
+        "se_ratio": 2.045346837422795,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "scova-cf": {
+        "absolute_error_p95": 0.12430739273047564,
+        "bias": 0.06534301871101653,
+        "bias_interval": [
+          0.014522099316773928,
+          0.10947934210803378
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.0657851028991756,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.13002856135015906,
+        "mean_reported_se": 0.09393853297161969,
+        "median_absolute_error": 0.08449415133636684,
+        "rmse": 0.08782452083978952,
+        "rmse_interval": [
+          0.003120842781720949,
+          0.012526611936827765
+        ],
+        "se_ratio": 1.4279605690606423,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 1.0,
+        "warning_rate_interval": [
+          0.5655175352168251,
+          1.0
+        ]
+      }
+    },
+    "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor": {
+      "econml-drlearner": {
+        "absolute_error_p95": 865.8603720367336,
+        "bias": 279.47180916346076,
+        "bias_interval": [
+          -0.022779083673612987,
+          586.4145026733154
+        ],
+        "completed_records": 5,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "empirical_sd": 430.41803785300135,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 977.308514656084,
+        "mean_reported_se": 10.989679516204022,
+        "median_absolute_error": 0.16393877474639873,
+        "rmse": 475.72868915599184,
+        "rmse_interval": [
+          0.013469053672345827,
+          573079.1622104311
+        ],
+        "se_ratio": 0.025532571941042293,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "econml-drlearner-conservative": {
+        "absolute_error_p95": 0.47092315177468236,
+        "bias": 0.34315254378732846,
+        "bias_interval": [
+          0.26155877415860346,
+          0.4263812736201801
+        ],
+        "completed_records": 5,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "empirical_sd": 0.12290057183493652,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.4932438743258669,
+        "mean_reported_se": 0.04071736445601537,
+        "median_absolute_error": 0.37363906672772296,
+        "rmse": 0.3589004164779838,
+        "rmse_interval": [
+          0.07412226393464087,
+          0.1848856912037942
+        ],
+        "se_ratio": 0.33130329540452785,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "independent-aipw": {
+        "absolute_error_p95": 1.1660778831385576,
+        "bias": 0.25772528132200956,
+        "bias_interval": [
+          -0.22392410919268171,
+          0.8473098563027964
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.7240265645723621,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 1.2970633678790207,
+        "mean_reported_se": 1.2917529032065016,
+        "median_absolute_error": 0.5456645848183908,
+        "rmse": 0.6925983402560811,
+        "rmse_interval": [
+          0.06418869476915232,
+          1.0939522283241978
+        ],
+        "se_ratio": 1.7841236308359216,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "linear-ancova": {
+        "absolute_error_p95": 0.5533700599139257,
+        "bias": -0.41787184439499453,
+        "bias_interval": [
+          -0.5099140229765557,
+          -0.3221989210631603
+        ],
+        "completed_records": 5,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "empirical_sd": 0.12313905146307622,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.5737632023146458,
+        "mean_reported_se": 0.08519523962294527,
+        "median_absolute_error": 0.4581064537165328,
+        "rmse": 0.4321303634879498,
+        "rmse_interval": [
+          0.10953453211522061,
+          0.2627547950096462
+        ],
+        "se_ratio": 0.6918620747090247,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "scova-cf": {
+        "absolute_error_p95": 0.22686539290061494,
+        "bias": -0.02525824832690069,
+        "bias_interval": [
+          -0.1758273599459867,
+          0.12531086329218533
+        ],
+        "completed_records": 5,
+        "coverage": 0.8,
+        "coverage_interval": [
+          0.37553462976252533,
+          0.9637758913675698
+        ],
+        "empirical_sd": 0.19196634782543628,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.22878512034533238,
+        "mean_reported_se": 0.13109897378984606,
+        "median_absolute_error": 0.18081625842025884,
+        "rmse": 0.17248340922847213,
+        "rmse_interval": [
+          0.012808010786449876,
+          0.04669304213170329
+        ],
+        "se_ratio": 0.6829268529349753,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 1.0,
+        "warning_rate_interval": [
+          0.5655175352168251,
+          1.0
+        ]
+      }
+    },
+    "cmp-v3-smooth-nonlinear-threshold-adequate": {
+      "econml-drlearner": {
+        "absolute_error_p95": 0.12951054697131537,
+        "bias": 0.05210753903989311,
+        "bias_interval": [
+          -0.010712749087185846,
+          0.11393583233681182
+        ],
+        "completed_records": 5,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "empirical_sd": 0.08517456392953195,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.13570170399033765,
+        "mean_reported_se": 0.006535099407795,
+        "median_absolute_error": 0.09676491740407878,
+        "rmse": 0.09131560691804345,
+        "rmse_interval": [
+          0.003370427183016263,
+          0.013556587357327832
+        ],
+        "se_ratio": 0.07672595087427425,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "econml-drlearner-conservative": {
+        "absolute_error_p95": 0.74107820766192,
+        "bias": -0.20040567478591703,
+        "bias_interval": [
+          -0.5585341638386139,
+          0.1579792930742339
+        ],
+        "completed_records": 5,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "empirical_sd": 0.46110672436077754,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.7967318528429168,
+        "mean_reported_se": 0.0218891710173236,
+        "median_absolute_error": 0.26337136348674384,
+        "rmse": 0.45700360320262395,
+        "rmse_interval": [
+          0.04354664174713302,
+          0.3951311499614837
+        ],
+        "se_ratio": 0.047470942974575124,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "independent-aipw": {
+        "absolute_error_p95": 0.7404411935089278,
+        "bias": -0.27575791036677194,
+        "bias_interval": [
+          -0.5673577341108685,
+          0.01609105274832406
+        ],
+        "completed_records": 5,
+        "coverage": 0.8,
+        "coverage_interval": [
+          0.37553462976252533,
+          0.9637758913675698
+        ],
+        "empirical_sd": 0.3851201185834751,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.7948788142626436,
+        "mean_reported_se": 0.3192803508157712,
+        "median_absolute_error": 0.20164962104092576,
+        "rmse": 0.43966267052154867,
+        "rmse_interval": [
+          0.02033177442670198,
+          0.38743803632452667
+        ],
+        "se_ratio": 0.8290409547808834,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "linear-ancova": {
+        "absolute_error_p95": 0.22564406796306224,
+        "bias": 0.18125837382326257,
+        "bias_interval": [
+          0.1204366527651544,
+          0.22392953011324396
+        ],
+        "completed_records": 5,
+        "coverage": 0.2,
+        "coverage_interval": [
+          0.03622410863243014,
+          0.6244653702374747
+        ],
+        "empirical_sd": 0.07188276463286801,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.22578942800614077,
+        "mean_reported_se": 0.0810972354984721,
+        "median_absolute_error": 0.21792536896705728,
+        "rmse": 0.1928868914587438,
+        "rmse_interval": [
+          0.02136861678019401,
+          0.050153552575708756
+        ],
+        "se_ratio": 1.1281874857299357,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "scova-cf": {
+        "absolute_error_p95": 0.1340718056429227,
+        "bias": -0.04614861952233653,
+        "bias_interval": [
+          -0.11983233574395605,
+          0.027564551094702242
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.09206644528162458,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.1343497787806427,
+        "mean_reported_se": 0.09363288078407568,
+        "median_absolute_error": 0.06947903534022881,
+        "rmse": 0.09562603557363891,
+        "rmse_interval": [
+          0.003031929469559483,
+          0.015198727101046023
+        ],
+        "se_ratio": 1.0170141846756382,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 1.0,
+        "warning_rate_interval": [
+          0.5655175352168251,
+          1.0
+        ]
+      }
+    },
+    "cmp-v3-smooth-nonlinear-threshold-poor": {
+      "econml-drlearner": {
+        "absolute_error_p95": 1061.9264787835612,
+        "bias": -265.48184805229357,
+        "bias_interval": [
+          -796.445585900405,
+          0.03146134017510849
+        ],
+        "completed_records": 5,
+        "coverage": 0.2,
+        "coverage_interval": [
+          0.03622410863243014,
+          0.6244653702374747
+        ],
+        "empirical_sd": 593.6214542086194,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 1327.387495922598,
+        "mean_reported_se": 13.407668049329692,
+        "median_absolute_error": 0.08087932828278999,
+        "rmse": 593.6257372177972,
+        "rmse_interval": [
+          0.0022671701183697244,
+          1057174.5402120652
+        ],
+        "se_ratio": 0.02258622553863723,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "econml-drlearner-conservative": {
+        "absolute_error_p95": 0.5588835724302891,
+        "bias": -0.28452534848623134,
+        "bias_interval": [
+          -0.44245830061059155,
+          -0.14661388214327237
+        ],
+        "completed_records": 5,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "empirical_sd": 0.2003767172658212,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.6262185351566985,
+        "mean_reported_se": 0.039772732383721955,
+        "median_absolute_error": 0.2271173349987602,
+        "rmse": 0.33733316624604764,
+        "rmse_interval": [
+          0.0230926311756715,
+          0.24735411042569658
+        ],
+        "se_ratio": 0.19848978926508293,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "independent-aipw": {
+        "absolute_error_p95": 3.7867385623418057,
+        "bias": -1.7303527173231015,
+        "bias_interval": [
+          -2.842976475455894,
+          -0.6172005508396434
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 1.5835370158904283,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 4.335796804316749,
+        "mean_reported_se": 2.0490670752972906,
+        "median_absolute_error": 1.5264303966717978,
+        "rmse": 2.239207828700837,
+        "rmse_interval": [
+          0.8468316535932336,
+          11.5663591362212
+        ],
+        "se_ratio": 1.2939811666764816,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "linear-ancova": {
+        "absolute_error_p95": 0.40184422665499764,
+        "bias": 0.365588094729789,
+        "bias_interval": [
+          0.32792285765564033,
+          0.39422237620041634
+        ],
+        "completed_records": 5,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "empirical_sd": 0.05267345738092196,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.4040122802955217,
+        "mean_reported_se": 0.08970585504211419,
+        "median_absolute_error": 0.3743848143138735,
+        "rmse": 0.3677494549316891,
+        "rmse_interval": [
+          0.10964859184344515,
+          0.1556297739062721
+        ],
+        "se_ratio": 1.7030561406551066,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "scova-cf": {
+        "absolute_error_p95": 0.11520091862537898,
+        "bias": 0.04384557722096068,
+        "bias_interval": [
+          -0.015306754934698708,
+          0.1015429928193851
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.08406625539144714,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.11669314073536352,
+        "mean_reported_se": 0.1530365505987821,
+        "median_absolute_error": 0.06313920504149162,
+        "rmse": 0.08004939148088294,
+        "rmse_interval": [
+          0.0017989281050184418,
+          0.01101688204790087
+        ],
+        "se_ratio": 1.8204278266729121,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 1.0,
+        "warning_rate_interval": [
+          0.5655175352168251,
+          1.0
+        ]
+      }
+    },
+    "cmp-v3-threshold-smooth-nonlinear-adequate": {
+      "econml-drlearner": {
+        "absolute_error_p95": 0.1160260500475234,
+        "bias": 0.005665193057027462,
+        "bias_interval": [
+          -0.05331419725330417,
+          0.07737591760034417
+        ],
+        "completed_records": 5,
+        "coverage": 0.2,
+        "coverage_interval": [
+          0.03622410863243014,
+          0.6244653702374747
+        ],
+        "empirical_sd": 0.09341500010867615,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.12039488241161878,
+        "mean_reported_se": 0.008905550428004269,
+        "median_absolute_error": 0.06026030317567177,
+        "rmse": 0.07862336254737701,
+        "rmse_interval": [
+          0.001950503191163663,
+          0.01122033189580388
+        ],
+        "se_ratio": 0.09533319507192448,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "econml-drlearner-conservative": {
+        "absolute_error_p95": 0.249941247607848,
+        "bias": -0.06438601438881268,
+        "bias_interval": [
+          -0.20933570417893133,
+          0.08323257084779943
+        ],
+        "completed_records": 5,
+        "coverage": 0.2,
+        "coverage_interval": [
+          0.03622410863243014,
+          0.6244653702374747
+        ],
+        "empirical_sd": 0.20945867909591517,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.25161019896953807,
+        "mean_reported_se": 0.018231680419317966,
+        "median_absolute_error": 0.19427997333401448,
+        "rmse": 0.19529426029477134,
+        "rmse_interval": [
+          0.019703528270277545,
+          0.05656389672223939
+        ],
+        "se_ratio": 0.08704189531802274,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "independent-aipw": {
+        "absolute_error_p95": 0.33390717386725505,
+        "bias": -0.025537269799310657,
+        "bias_interval": [
+          -0.20118561562415502,
+          0.16338587057405887
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.24648544534106384,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.3500196956944124,
+        "mean_reported_se": 0.3006380432321679,
+        "median_absolute_error": 0.2198239650904804,
+        "rmse": 0.22167939964679023,
+        "rmse_interval": [
+          0.015427542955346235,
+          0.09257647571830235
+        ],
+        "se_ratio": 1.2196989676861962,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "linear-ancova": {
+        "absolute_error_p95": 0.12840935530370606,
+        "bias": 0.07411869699760425,
+        "bias_interval": [
+          0.03261572840716909,
+          0.11964971226999821
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.06531162149829958,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.12909846418632642,
+        "mean_reported_se": 0.0690283655702134,
+        "median_absolute_error": 0.0886596548205616,
+        "rmse": 0.09042801573156592,
+        "rmse_interval": [
+          0.003167492474216806,
+          0.014558523545740727
+        ],
+        "se_ratio": 1.0569078517214672,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "scova-cf": {
+        "absolute_error_p95": 0.11550578924786693,
+        "bias": -0.011165826711798155,
+        "bias_interval": [
+          -0.06140138112560494,
+          0.0629543430037881
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.08296400854189138,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.12240417422977456,
+        "mean_reported_se": 0.08988867006840331,
+        "median_absolute_error": 0.05518676051938687,
+        "rmse": 0.07375551185317603,
+        "rmse_interval": [
+          0.00118609717035658,
+          0.01021612526979518
+        ],
+        "se_ratio": 1.083465850411693,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 1.0,
+        "warning_rate_interval": [
+          0.5655175352168251,
+          1.0
+        ]
+      }
+    },
+    "cmp-v3-threshold-smooth-nonlinear-poor": {
+      "econml-drlearner": {
+        "absolute_error_p95": 394.5350004422887,
+        "bias": -98.62714788146243,
+        "bias_interval": [
+          -295.8945900827185,
+          0.049836138705075195
+        ],
+        "completed_records": 5,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "empirical_sd": 220.53773706477568,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 493.12940906890026,
+        "mean_reported_se": 2.9825149500734716,
+        "median_absolute_error": 0.07324709256420259,
+        "rmse": 220.53419120423854,
+        "rmse_interval": [
+          0.002366115772986871,
+          145905.97357091442
+        ],
+        "se_ratio": 0.013523830387347523,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "econml-drlearner-conservative": {
+        "absolute_error_p95": 0.26568951627088105,
+        "bias": -0.09267324092025764,
+        "bias_interval": [
+          -0.2182945853206209,
+          0.03294810348010564
+        ],
+        "completed_records": 5,
+        "coverage": 0.4,
+        "coverage_interval": [
+          0.11762077423264783,
+          0.769275718723987
+        ],
+        "empirical_sd": 0.1754242489212927,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.26643336771289683,
+        "mean_reported_se": 0.029578098862144027,
+        "median_absolute_error": 0.12968930952097035,
+        "rmse": 0.17825255955353375,
+        "rmse_interval": [
+          0.004181909258717977,
+          0.058578826486634664
+        ],
+        "se_ratio": 0.16860895254802988,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "independent-aipw": {
+        "absolute_error_p95": 2.9629104724072284,
+        "bias": -1.508452615617748,
+        "bias_interval": [
+          -2.38802936710115,
+          -0.40187262397787676
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 1.3786157668008003,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 3.229729707368869,
+        "mean_reported_se": 1.4925062097142192,
+        "median_absolute_error": 1.689420355646678,
+        "rmse": 1.947879144898519,
+        "rmse_interval": [
+          1.4078059096747277,
+          6.899672520406371
+        ],
+        "se_ratio": 1.0826121720468291,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "linear-ancova": {
+        "absolute_error_p95": 0.23277556342814798,
+        "bias": 0.1651568032052282,
+        "bias_interval": [
+          0.10999809735317552,
+          0.21474714755792612
+        ],
+        "completed_records": 5,
+        "coverage": 0.2,
+        "coverage_interval": [
+          0.03622410863243014,
+          0.6244653702374747
+        ],
+        "empirical_sd": 0.06906473001807094,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.24468818832088313,
+        "mean_reported_se": 0.07056757828373293,
+        "median_absolute_error": 0.1750921854063079,
+        "rmse": 0.1749502526117105,
+        "rmse_interval": [
+          0.015508159171358317,
+          0.04818629505839634
+        ],
+        "se_ratio": 1.021759996242203,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "scova-cf": {
+        "absolute_error_p95": 0.14703204196635758,
+        "bias": -0.008194455240947151,
+        "bias_interval": [
+          -0.09326510762040054,
+          0.07192793630695946
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.10494211181857505,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.15327951653453264,
+        "mean_reported_se": 0.1148593621592798,
+        "median_absolute_error": 0.034775696274431,
+        "rmse": 0.08989889775519198,
+        "rmse_interval": [
+          0.0006480127232367502,
+          0.017081681751568226
+        ],
+        "se_ratio": 1.0945021037679306,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 1.0,
+        "warning_rate_interval": [
+          0.5655175352168251,
+          1.0
+        ]
+      }
+    },
+    "cmp-v3-threshold-threshold-adequate": {
+      "econml-drlearner": {
+        "absolute_error_p95": 0.13265716532725222,
+        "bias": 0.08222537875743999,
+        "bias_interval": [
+          0.05596258512229913,
+          0.11029207078861467
+        ],
+        "completed_records": 5,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "empirical_sd": 0.040893964275171224,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.14020464162771384,
+        "mean_reported_se": 0.006439852216411921,
+        "median_absolute_error": 0.06611655043683418,
+        "rmse": 0.08942076601727972,
+        "rmse_interval": [
+          0.003288326899668491,
+          0.013426358151843528
+        ],
+        "se_ratio": 0.15747683871093607,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "econml-drlearner-conservative": {
+        "absolute_error_p95": 0.4112931249292676,
+        "bias": -0.009364474105027897,
+        "bias_interval": [
+          -0.26621387962687265,
+          0.2299296143131301
+        ],
+        "completed_records": 5,
+        "coverage": 0.2,
+        "coverage_interval": [
+          0.03622410863243014,
+          0.6244653702374747
+        ],
+        "empirical_sd": 0.3334498104818349,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.4252020278719896,
+        "mean_reported_se": 0.018642832644951274,
+        "median_absolute_error": 0.2678809276399461,
+        "rmse": 0.29482392281054126,
+        "rmse_interval": [
+          0.036447020456674334,
+          0.13718427314832812
+        ],
+        "se_ratio": 0.0559089615855903,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "independent-aipw": {
+        "absolute_error_p95": 0.5209407086222406,
+        "bias": -0.06630940727869646,
+        "bias_interval": [
+          -0.43003708681257924,
+          0.2635946577730307
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.46767594434654614,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.5211603982163571,
+        "mean_reported_se": 0.3696459428754132,
+        "median_absolute_error": 0.5114619774956002,
+        "rmse": 0.4199977316717352,
+        "rmse_interval": [
+          0.0727506192428304,
+          0.26914770798973014
+        ],
+        "se_ratio": 0.7903890446875474,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "linear-ancova": {
+        "absolute_error_p95": 0.14281278509206977,
+        "bias": 0.09888803895091866,
+        "bias_interval": [
+          0.07456671170703609,
+          0.12401812701027497
+        ],
+        "completed_records": 5,
+        "coverage": 0.8,
+        "coverage_interval": [
+          0.37553462976252533,
+          0.9637758913675698
+        ],
+        "empirical_sd": 0.03549731101906892,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.15073518639215888,
+        "mean_reported_se": 0.0696283023352145,
+        "median_absolute_error": 0.08929169574104145,
+        "rmse": 0.1035448015279764,
+        "rmse_interval": [
+          0.0058078335120975684,
+          0.016447922565411662
+        ],
+        "se_ratio": 1.961509205522938,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "scova-cf": {
+        "absolute_error_p95": 0.06833045347965393,
+        "bias": 0.014293715081813674,
+        "bias_interval": [
+          -0.017742337081044602,
+          0.04685584829953486
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.04492303439926055,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.07835776536512218,
+        "mean_reported_se": 0.08774822503340429,
+        "median_absolute_error": 0.027427151340088773,
+        "rmse": 0.04189719883525045,
+        "rmse_interval": [
+          0.0005604743982102374,
+          0.003971651402907558
+        ],
+        "se_ratio": 1.9533013788322515,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 1.0,
+        "warning_rate_interval": [
+          0.5655175352168251,
+          1.0
+        ]
+      }
+    },
+    "cmp-v3-threshold-threshold-poor": {
+      "econml-drlearner": {
+        "absolute_error_p95": 0.19980884879412428,
+        "bias": -0.0515929100716771,
+        "bias_interval": [
+          -0.1380213159349686,
+          0.03608106185656125
+        ],
+        "completed_records": 5,
+        "coverage": 0.4,
+        "coverage_interval": [
+          0.11762077423264783,
+          0.769275718723987
+        ],
+        "empirical_sd": 0.12080798256839365,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.22195558162919748,
+        "mean_reported_se": 0.011606353071653716,
+        "median_absolute_error": 0.09914547563503628,
+        "rmse": 0.11985520756684818,
+        "rmse_interval": [
+          0.002607604838152455,
+          0.03160137667354308
+        ],
+        "se_ratio": 0.09607273314975648,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "econml-drlearner-conservative": {
+        "absolute_error_p95": 0.6326929139614978,
+        "bias": -0.20213087349758124,
+        "bias_interval": [
+          -0.4870904169606689,
+          0.17454891080491547
+        ],
+        "completed_records": 5,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "empirical_sd": 0.4201225663273166,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.6728816524486417,
+        "mean_reported_se": 0.031216107020236656,
+        "median_absolute_error": 0.4293223689003407,
+        "rmse": 0.42675041188829366,
+        "rmse_interval": [
+          0.05717022628474709,
+          0.3179169644606009
+        ],
+        "se_ratio": 0.07430238107208993,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "independent-aipw": {
+        "absolute_error_p95": 1.1543974541292763,
+        "bias": -0.549254781632599,
+        "bias_interval": [
+          -0.885809177286794,
+          -0.21218322458878125
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.47019475021458046,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 1.259589943268374,
+        "mean_reported_se": 1.3951077560343743,
+        "median_absolute_error": 0.44261100475144866,
+        "rmse": 0.6932259664858512,
+        "rmse_interval": [
+          0.07203312876391504,
+          0.9847108919988925
+        ],
+        "se_ratio": 2.96708492682595,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "linear-ancova": {
+        "absolute_error_p95": 0.26922624571560333,
+        "bias": 0.19171070268393145,
+        "bias_interval": [
+          0.14010064798665184,
+          0.24477085826201475
+        ],
+        "completed_records": 5,
+        "coverage": 0.2,
+        "coverage_interval": [
+          0.03622410863243014,
+          0.6244653702374747
+        ],
+        "empirical_sd": 0.06405089924148805,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.27351079055035243,
+        "mean_reported_se": 0.07585654312763172,
+        "median_absolute_error": 0.1654060730521365,
+        "rmse": 0.20104297807039287,
+        "rmse_interval": [
+          0.02002210595952904,
+          0.06216993585541412
+        ],
+        "se_ratio": 1.1843165986106365,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "scova-cf": {
+        "absolute_error_p95": 0.16116934400881255,
+        "bias": -0.06397488241566802,
+        "bias_interval": [
+          -0.12424021343395188,
+          -0.008111202777845338
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.07424520602627016,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.184550691085011,
+        "mean_reported_se": 0.12187555997475645,
+        "median_absolute_error": 0.062240789559874,
+        "rmse": 0.09424191821054202,
+        "rmse_interval": [
+          0.001534430189700711,
+          0.02150703772994749
+        ],
+        "se_ratio": 1.641527668892632,
+        "treated_retained_fraction": null,
+        "treated_retained_fraction_interval": null,
+        "warning_rate": 1.0,
+        "warning_rate_interval": [
+          0.5655175352168251,
+          1.0
+        ]
+      }
+    }
+  },
+  "cell_att_summaries": {
+    "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate": {
+      "psm-att": {
+        "absolute_error_p95": 0.26673066022757264,
+        "bias": -0.20974232792866704,
+        "bias_interval": [
+          -0.2538946493939866,
+          -0.1684755634745353
+        ],
+        "completed_records": 5,
+        "coverage": 0.2,
+        "coverage_interval": [
+          0.03622410863243014,
+          0.6244653702374747
+        ],
+        "empirical_sd": 0.05377322383748262,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.2684814649780546,
+        "mean_reported_se": 0.0919076708034396,
+        "median_absolute_error": 0.21283658396872396,
+        "rmse": 0.21572737209338808,
+        "rmse_interval": [
+          0.030139350161817544,
+          0.06489925836660408
+        ],
+        "se_ratio": 1.709171670294675,
+        "treated_retained_fraction": 0.7951501844862413,
+        "treated_retained_fraction_interval": [
+          0.786187368892947,
+          0.804276624512845
+        ],
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      }
+    },
+    "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor": {
+      "psm-att": {
+        "absolute_error_p95": 0.5718430774544045,
+        "bias": -0.4598442193330604,
+        "bias_interval": [
+          -0.5409364189105601,
+          -0.3787520197555607
+        ],
+        "completed_records": 5,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "empirical_sd": 0.10852500333568182,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.5763074961356228,
+        "mean_reported_se": 0.10288954291524796,
+        "median_absolute_error": 0.4440962968224924,
+        "rmse": 0.46885474480045836,
+        "rmse_interval": [
+          0.14459317665771088,
+          0.2950563667860949
+        ],
+        "se_ratio": 0.9480722391410332,
+        "treated_retained_fraction": 0.6971403651403836,
+        "treated_retained_fraction_interval": [
+          0.6785343165606325,
+          0.7157464137201348
+        ],
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      }
+    },
+    "cmp-v3-smooth-nonlinear-threshold-adequate": {
+      "psm-att": {
+        "absolute_error_p95": 0.2240893762135904,
+        "bias": 0.15402241038966896,
+        "bias_interval": [
+          0.09039926223687604,
+          0.20711902251781397
+        ],
+        "completed_records": 5,
+        "coverage": 0.6,
+        "coverage_interval": [
+          0.2307242812760128,
+          0.882379225767352
+        ],
+        "empirical_sd": 0.07685593694029619,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.22679669637593314,
+        "mean_reported_se": 0.08855186107671205,
+        "median_absolute_error": 0.15548152870876475,
+        "rmse": 0.16969871566223121,
+        "rmse_interval": [
+          0.01399376310205983,
+          0.043601545092761776
+        ],
+        "se_ratio": 1.1521798393467193,
+        "treated_retained_fraction": 0.7738915791762206,
+        "treated_retained_fraction_interval": [
+          0.7578104818531785,
+          0.7925952995095955
+        ],
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      }
+    },
+    "cmp-v3-smooth-nonlinear-threshold-poor": {
+      "psm-att": {
+        "absolute_error_p95": 0.4330231974052971,
+        "bias": 0.34147721258771674,
+        "bias_interval": [
+          0.27765158471388274,
+          0.39816811302659233
+        ],
+        "completed_records": 5,
+        "coverage": 0.0,
+        "coverage_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "empirical_sd": 0.08507699791826019,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.4469113806042293,
+        "mean_reported_se": 0.10737820579313587,
+        "median_absolute_error": 0.34257592678580306,
+        "rmse": 0.34882272821964017,
+        "rmse_interval": [
+          0.07995862346488387,
+          0.16222294959369307
+        ],
+        "se_ratio": 1.2621296992202535,
+        "treated_retained_fraction": 0.563895595097984,
+        "treated_retained_fraction_interval": [
+          0.5457235128592406,
+          0.5857347161503946
+        ],
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      }
+    },
+    "cmp-v3-threshold-smooth-nonlinear-adequate": {
+      "psm-att": {
+        "absolute_error_p95": 0.05873656765146271,
+        "bias": 0.02263448646408066,
+        "bias_interval": [
+          -0.0003682424519621197,
+          0.04829686638071066
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.040265412375539864,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.063974150141906,
+        "mean_reported_se": 0.07551656920959259,
+        "median_absolute_error": 0.031225769463557818,
+        "rmse": 0.03661542991463515,
+        "rmse_interval": [
+          0.000349622669947625,
+          0.002773369149466662
+        ],
+        "se_ratio": 1.875469907157013,
+        "treated_retained_fraction": 0.8396848110501685,
+        "treated_retained_fraction_interval": [
+          0.8272680479377379,
+          0.8514250700280112
+        ],
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      }
+    },
+    "cmp-v3-threshold-smooth-nonlinear-poor": {
+      "psm-att": {
+        "absolute_error_p95": 0.10088580194081284,
+        "bias": 0.040096008084469024,
+        "bias_interval": [
+          -0.014991207018427417,
+          0.0835873908874492
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.07092846753455966,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.10780331128391563,
+        "mean_reported_se": 0.08205599047492342,
+        "median_absolute_error": 0.062143915489369594,
+        "rmse": 0.07018468051638113,
+        "rmse_interval": [
+          0.0020935263125734277,
+          0.008222802813041842
+        ],
+        "se_ratio": 1.1568837355035468,
+        "treated_retained_fraction": 0.6902864396781941,
+        "treated_retained_fraction_interval": [
+          0.6445497858672377,
+          0.7271736237226575
+        ],
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      }
+    },
+    "cmp-v3-threshold-threshold-adequate": {
+      "psm-att": {
+        "absolute_error_p95": 0.08345444413939504,
+        "bias": 0.05914709474026836,
+        "bias_interval": [
+          0.031216631203241585,
+          0.07794247206662637
+        ],
+        "completed_records": 5,
+        "coverage": 1.0,
+        "coverage_interval": [
+          0.5655175352168251,
+          1.0
+        ],
+        "empirical_sd": 0.02805640411194229,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.08575218401029439,
+        "mean_reported_se": 0.0778201742832705,
+        "median_absolute_error": 0.0696810230009477,
+        "rmse": 0.06506525253656835,
+        "rmse_interval": [
+          0.0018166143286409045,
+          0.006118489879594635
+        ],
+        "se_ratio": 2.7737044980096406,
+        "treated_retained_fraction": 0.7729473041356993,
+        "treated_retained_fraction_interval": [
+          0.7426589297501178,
+          0.8059696643841466
+        ],
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      }
+    },
+    "cmp-v3-threshold-threshold-poor": {
+      "psm-att": {
+        "absolute_error_p95": 0.22177491997614043,
+        "bias": 0.12978816903098914,
+        "bias_interval": [
+          0.05144290744753078,
+          0.19388228854100528
+        ],
+        "completed_records": 5,
+        "coverage": 0.6,
+        "coverage_interval": [
+          0.2307242812760128,
+          0.882379225767352
+        ],
+        "empirical_sd": 0.08677141793255105,
+        "failure_rate": 0.0,
+        "failure_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ],
+        "maximum_absolute_error": 0.22339855267330622,
+        "mean_reported_se": 0.09147540307988697,
+        "median_absolute_error": 0.12368520251821957,
+        "rmse": 0.1539299589845886,
+        "rmse_interval": [
+          0.005828234959503812,
+          0.040619343507743585
+        ],
+        "se_ratio": 1.0542112282986134,
+        "treated_retained_fraction": 0.562973074310621,
+        "treated_retained_fraction_interval": [
+          0.5434466074415363,
+          0.5840620414467674
+        ],
+        "warning_rate": 0.0,
+        "warning_rate_interval": [
+          0.0,
+          0.43448246478317476
+        ]
+      }
+    }
+  },
+  "complete": false,
+  "completed_cells": 8,
+  "completed_records": 240,
+  "dependency_lock_checksum": "2131bd968e061c12847a100a896903ee1748baa4d5dcdd66d8bcd18a20559f09",
+  "git_commit": "e066558f8d0e02e3b4fe5c19d7d67d8142e5795f",
+  "interpretation": "Descriptive methods evidence within frozen simulated DGPs only. It does not qualify SCOVA-CF, certify observational causal identification, or create a profile.",
+  "planned_cells": 8,
+  "planned_records": 48000,
+  "planned_replications_per_cell": 1000,
+  "program_type": "methods",
+  "protocol_checksum": "d4c3ec0fa98131c4370d3a42b753f1f8c4ffb2ffb1f97021c617fd45404139fe",
+  "protocol_id": "cf-two-group-comparative-methods-v3",
+  "records": [
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.2965911352220785,
+      "method": "scova-cf",
+      "seed": 840000000,
+      "standard_error": 0.09994372354608717,
+      "status": "limited/unstable-support",
+      "truth": 1.1951684169703365
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0581882383602388,
+      "method": "linear-ancova",
+      "seed": 840000000,
+      "standard_error": 0.08269488391075464,
+      "status": "ok",
+      "truth": 1.1951684169703365
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.2412814540292432,
+      "method": "independent-aipw",
+      "seed": 840000000,
+      "standard_error": 0.2968124023496052,
+      "status": "ok",
+      "truth": 1.1951684169703365
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "caliper": 0.07228712835373483,
+        "matched_pairs": 397,
+        "treated_retained_fraction": 0.7830374753451677
+      },
+      "estimand": "att",
+      "estimate": 0.9589224487478988,
+      "method": "psm-att",
+      "seed": 840000000,
+      "standard_error": 0.09349039615116424,
+      "status": "ok",
+      "truth": 1.1717590327166227
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.2289019975188584,
+      "method": "econml-drlearner",
+      "seed": 840000000,
+      "standard_error": 0.006464648255018995,
+      "status": "ok",
+      "truth": 1.1951684169703365
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.4447463397307523,
+      "method": "econml-drlearner-conservative",
+      "seed": 840000000,
+      "standard_error": 0.009140611855964034,
+      "status": "ok",
+      "truth": 1.1951684169703365
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.2624386585357263,
+      "method": "scova-cf",
+      "seed": 840000001,
+      "standard_error": 0.09496272501581875,
+      "status": "limited/unstable-support",
+      "truth": 1.2113674871854863
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9869049965803388,
+      "method": "linear-ancova",
+      "seed": 840000001,
+      "standard_error": 0.08357236917709208,
+      "status": "ok",
+      "truth": 1.2113674871854863
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.1485989787854614,
+      "method": "independent-aipw",
+      "seed": 840000001,
+      "standard_error": 0.24424968138545264,
+      "status": "ok",
+      "truth": 1.2113674871854863
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "caliper": 0.0781387543269781,
+        "matched_pairs": 400,
+        "treated_retained_fraction": 0.8080808080808081
+      },
+      "estimand": "att",
+      "estimate": 0.9210785037207291,
+      "method": "psm-att",
+      "seed": 840000001,
+      "standard_error": 0.09928884848382498,
+      "status": "ok",
+      "truth": 1.1895599686987837
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.2346760884622412,
+      "method": "econml-drlearner",
+      "seed": 840000001,
+      "standard_error": 0.008979064471175366,
+      "status": "ok",
+      "truth": 1.2113674871854863
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.3916767311813123,
+      "method": "econml-drlearner-conservative",
+      "seed": 840000001,
+      "standard_error": 0.005728042475939815,
+      "status": "ok",
+      "truth": 1.2113674871854863
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.2804089368099514,
+      "method": "scova-cf",
+      "seed": 840000002,
+      "standard_error": 0.09054269436498366,
+      "status": "limited/unstable-support",
+      "truth": 1.1959147854735845
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0011180019119923,
+      "method": "linear-ancova",
+      "seed": 840000002,
+      "standard_error": 0.07620921951910614,
+      "status": "ok",
+      "truth": 1.1959147854735845
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 2.2809488987472526,
+      "method": "independent-aipw",
+      "seed": 840000002,
+      "standard_error": 0.46738959265973146,
+      "status": "ok",
+      "truth": 1.1959147854735845
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "caliper": 0.06571345325970415,
+        "matched_pairs": 397,
+        "treated_retained_fraction": 0.802020202020202
+      },
+      "estimand": "att",
+      "estimate": 1.0206386270712486,
+      "method": "psm-att",
+      "seed": 840000002,
+      "standard_error": 0.08600052512924183,
+      "status": "ok",
+      "truth": 1.190630497377663
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.333486014214846,
+      "method": "econml-drlearner",
+      "seed": 840000002,
+      "standard_error": 0.003969118129564847,
+      "status": "ok",
+      "truth": 1.1959147854735845
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 2.215674613971165,
+      "method": "econml-drlearner-conservative",
+      "seed": 840000002,
+      "standard_error": 0.020567807498527352,
+      "status": "ok",
+      "truth": 1.1959147854735845
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.3376044376837926,
+      "method": "scova-cf",
+      "seed": 840000003,
+      "standard_error": 0.09932241016521495,
+      "status": "limited/unstable-support",
+      "truth": 1.2075758763336335
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.052190983932129,
+      "method": "linear-ancova",
+      "seed": 840000003,
+      "standard_error": 0.0820639838288719,
+      "status": "ok",
+      "truth": 1.2075758763336335
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.674290590074513,
+      "method": "independent-aipw",
+      "seed": 840000003,
+      "standard_error": 0.22947436314042127,
+      "status": "ok",
+      "truth": 1.2075758763336335
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "caliper": 0.06775641251584123,
+        "matched_pairs": 407,
+        "treated_retained_fraction": 0.8011811023622047
+      },
+      "estimand": "att",
+      "estimate": 1.0299698151688972,
+      "method": "psm-att",
+      "seed": 840000003,
+      "standard_error": 0.08716066525987272,
+      "status": "ok",
+      "truth": 1.1676440943333946
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.2195886380976795,
+      "method": "econml-drlearner",
+      "seed": 840000003,
+      "standard_error": 0.010779555142950585,
+      "status": "ok",
+      "truth": 1.2075758763336335
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.6156809582202463,
+      "method": "econml-drlearner-conservative",
+      "seed": 840000003,
+      "standard_error": 0.007841925899157666,
+      "status": "ok",
+      "truth": 1.2075758763336335
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.1609280557286437,
+      "method": "scova-cf",
+      "seed": 840000004,
+      "standard_error": 0.08492111176599396,
+      "status": "limited/unstable-support",
+      "truth": 1.201229564462069
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9683139232282902,
+      "method": "linear-ancova",
+      "seed": 840000004,
+      "standard_error": 0.08441057115692585,
+      "status": "ok",
+      "truth": 1.201229564462069
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.4595545934086323,
+      "method": "independent-aipw",
+      "seed": 840000004,
+      "standard_error": 0.19578012577064707,
+      "status": "ok",
+      "truth": 1.201229564462069
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "caliper": 0.07538360194505421,
+        "matched_pairs": 404,
+        "treated_retained_fraction": 0.781431334622824
+      },
+      "estimand": "att",
+      "estimate": 0.9162267145749997,
+      "method": "psm-att",
+      "seed": 840000004,
+      "standard_error": 0.0935979189930943,
+      "status": "ok",
+      "truth": 1.1759541558006446
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.1739297828328268,
+      "method": "econml-drlearner",
+      "seed": 840000004,
+      "standard_error": 0.008710018999559498,
+      "status": "ok",
+      "truth": 1.201229564462069
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.4970265966458542,
+      "method": "econml-drlearner-conservative",
+      "seed": 840000004,
+      "standard_error": 0.018259002877876886,
+      "status": "ok",
+      "truth": 1.201229564462069
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9738809525548229,
+      "method": "scova-cf",
+      "seed": 840010000,
+      "standard_error": 0.09781353155998142,
+      "status": "limited/unstable-support",
+      "truth": 1.193067435676568
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.7349609819600352,
+      "method": "linear-ancova",
+      "seed": 840010000,
+      "standard_error": 0.08592108693887085,
+      "status": "ok",
+      "truth": 1.193067435676568
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.5509314914998618,
+      "method": "independent-aipw",
+      "seed": 840010000,
+      "standard_error": 1.3370659255565365,
+      "status": "ok",
+      "truth": 1.193067435676568
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "caliper": 0.14040846088449885,
+        "matched_pairs": 314,
+        "treated_retained_fraction": 0.6885964912280702
+      },
+      "estimand": "att",
+      "estimate": 0.70930194428383,
+      "method": "psm-att",
+      "seed": 840010000,
+      "standard_error": 0.10150396646467337,
+      "status": "ok",
+      "truth": 1.1533982411063224
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 421.2608689950092,
+      "method": "econml-drlearner",
+      "seed": 840010000,
+      "standard_error": 19.688083364990973,
+      "status": "ok",
+      "truth": 1.193067435676568
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.3703569136022962,
+      "method": "econml-drlearner-conservative",
+      "seed": 840010000,
+      "standard_error": 0.03206017967884959,
+      "status": "ok",
+      "truth": 1.193067435676568
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9720880632072502,
+      "method": "scova-cf",
+      "seed": 840010001,
+      "standard_error": 0.153366405723355,
+      "status": "limited/unstable-support",
+      "truth": 1.2008731835525825
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.6271099812379367,
+      "method": "linear-ancova",
+      "seed": 840010001,
+      "standard_error": 0.08057436519508056,
+      "status": "ok",
+      "truth": 1.2008731835525825
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.7465377683709733,
+      "method": "independent-aipw",
+      "seed": 840010001,
+      "standard_error": 1.908738280234392,
+      "status": "ok",
+      "truth": 1.2008731835525825
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "caliper": 0.11537112779794334,
+        "matched_pairs": 335,
+        "treated_retained_fraction": 0.7204301075268817
+      },
+      "estimand": "att",
+      "estimate": 0.5683385079161104,
+      "method": "psm-att",
+      "seed": 840010001,
+      "standard_error": 0.0946732511178155,
+      "status": "ok",
+      "truth": 1.1446460040517332
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.0369344088061838,
+      "method": "econml-drlearner",
+      "seed": 840010001,
+      "standard_error": 0.008191922249266535,
+      "status": "ok",
+      "truth": 1.2008731835525825
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.4908232219399624,
+      "method": "econml-drlearner-conservative",
+      "seed": 840010001,
+      "standard_error": 0.04283813901697103,
+      "status": "ok",
+      "truth": 1.2008731835525825
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.225489941635505,
+      "method": "scova-cf",
+      "seed": 840010002,
+      "standard_error": 0.13740270372348495,
+      "status": "limited/unstable-support",
+      "truth": 1.2086835344312834
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.7368860441202378,
+      "method": "linear-ancova",
+      "seed": 840010002,
+      "standard_error": 0.08852287423275813,
+      "status": "ok",
+      "truth": 1.2086835344312834
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 2.505746902310304,
+      "method": "independent-aipw",
+      "seed": 840010002,
+      "standard_error": 1.348929247110259,
+      "status": "ok",
+      "truth": 1.2086835344312834
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "caliper": 0.14732120766228082,
+        "matched_pairs": 309,
+        "treated_retained_fraction": 0.6791208791208792
+      },
+      "estimand": "att",
+      "estimate": 0.5960533509035035,
+      "method": "psm-att",
+      "seed": 840010002,
+      "standard_error": 0.10852788356597963,
+      "status": "ok",
+      "truth": 1.1500387536330348
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.2880381565739945,
+      "method": "econml-drlearner",
+      "seed": 840010002,
+      "standard_error": 0.013257916369888304,
+      "status": "ok",
+      "truth": 1.2086835344312834
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.5823226011590064,
+      "method": "econml-drlearner-conservative",
+      "seed": 840010002,
+      "standard_error": 0.038272821325131115,
+      "status": "ok",
+      "truth": 1.2086835344312834
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.3337144689703047,
+      "method": "scova-cf",
+      "seed": 840010003,
+      "standard_error": 0.13240905900998176,
+      "status": "limited/unstable-support",
+      "truth": 1.209656772762211
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.9327331151187761,
+      "method": "linear-ancova",
+      "seed": 840010003,
+      "standard_error": 0.08644839029233098,
+      "status": "ok",
+      "truth": 1.209656772762211
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.2210742265508925,
+      "method": "independent-aipw",
+      "seed": 840010003,
+      "standard_error": 1.316397047171254,
+      "status": "ok",
+      "truth": 1.209656772762211
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "caliper": 0.1002737798542426,
+        "matched_pairs": 350,
+        "treated_retained_fraction": 0.7246376811594203
+      },
+      "estimand": "att",
+      "estimate": 0.8107660999136918,
+      "method": "psm-att",
+      "seed": 840010003,
+      "standard_error": 0.1038007607297938,
+      "status": "ok",
+      "truth": 1.1636547506509995
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.2769705272532217,
+      "method": "econml-drlearner",
+      "seed": 840010003,
+      "standard_error": 0.00816544827245793,
+      "status": "ok",
+      "truth": 1.209656772762211
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.7029006470880779,
+      "method": "econml-drlearner-conservative",
+      "seed": 840010003,
+      "standard_error": 0.03757771302999873,
+      "status": "ok",
+      "truth": 1.209656772762211
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.370045333591467,
+      "method": "scova-cf",
+      "seed": 840010004,
+      "standard_error": 0.1345031689324271,
+      "status": "limited/unstable-support",
+      "truth": 1.1892290751712082
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 0.8804606571818945,
+      "method": "linear-ancova",
+      "seed": 840010004,
+      "standard_error": 0.08450948145568586,
+      "status": "ok",
+      "truth": 1.1892290751712082
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.2658460194718695,
+      "method": "independent-aipw",
+      "seed": 840010004,
+      "standard_error": 0.5476340159600668,
+      "status": "ok",
+      "truth": 1.1892290751712082
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "caliper": 0.13711160196639505,
+        "matched_pairs": 323,
+        "treated_retained_fraction": 0.6729166666666667
+      },
+      "estimand": "att",
+      "estimate": 0.78265406355003,
+      "method": "psm-att",
+      "seed": 840010004,
+      "standard_error": 0.1059418526979775,
+      "status": "ok",
+      "truth": 1.1545973137903778
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 978.4977437312551,
+      "method": "econml-drlearner",
+      "seed": 840010004,
+      "standard_error": 35.230698929137525,
+      "status": "ok",
+      "truth": 1.1892290751712082
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.5708693367411526,
+      "method": "econml-drlearner-conservative",
+      "seed": 840010004,
+      "standard_error": 0.05283796922912641,
+      "status": "ok",
+      "truth": 1.1892290751712082
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.1297708819788452,
+      "method": "scova-cf",
+      "seed": 840020000,
+      "standard_error": 0.09115515006275703,
+      "status": "limited/unstable-support",
+      "truth": 1.1943131769532547
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.412238545920312,
+      "method": "linear-ancova",
+      "seed": 840020000,
+      "standard_error": 0.08290611866306179,
+      "status": "ok",
+      "truth": 1.1943131769532547
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.1905157926608463,
+      "method": "independent-aipw",
+      "seed": 840020000,
+      "standard_error": 0.3616515708237518,
+      "status": "ok",
+      "truth": 1.1943131769532547
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "caliper": 0.08872733013404556,
+        "matched_pairs": 390,
+        "treated_retained_fraction": 0.7514450867052023
+      },
+      "estimand": "att",
+      "estimate": 1.4121089558375493,
+      "method": "psm-att",
+      "seed": 840020000,
+      "standard_error": 0.09058383986293855,
+      "status": "ok",
+      "truth": 1.1853122594616161
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.3300148809435923,
+      "method": "econml-drlearner",
+      "seed": 840020000,
+      "standard_error": 0.008068668453167942,
+      "status": "ok",
+      "truth": 1.1943131769532547
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.4063887789491458,
+      "method": "econml-drlearner-conservative",
+      "seed": 840020000,
+      "standard_error": 0.029620006282104067,
+      "status": "ok",
+      "truth": 1.1943131769532547
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.273810551496986,
+      "method": "scova-cf",
+      "seed": 840020001,
+      "standard_error": 0.0966403786847055,
+      "status": "limited/unstable-support",
+      "truth": 1.2043315161567572
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.430120944162898,
+      "method": "linear-ancova",
+      "seed": 840020001,
+      "standard_error": 0.08363323454539219,
+      "status": "ok",
+      "truth": 1.2043315161567572
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.34855849441294,
+      "method": "independent-aipw",
+      "seed": 840020001,
+      "standard_error": 0.3576559566181882,
+      "status": "ok",
+      "truth": 1.2043315161567572
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "caliper": 0.1072569185561708,
+        "matched_pairs": 374,
+        "treated_retained_fraction": 0.7555555555555555
+      },
+      "estimand": "att",
+      "estimate": 1.3467141875848754,
+      "method": "psm-att",
+      "seed": 840020001,
+      "standard_error": 0.0904325800014136,
+      "status": "ok",
+      "truth": 1.1975437173195609
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.301096433560836,
+      "method": "econml-drlearner",
+      "seed": 840020001,
+      "standard_error": 0.0053036388537909054,
+      "status": "ok",
+      "truth": 1.2043315161567572
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.467702879643501,
+      "method": "econml-drlearner-conservative",
+      "seed": 840020001,
+      "standard_error": 0.018725327161967013,
+      "status": "ok",
+      "truth": 1.2043315161567572
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.2202640007621746,
+      "method": "scova-cf",
+      "seed": 840020002,
+      "standard_error": 0.08071321416963963,
+      "status": "limited/unstable-support",
+      "truth": 1.1886341468669912
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.3733257689351666,
+      "method": "linear-ancova",
+      "seed": 840020002,
+      "standard_error": 0.07759909799887045,
+      "status": "ok",
+      "truth": 1.1886341468669912
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.6659434363729263,
+      "method": "independent-aipw",
+      "seed": 840020002,
+      "standard_error": 0.28726720357514773,
+      "status": "ok",
+      "truth": 1.1886341468669912
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "caliper": 0.06639529890717077,
+        "matched_pairs": 419,
+        "treated_retained_fraction": 0.812015503875969
+      },
+      "estimand": "att",
+      "estimate": 1.3335487116152913,
+      "method": "psm-att",
+      "seed": 840020002,
+      "standard_error": 0.08257742520152389,
+      "status": "ok",
+      "truth": 1.1780671829065266
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.1490567307842023,
+      "method": "econml-drlearner",
+      "seed": 840020002,
+      "standard_error": 0.009129737484227837,
+      "status": "ok",
+      "truth": 1.1886341468669912
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.6701705199290584,
+      "method": "econml-drlearner-conservative",
+      "seed": 840020002,
+      "standard_error": 0.022305341362859152,
+      "status": "ok",
+      "truth": 1.1886341468669912
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.071588360313002,
+      "method": "scova-cf",
+      "seed": 840020003,
+      "standard_error": 0.09756080711567469,
+      "status": "limited/unstable-support",
+      "truth": 1.2045482734050448
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.257371095689236,
+      "method": "linear-ancova",
+      "seed": 840020003,
+      "standard_error": 0.08126551914793904,
+      "status": "ok",
+      "truth": 1.2045482734050448
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.002898652364119,
+      "method": "independent-aipw",
+      "seed": 840020003,
+      "standard_error": 0.20663604767885088,
+      "status": "ok",
+      "truth": 1.2045482734050448
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "caliper": 0.08860286986171934,
+        "matched_pairs": 397,
+        "treated_retained_fraction": 0.775390625
+      },
+      "estimand": "att",
+      "estimate": 1.2269465201333465,
+      "method": "psm-att",
+      "seed": 840020003,
+      "standard_error": 0.08750146273059786,
+      "status": "ok",
+      "truth": 1.2015432590992334
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.1674508443976566,
+      "method": "econml-drlearner",
+      "seed": 840020003,
+      "standard_error": 0.006177127323651268,
+      "status": "ok",
+      "truth": 1.2045482734050448
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.0422684137736742,
+      "method": "econml-drlearner-conservative",
+      "seed": 840020003,
+      "standard_error": 0.01141841678393549,
+      "status": "ok",
+      "truth": 1.2045482734050448
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.0657026654280317,
+      "method": "scova-cf",
+      "seed": 840020004,
+      "standard_error": 0.1020948538876015,
+      "status": "limited/unstable-support",
+      "truth": 1.2000524442086744
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.4251150719994226,
+      "method": "linear-ancova",
+      "seed": 840020004,
+      "standard_error": 0.08008220713709703,
+      "status": "ok",
+      "truth": 1.2000524442086744
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.4051736299460308,
+      "method": "independent-aipw",
+      "seed": 840020004,
+      "standard_error": 0.38319097538291713,
+      "status": "ok",
+      "truth": 1.2000524442086744
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "caliper": 0.09397303364885709,
+        "matched_pairs": 379,
+        "treated_retained_fraction": 0.7750511247443763
+      },
+      "estimand": "att",
+      "estimate": 1.4162413881474334,
+      "method": "psm-att",
+      "seed": 840020004,
+      "standard_error": 0.09166399758708635,
+      "status": "ok",
+      "truth": 1.202981292583214
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.3047983631039006,
+      "method": "econml-drlearner",
+      "seed": 840020004,
+      "standard_error": 0.003996324924137047,
+      "status": "ok",
+      "truth": 1.2000524442086744
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.40332059136575754,
+      "method": "econml-drlearner-conservative",
+      "seed": 840020004,
+      "standard_error": 0.027376763495752278,
+      "status": "ok",
+      "truth": 1.2000524442086744
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.3130721947925315,
+      "method": "scova-cf",
+      "seed": 840030000,
+      "standard_error": 0.1653064085912267,
+      "status": "limited/unstable-support",
+      "truth": 1.2038401646070906
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.5782249789209641,
+      "method": "linear-ancova",
+      "seed": 840030000,
+      "standard_error": 0.08958154800544671,
+      "status": "ok",
+      "truth": 1.2038401646070906
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -3.1319566397096588,
+      "method": "independent-aipw",
+      "seed": 840030000,
+      "standard_error": 2.877884940091271,
+      "status": "ok",
+      "truth": 1.2038401646070906
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "caliper": 0.24157971509982046,
+        "matched_pairs": 289,
+        "treated_retained_fraction": 0.5677799607072691
+      },
+      "estimand": "att",
+      "estimate": 1.4947271055879305,
+      "method": "psm-att",
+      "seed": 840030000,
+      "standard_error": 0.10509295950615354,
+      "status": "ok",
+      "truth": 1.1872094052606508
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.2196016486546477,
+      "method": "econml-drlearner",
+      "seed": 840030000,
+      "standard_error": 0.010378519637304046,
+      "status": "ok",
+      "truth": 1.2038401646070906
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.5776216294503922,
+      "method": "econml-drlearner-conservative",
+      "seed": 840030000,
+      "standard_error": 0.035114916860283535,
+      "status": "ok",
+      "truth": 1.2038401646070906
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.14391686185567,
+      "method": "scova-cf",
+      "seed": 840030001,
+      "standard_error": 0.10434254108707607,
+      "status": "limited/unstable-support",
+      "truth": 1.1845566886505838
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.4752425092743928,
+      "method": "linear-ancova",
+      "seed": 840030001,
+      "standard_error": 0.08466194746623354,
+      "status": "ok",
+      "truth": 1.1845566886505838
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.1735093683657098,
+      "method": "independent-aipw",
+      "seed": 840030001,
+      "standard_error": 0.6519938337231367,
+      "status": "ok",
+      "truth": 1.1845566886505838
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "caliper": 0.19213308698395076,
+        "matched_pairs": 310,
+        "treated_retained_fraction": 0.6066536203522505
+      },
+      "estimand": "att",
+      "estimate": 1.4065468834832782,
+      "method": "psm-att",
+      "seed": 840030001,
+      "standard_error": 0.09815028033219046,
+      "status": "ok",
+      "truth": 1.173636292871575
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.1036773603677938,
+      "method": "econml-drlearner",
+      "seed": 840030001,
+      "standard_error": 0.012030078486548404,
+      "status": "ok",
+      "truth": 1.1845566886505838
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.0109815794363146,
+      "method": "econml-drlearner-conservative",
+      "seed": 840030001,
+      "standard_error": 0.038689478218130444,
+      "status": "ok",
+      "truth": 1.1845566886505838
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.3181559724578369,
+      "method": "scova-cf",
+      "seed": 840030002,
+      "standard_error": 0.14268640767057442,
+      "status": "limited/unstable-support",
+      "truth": 1.2014628317224734
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.5671483780453128,
+      "method": "linear-ancova",
+      "seed": 840030002,
+      "standard_error": 0.0933275762127685,
+      "status": "ok",
+      "truth": 1.2014628317224734
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.013479360822419722,
+      "method": "independent-aipw",
+      "seed": 840030002,
+      "standard_error": 2.0718097418147474,
+      "status": "ok",
+      "truth": 1.2014628317224734
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "caliper": 0.22279095565455553,
+        "matched_pairs": 274,
+        "treated_retained_fraction": 0.541501976284585
+      },
+      "estimand": "att",
+      "estimate": 1.5838139907129793,
+      "method": "psm-att",
+      "seed": 840030002,
+      "standard_error": 0.11231508265867392,
+      "status": "ok",
+      "truth": 1.206343526103411
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": -1326.1860330908755,
+      "method": "econml-drlearner",
+      "seed": 840030002,
+      "standard_error": 66.98411035661275,
+      "status": "ok",
+      "truth": 1.2014628317224734
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.0952907901856963,
+      "method": "econml-drlearner-conservative",
+      "seed": 840030002,
+      "standard_error": 0.03412853151341325,
+      "status": "ok",
+      "truth": 1.2014628317224734
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.1600160426657076,
+      "method": "scova-cf",
+      "seed": 840030003,
+      "standard_error": 0.1364610297535842,
+      "status": "limited/unstable-support",
+      "truth": 1.1892127057282864
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.5823847178211876,
+      "method": "linear-ancova",
+      "seed": 840030003,
+      "standard_error": 0.09109673464890677,
+      "status": "ok",
+      "truth": 1.1892127057282864
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -0.40129288871374674,
+      "method": "independent-aipw",
+      "seed": 840030003,
+      "standard_error": 1.8120396658940083,
+      "status": "ok",
+      "truth": 1.1892127057282864
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "caliper": 0.23829749733414946,
+        "matched_pairs": 283,
+        "treated_retained_fraction": 0.562624254473161
+      },
+      "estimand": "att",
+      "estimate": 1.5227238299057044,
+      "method": "psm-att",
+      "seed": 840030003,
+      "standard_error": 0.11074714811445405,
+      "status": "ok",
+      "truth": 1.1801479031199014
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.1501759836782355,
+      "method": "econml-drlearner",
+      "seed": 840030003,
+      "standard_error": 0.016326857395838407,
+      "status": "ok",
+      "truth": 1.1892127057282864
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.8996689842036344,
+      "method": "econml-drlearner-conservative",
+      "seed": 840030003,
+      "standard_error": 0.06395057952029386,
+      "status": "ok",
+      "truth": 1.1892127057282864
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.2748006282482611,
+      "method": "scova-cf",
+      "seed": 840030004,
+      "standard_error": 0.21638636589144913,
+      "status": "limited/unstable-support",
+      "truth": 1.2116614232067695
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.6156737035022912,
+      "method": "linear-ancova",
+      "seed": 840030004,
+      "standard_error": 0.08986146887721543,
+      "status": "ok",
+      "truth": 1.2116614232067695
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -0.31476897346502825,
+      "method": "independent-aipw",
+      "seed": 840030004,
+      "standard_error": 2.8316071949632895,
+      "status": "ok",
+      "truth": 1.2116614232067695
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "caliper": 0.2766941593643924,
+        "matched_pairs": 271,
+        "treated_retained_fraction": 0.5409181636726547
+      },
+      "estimand": "att",
+      "estimate": 1.6277762039740284,
+      "method": "psm-att",
+      "seed": 840030004,
+      "standard_error": 0.11058555835420736,
+      "status": "ok",
+      "truth": 1.1808648233697991
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.2940716506220091,
+      "method": "econml-drlearner",
+      "seed": 840030004,
+      "standard_error": 0.01549443451603417,
+      "status": "ok",
+      "truth": 1.2116614232067695
+    },
+    {
+      "cell_id": "cmp-v3-smooth-nonlinear-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.9845440882080093,
+      "method": "econml-drlearner-conservative",
+      "seed": 840030004,
+      "standard_error": 0.02698015580648866,
+      "status": "ok",
+      "truth": 1.2116614232067695
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9492132394806133,
+      "method": "scova-cf",
+      "seed": 840040000,
+      "standard_error": 0.0870693336359814,
+      "status": "limited/unstable-support",
+      "truth": 1.0044000000000002
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0079641757042213,
+      "method": "linear-ancova",
+      "seed": 840040000,
+      "standard_error": 0.07049193704337166,
+      "status": "ok",
+      "truth": 1.0044000000000002
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.9770340251774373,
+      "method": "independent-aipw",
+      "seed": 840040000,
+      "standard_error": 0.2814931164147482,
+      "status": "ok",
+      "truth": 1.0044000000000002
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "caliper": 0.061700107568606444,
+        "matched_pairs": 407,
+        "treated_retained_fraction": 0.8550420168067226
+      },
+      "estimand": "att",
+      "estimate": 1.0116327000450176,
+      "method": "psm-att",
+      "seed": 840040000,
+      "standard_error": 0.07532482518665569,
+      "status": "ok",
+      "truth": 1.023949579831933
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.9058492794088583,
+      "method": "econml-drlearner",
+      "seed": 840040000,
+      "standard_error": 0.010286835603854622,
+      "status": "ok",
+      "truth": 1.0044000000000002
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.8333941635168187,
+      "method": "econml-drlearner-conservative",
+      "seed": 840040000,
+      "standard_error": 0.020397564339252376,
+      "status": "ok",
+      "truth": 1.0044000000000002
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9961697492018544,
+      "method": "scova-cf",
+      "seed": 840040001,
+      "standard_error": 0.09060279050822345,
+      "status": "limited/unstable-support",
+      "truth": 1.0340500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1597029197732247,
+      "method": "linear-ancova",
+      "seed": 840040001,
+      "standard_error": 0.06921081944787215,
+      "status": "ok",
+      "truth": 1.0340500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.8142260349095197,
+      "method": "independent-aipw",
+      "seed": 840040001,
+      "standard_error": 0.4055032357742213,
+      "status": "ok",
+      "truth": 1.0340500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "caliper": 0.051919001391367715,
+        "matched_pairs": 409,
+        "treated_retained_fraction": 0.8520833333333333
+      },
+      "estimand": "att",
+      "estimate": 1.0797674361302245,
+      "method": "psm-att",
+      "seed": 840040001,
+      "standard_error": 0.07608963174231723,
+      "status": "ok",
+      "truth": 1.0485416666666667
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.0468974703834324,
+      "method": "econml-drlearner",
+      "seed": 840040001,
+      "standard_error": 0.011226068323286922,
+      "status": "ok",
+      "truth": 1.0340500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.7907845578389124,
+      "method": "econml-drlearner-conservative",
+      "seed": 840040001,
+      "standard_error": 0.0225150446171955,
+      "status": "ok",
+      "truth": 1.0340500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.1498041742297747,
+      "method": "scova-cf",
+      "seed": 840040002,
+      "standard_error": 0.09494304712756761,
+      "status": "limited/unstable-support",
+      "truth": 1.0274
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1564984641863265,
+      "method": "linear-ancova",
+      "seed": 840040002,
+      "standard_error": 0.06880202142287772,
+      "status": "ok",
+      "truth": 1.0274
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.3774196956944125,
+      "method": "independent-aipw",
+      "seed": 840040002,
+      "standard_error": 0.3450894510741742,
+      "status": "ok",
+      "truth": 1.0274
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "caliper": 0.08419622914465434,
+        "matched_pairs": 388,
+        "treated_retained_fraction": 0.8151260504201681
+      },
+      "estimand": "att",
+      "estimate": 1.1201716291335027,
+      "method": "psm-att",
+      "seed": 840040002,
+      "standard_error": 0.07800679100608397,
+      "status": "ok",
+      "truth": 1.0561974789915967
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.1477948824116189,
+      "method": "econml-drlearner",
+      "seed": 840040002,
+      "standard_error": 0.007164226729807225,
+      "status": "ok",
+      "truth": 1.0274
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.2790101989695382,
+      "method": "econml-drlearner-conservative",
+      "seed": 840040002,
+      "standard_error": 0.011044874786348195,
+      "status": "ok",
+      "truth": 1.0274
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.0272959528490035,
+      "method": "scova-cf",
+      "seed": 840040003,
+      "standard_error": 0.08847519571091958,
+      "status": "limited/unstable-support",
+      "truth": 1.0245499999999998
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1132096548205614,
+      "method": "linear-ancova",
+      "seed": 840040003,
+      "standard_error": 0.0674619548166463,
+      "status": "ok",
+      "truth": 1.0245499999999998
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.7550929134413741,
+      "method": "independent-aipw",
+      "seed": 840040003,
+      "standard_error": 0.2286648258703079,
+      "status": "ok",
+      "truth": 1.0245499999999998
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "caliper": 0.07709175346336898,
+        "matched_pairs": 406,
+        "treated_retained_fraction": 0.8458333333333333
+      },
+      "estimand": "att",
+      "estimate": 1.0757029043563564,
+      "method": "psm-att",
+      "seed": 840040003,
+      "standard_error": 0.07383779098021354,
+      "status": "ok",
+      "truth": 1.0379166666666668
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.0784446362568998,
+      "method": "econml-drlearner",
+      "seed": 840040003,
+      "standard_error": 0.008489794225579482,
+      "status": "ok",
+      "truth": 1.0245499999999998
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.8302700266659854,
+      "method": "econml-drlearner-conservative",
+      "seed": 840040003,
+      "standard_error": 0.016941693089623164,
+      "status": "ok",
+      "truth": 1.0245499999999998
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9476877506797636,
+      "method": "scova-cf",
+      "seed": 840040004,
+      "standard_error": 0.0883529833593245,
+      "status": "limited/unstable-support",
+      "truth": 1.0356
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0592182705036877,
+      "method": "linear-ancova",
+      "seed": 840040004,
+      "standard_error": 0.0691750951202992,
+      "status": "ok",
+      "truth": 1.0356
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.0745409817807035,
+      "method": "independent-aipw",
+      "seed": 840040004,
+      "standard_error": 0.2424395870273879,
+      "status": "ok",
+      "truth": 1.0356
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "caliper": 0.06548526165701224,
+        "matched_pairs": 416,
+        "treated_retained_fraction": 0.8303393213572854
+      },
+      "estimand": "att",
+      "estimate": 1.0481917775666565,
+      "method": "psm-att",
+      "seed": 840040004,
+      "standard_error": 0.07432380713269249,
+      "status": "ok",
+      "truth": 1.0556886227544913
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.9753396968243283,
+      "method": "econml-drlearner",
+      "seed": 840040004,
+      "standard_error": 0.0073608272574930975,
+      "status": "ok",
+      "truth": 1.0356
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.0706109810646822,
+      "method": "econml-drlearner-conservative",
+      "seed": 840040004,
+      "standard_error": 0.02025922526417059,
+      "status": "ok",
+      "truth": 1.0356
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.0187018461823145,
+      "method": "scova-cf",
+      "seed": 840050000,
+      "standard_error": 0.11411139184584496,
+      "status": "limited/unstable-support",
+      "truth": 1.0219500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1762265397906553,
+      "method": "linear-ancova",
+      "seed": 840050000,
+      "standard_error": 0.06982716551243154,
+      "status": "ok",
+      "truth": 1.0219500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -2.2077797073688687,
+      "method": "independent-aipw",
+      "seed": 840050000,
+      "standard_error": 2.482228631247265,
+      "status": "ok",
+      "truth": 1.0219500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "caliper": 0.1265975504189862,
+        "matched_pairs": 312,
+        "treated_retained_fraction": 0.6680942184154176
+      },
+      "estimand": "att",
+      "estimate": 1.1352071992579094,
+      "method": "psm-att",
+      "seed": 840050000,
+      "standard_error": 0.08466251077248116,
+      "status": "ok",
+      "truth": 1.0619914346895076
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.0951970925642027,
+      "method": "econml-drlearner",
+      "seed": 840050000,
+      "standard_error": 0.008638937227311926,
+      "status": "ok",
+      "truth": 1.0219500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.7555166322871033,
+      "method": "econml-drlearner-conservative",
+      "seed": 840050000,
+      "standard_error": 0.04232294594889771,
+      "status": "ok",
+      "truth": 1.0219500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.984174303725569,
+      "method": "scova-cf",
+      "seed": 840050001,
+      "standard_error": 0.11486655071715988,
+      "status": "limited/unstable-support",
+      "truth": 1.01895
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.194042185406308,
+      "method": "linear-ancova",
+      "seed": 840050001,
+      "standard_error": 0.07179236570401934,
+      "status": "ok",
+      "truth": 1.01895
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -0.3007790211155612,
+      "method": "independent-aipw",
+      "seed": 840050001,
+      "standard_error": 1.1300117175261601,
+      "status": "ok",
+      "truth": 1.01895
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "caliper": 0.14431518120505843,
+        "matched_pairs": 306,
+        "treated_retained_fraction": 0.6071428571428571
+      },
+      "estimand": "att",
+      "estimate": 1.0846346487553575,
+      "method": "psm-att",
+      "seed": 840050001,
+      "standard_error": 0.08690212207982735,
+      "status": "ok",
+      "truth": 1.0589285714285714
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.8615840641570156,
+      "method": "econml-drlearner",
+      "seed": 840050001,
+      "standard_error": 0.004405093970067126,
+      "status": "ok",
+      "truth": 1.01895
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.9882199342651313,
+      "method": "econml-drlearner-conservative",
+      "seed": 840050001,
+      "standard_error": 0.03397023352480189,
+      "status": "ok",
+      "truth": 1.01895
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.8619204834654675,
+      "method": "scova-cf",
+      "seed": 840050002,
+      "standard_error": 0.1313290050673008,
+      "status": "limited/unstable-support",
+      "truth": 1.0152
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0818020386510874,
+      "method": "linear-ancova",
+      "seed": 840050002,
+      "standard_error": 0.07079311347590624,
+      "status": "ok",
+      "truth": 1.0152
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -0.6742203556466778,
+      "method": "independent-aipw",
+      "seed": 840050002,
+      "standard_error": 1.4711127048963162,
+      "status": "ok",
+      "truth": 1.0152
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "caliper": 0.11271994226884521,
+        "matched_pairs": 330,
+        "treated_retained_fraction": 0.7333333333333333
+      },
+      "estimand": "att",
+      "estimate": 0.9888560845106306,
+      "method": "psm-att",
+      "seed": 840050002,
+      "standard_error": 0.08133551113022923,
+      "status": "ok",
+      "truth": 1.0510000000000002
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": -492.11420906890027,
+      "method": "econml-drlearner",
+      "seed": 840050002,
+      "standard_error": 14.881716794766746,
+      "status": "ok",
+      "truth": 1.0152
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.7524858894971822,
+      "method": "econml-drlearner-conservative",
+      "seed": 840050002,
+      "standard_error": 0.024010165140878,
+      "status": "ok",
+      "truth": 1.0152
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.1475421436936575,
+      "method": "scova-cf",
+      "seed": 840050003,
+      "standard_error": 0.09388487257406701,
+      "status": "limited/unstable-support",
+      "truth": 1.0255
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.2701881883208832,
+      "method": "linear-ancova",
+      "seed": 840050003,
+      "standard_error": 0.06970997578400454,
+      "status": "ok",
+      "truth": 1.0255
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.6177495386030347,
+      "method": "independent-aipw",
+      "seed": 840050003,
+      "standard_error": 1.104918238987848,
+      "status": "ok",
+      "truth": 1.0255
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "caliper": 0.11015067069966447,
+        "matched_pairs": 328,
+        "treated_retained_fraction": 0.702355460385439
+      },
+      "estimand": "att",
+      "estimate": 1.1326653980216905,
+      "method": "psm-att",
+      "seed": 840050003,
+      "standard_error": 0.07902561330696292,
+      "status": "ok",
+      "truth": 1.0767665952890793
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.054215956819751,
+      "method": "econml-drlearner",
+      "seed": 840050003,
+      "standard_error": 0.010664458104489214,
+      "status": "ok",
+      "truth": 1.0255
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.992322029828325,
+      "method": "econml-drlearner-conservative",
+      "seed": 840050003,
+      "standard_error": 0.02755437043033986,
+      "status": "ok",
+      "truth": 1.0255
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.060688946728256,
+      "method": "scova-cf",
+      "seed": 840050004,
+      "standard_error": 0.12010499059202637,
+      "status": "limited/unstable-support",
+      "truth": 1.0324
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.2175250638572075,
+      "method": "linear-ancova",
+      "seed": 840050004,
+      "standard_error": 0.07071527094230305,
+      "status": "ok",
+      "truth": 1.0324
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -0.8632335325606668,
+      "method": "independent-aipw",
+      "seed": 840050004,
+      "standard_error": 1.2742597559135063,
+      "status": "ok",
+      "truth": 1.0324
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "caliper": 0.11687420716580335,
+        "matched_pairs": 351,
+        "treated_retained_fraction": 0.740506329113924
+      },
+      "estimand": "att",
+      "estimate": 1.1725712437733673,
+      "method": "psm-att",
+      "seed": 840050004,
+      "standard_error": 0.07835419508511637,
+      "status": "ok",
+      "truth": 1.0647679324894517
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.0814725480471408,
+      "method": "econml-drlearner",
+      "seed": 840050004,
+      "standard_error": 0.007149466298742885,
+      "status": "ok",
+      "truth": 1.0324
+    },
+    {
+      "cell_id": "cmp-v3-threshold-smooth-nonlinear-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.1620893095209703,
+      "method": "econml-drlearner-conservative",
+      "seed": 840050004,
+      "standard_error": 0.02003277926580267,
+      "status": "ok",
+      "truth": 1.0324
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.0422271513400887,
+      "method": "scova-cf",
+      "seed": 840060000,
+      "standard_error": 0.08884662313936552,
+      "status": "limited/unstable-support",
+      "truth": 1.0148
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1040916957410414,
+      "method": "linear-ancova",
+      "seed": 840060000,
+      "standard_error": 0.06753370863482602,
+      "status": "ok",
+      "truth": 1.0148
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.5033380225043997,
+      "method": "independent-aipw",
+      "seed": 840060000,
+      "standard_error": 0.3354573767724281,
+      "status": "ok",
+      "truth": 1.0148
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "caliper": 0.09461823348023984,
+        "matched_pairs": 386,
+        "treated_retained_fraction": 0.7813765182186235
+      },
+      "estimand": "att",
+      "estimate": 1.1057412174493202,
+      "method": "psm-att",
+      "seed": 840060000,
+      "standard_error": 0.07874665619386666,
+      "status": "ok",
+      "truth": 1.0314777327935225
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.07634971905447,
+      "method": "econml-drlearner",
+      "seed": 840060000,
+      "standard_error": 0.00457241863135891,
+      "status": "ok",
+      "truth": 1.0148
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.5895979721280104,
+      "method": "econml-drlearner-conservative",
+      "seed": 840060000,
+      "standard_error": 0.03737330631415262,
+      "status": "ok",
+      "truth": 1.0148
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9944287940622191,
+      "method": "scova-cf",
+      "seed": 840060001,
+      "standard_error": 0.0851565350005776,
+      "status": "limited/unstable-support",
+      "truth": 1.02265
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.0820653056505039,
+      "method": "linear-ancova",
+      "seed": 840060001,
+      "standard_error": 0.06769512397035898,
+      "status": "ok",
+      "truth": 1.02265
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.9355124214198531,
+      "method": "independent-aipw",
+      "seed": 840060001,
+      "standard_error": 0.2174600655232842,
+      "status": "ok",
+      "truth": 1.02265
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "caliper": 0.09191261162015364,
+        "matched_pairs": 386,
+        "treated_retained_fraction": 0.772
+      },
+      "estimand": "att",
+      "estimate": 1.0436904446630542,
+      "method": "psm-att",
+      "seed": 840060001,
+      "standard_error": 0.07538379728466602,
+      "status": "ok",
+      "truth": 1.0358
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.0887665504368342,
+      "method": "econml-drlearner",
+      "seed": 840060001,
+      "standard_error": 0.008665426110690965,
+      "status": "ok",
+      "truth": 1.02265
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.0129977754874324,
+      "method": "econml-drlearner-conservative",
+      "seed": 840060001,
+      "standard_error": 0.006662472658384296,
+      "status": "ok",
+      "truth": 1.02265
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.031929002812938,
+      "method": "scova-cf",
+      "seed": 840060002,
+      "standard_error": 0.08512205006864124,
+      "status": "limited/unstable-support",
+      "truth": 1.0118500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1229731798917135,
+      "method": "linear-ancova",
+      "seed": 840060002,
+      "standard_error": 0.07032987249721402,
+      "status": "ok",
+      "truth": 1.0118500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.4917880497542256,
+      "method": "independent-aipw",
+      "seed": 840060002,
+      "standard_error": 0.43344409776822934,
+      "status": "ok",
+      "truth": 1.0118500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "caliper": 0.1214817741035945,
+        "matched_pairs": 375,
+        "treated_retained_fraction": 0.7440476190476191
+      },
+      "estimand": "att",
+      "estimate": 1.0908119753819001,
+      "method": "psm-att",
+      "seed": 840060002,
+      "standard_error": 0.07885516311437589,
+      "status": "ok",
+      "truth": 1.0211309523809524
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.1143172601254059,
+      "method": "econml-drlearner",
+      "seed": 840060002,
+      "standard_error": 0.0029837837808181335,
+      "status": "ok",
+      "truth": 1.0118500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.7763434410610919,
+      "method": "econml-drlearner-conservative",
+      "seed": 840060002,
+      "standard_error": 0.01491738429799361,
+      "status": "ok",
+      "truth": 1.0118500000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.1032577653651223,
+      "method": "scova-cf",
+      "seed": 840060003,
+      "standard_error": 0.07884347380628219,
+      "status": "limited/unstable-support",
+      "truth": 1.0249000000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.175635186392159,
+      "method": "linear-ancova",
+      "seed": 840060003,
+      "standard_error": 0.06965064071660416,
+      "status": "ok",
+      "truth": 1.0249000000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.2908540717116825,
+      "method": "independent-aipw",
+      "seed": 840060003,
+      "standard_error": 0.26657668983126065,
+      "status": "ok",
+      "truth": 1.0249000000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "caliper": 0.07892555382708806,
+        "matched_pairs": 406,
+        "treated_retained_fraction": 0.8405797101449275
+      },
+      "estimand": "att",
+      "estimate": 1.1173256829750977,
+      "method": "psm-att",
+      "seed": 840060003,
+      "standard_error": 0.07641685771324817,
+      "status": "ok",
+      "truth": 1.0315734989648033
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.165104641627714,
+      "method": "econml-drlearner",
+      "seed": 840060003,
+      "standard_error": 0.009443219561992846,
+      "status": "ok",
+      "truth": 1.0249000000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.2927809276399462,
+      "method": "econml-drlearner-conservative",
+      "seed": 840060003,
+      "standard_error": 0.0066885433269086025,
+      "status": "ok",
+      "truth": 1.0249000000000001
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9934758618287007,
+      "method": "scova-cf",
+      "seed": 840060004,
+      "standard_error": 0.10077244315215496,
+      "status": "limited/unstable-support",
+      "truth": 1.0196500000000002
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.103524827079176,
+      "method": "linear-ancova",
+      "seed": 840060004,
+      "standard_error": 0.0729321658570693,
+      "status": "ok",
+      "truth": 1.0196500000000002
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 1.5408103982163572,
+      "method": "independent-aipw",
+      "seed": 840060004,
+      "standard_error": 0.5952914844818635,
+      "status": "ok",
+      "truth": 1.0196500000000002
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "caliper": 0.12988232754596868,
+        "matched_pairs": 367,
+        "treated_retained_fraction": 0.7267326732673267
+      },
+      "estimand": "att",
+      "estimate": 1.092999822519763,
+      "method": "psm-att",
+      "seed": 840060004,
+      "standard_error": 0.07969839711019572,
+      "status": "ok",
+      "truth": 1.034851485148515
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.0604387225427763,
+      "method": "econml-drlearner",
+      "seed": 840060004,
+      "standard_error": 0.006534412997198748,
+      "status": "ok",
+      "truth": 1.0196500000000002
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-adequate",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.37530751315838,
+      "method": "econml-drlearner-conservative",
+      "seed": 840060004,
+      "standard_error": 0.027572456627317256,
+      "status": "ok",
+      "truth": 1.0196500000000002
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.958206044295981,
+      "method": "scova-cf",
+      "seed": 840070000,
+      "standard_error": 0.09984095111489874,
+      "status": "limited/unstable-support",
+      "truth": 1.02585
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1912560730521364,
+      "method": "linear-ancova",
+      "seed": 840070000,
+      "standard_error": 0.07695460604199471,
+      "status": "ok",
+      "truth": 1.02585
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": -0.23373994326837394,
+      "method": "independent-aipw",
+      "seed": 840070000,
+      "standard_error": 1.004825236238815,
+      "status": "ok",
+      "truth": 1.02585
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "caliper": 0.24045500287319443,
+        "matched_pairs": 275,
+        "treated_retained_fraction": 0.5402750491159135
+      },
+      "estimand": "att",
+      "estimate": 1.136464209836496,
+      "method": "psm-att",
+      "seed": 840070000,
+      "standard_error": 0.09262186592321861,
+      "status": "ok",
+      "truth": 1.0533398821218074
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.020029894081961,
+      "method": "econml-drlearner",
+      "seed": 840070000,
+      "standard_error": 0.012959984618455059,
+      "status": "ok",
+      "truth": 1.02585
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.5539120399870772,
+      "method": "econml-drlearner-conservative",
+      "seed": 840070000,
+      "standard_error": 0.025070521457035654,
+      "status": "ok",
+      "truth": 1.02585
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9832358358603901,
+      "method": "scova-cf",
+      "seed": 840070001,
+      "standard_error": 0.1297157198794687,
+      "status": "limited/unstable-support",
+      "truth": 1.01665
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.2901607905503525,
+      "method": "linear-ancova",
+      "seed": 840070001,
+      "standard_error": 0.07583698722213635,
+      "status": "ok",
+      "truth": 1.01665
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.5740389952485514,
+      "method": "independent-aipw",
+      "seed": 840070001,
+      "standard_error": 1.4978197755115474,
+      "status": "ok",
+      "truth": 1.01665
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "caliper": 0.24036046988066315,
+        "matched_pairs": 278,
+        "treated_retained_fraction": 0.5650406504065041
+      },
+      "estimand": "att",
+      "estimate": 1.262626194949729,
+      "method": "psm-att",
+      "seed": 840070001,
+      "standard_error": 0.08995826908129509,
+      "status": "ok",
+      "truth": 1.0392276422764228
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.1157954756350363,
+      "method": "econml-drlearner",
+      "seed": 840070001,
+      "standard_error": 0.01293758954800689,
+      "status": "ok",
+      "truth": 1.01665
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 1.4459723689003408,
+      "method": "econml-drlearner-conservative",
+      "seed": 840070001,
+      "standard_error": 0.04524128602744216,
+      "status": "ok",
+      "truth": 1.01665
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.8378993089149891,
+      "method": "scova-cf",
+      "seed": 840070002,
+      "standard_error": 0.13584258107420816,
+      "status": "limited/unstable-support",
+      "truth": 1.02245
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.1391281204086574,
+      "method": "linear-ancova",
+      "seed": 840070002,
+      "standard_error": 0.07545602887041407,
+      "status": "ok",
+      "truth": 1.02245
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.997500785845172,
+      "method": "independent-aipw",
+      "seed": 840070002,
+      "standard_error": 0.973453517015298,
+      "status": "ok",
+      "truth": 1.02245
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "caliper": 0.21284042954318144,
+        "matched_pairs": 300,
+        "treated_retained_fraction": 0.5964214711729622
+      },
+      "estimand": "att",
+      "estimate": 1.0537505837968404,
+      "method": "psm-att",
+      "seed": 840070002,
+      "standard_error": 0.089088044786343,
+      "status": "ok",
+      "truth": 1.0502982107355865
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.8004944183708026,
+      "method": "econml-drlearner",
+      "seed": 840070002,
+      "standard_error": 0.007889886622800341,
+      "status": "ok",
+      "truth": 1.02245
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.93490415241154,
+      "method": "econml-drlearner-conservative",
+      "seed": 840070002,
+      "standard_error": 0.0250885280092431,
+      "status": "ok",
+      "truth": 1.02245
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 1.0413751884101738,
+      "method": "scova-cf",
+      "seed": 840070003,
+      "standard_error": 0.1292274936653358,
+      "status": "limited/unstable-support",
+      "truth": 1.0134
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.164270463031904,
+      "method": "linear-ancova",
+      "seed": 840070003,
+      "standard_error": 0.07516846681768487,
+      "status": "ok",
+      "truth": 1.0134
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.27977250242711327,
+      "method": "independent-aipw",
+      "seed": 840070003,
+      "standard_error": 2.6948216379360987,
+      "status": "ok",
+      "truth": 1.0134
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "caliper": 0.22193794829129915,
+        "matched_pairs": 275,
+        "treated_retained_fraction": 0.5319148936170213
+      },
+      "estimand": "att",
+      "estimate": 1.1562770787271173,
+      "method": "psm-att",
+      "seed": 840070003,
+      "standard_error": 0.09241603926896992,
+      "status": "ok",
+      "truth": 1.0325918762088977
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.9952875790076463,
+      "method": "econml-drlearner",
+      "seed": 840070003,
+      "standard_error": 0.014656446849463368,
+      "status": "ok",
+      "truth": 1.0134
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.34051834755135835,
+      "method": "econml-drlearner-conservative",
+      "seed": 840070003,
+      "standard_error": 0.019515585097922453,
+      "status": "ok",
+      "truth": 1.0134
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "qualification_reason": "Observational qualification is retired; this result is assumption-dependent and is not software-certified",
+        "qualification_status": "unqualified",
+        "support": "unstable"
+      },
+      "estimand": "ate",
+      "estimate": 0.9459092104401261,
+      "method": "scova-cf",
+      "seed": 840070004,
+      "standard_error": 0.11475105413987087,
+      "status": "limited/unstable-support",
+      "truth": 1.00815
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {},
+      "estimand": "ate",
+      "estimate": 1.260238066376607,
+      "method": "linear-ancova",
+      "seed": 840070004,
+      "standard_error": 0.07586662668592865,
+      "status": "ok",
+      "truth": 1.00815
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "n_splits": 5,
+        "propensity_floor": 0.001
+      },
+      "estimand": "ate",
+      "estimate": 0.7226537515845425,
+      "method": "independent-aipw",
+      "seed": 840070004,
+      "standard_error": 0.8046186134701119,
+      "status": "ok",
+      "truth": 1.00815
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "caliper": 0.20890173489801042,
+        "matched_pairs": 297,
+        "treated_retained_fraction": 0.5812133072407045
+      },
+      "estimand": "att",
+      "estimate": 1.2520709958410978,
+      "method": "psm-att",
+      "seed": 840070004,
+      "standard_error": 0.09329279633960826,
+      "status": "ok",
+      "truth": 1.0367906066536206
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 2,
+          "min_propensity": 1e-06,
+          "model_propensity": "auto",
+          "model_regression": "auto"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.8969280825461685,
+      "method": "econml-drlearner",
+      "seed": 840070004,
+      "standard_error": 0.009587857719542932,
+      "status": "ok",
+      "truth": 1.00815
+    },
+    {
+      "cell_id": "cmp-v3-threshold-threshold-poor",
+      "details": {
+        "recipe": {
+          "cv": 5,
+          "min_propensity": 0.01,
+          "model_propensity": "hist-gradient-boosting-classifier",
+          "model_regression": "hist-gradient-boosting-regressor"
+        }
+      },
+      "estimand": "ate",
+      "estimate": 0.8005387236617777,
+      "method": "econml-drlearner-conservative",
+      "seed": 840070004,
+      "standard_error": 0.04116461450953992,
+      "status": "ok",
+      "truth": 1.00815
+    }
+  ],
+  "requested_replications_per_cell": 5,
+  "source_evidence_ids": [],
+  "source_shard_checksums": [
+    "1bc88dbf6b16c43dad717df6e2d255991c141af2789b481e6c967c1625409ffd",
+    "66e561b0960db183fdb72874d9675d46242ec77ac58bb806a194c9cf9a3b86a3",
+    "afb8c94f51fdc7e640c65a8246154b692d3ee3f6c685309627249bffa9d50dc1",
+    "c7f33e4b018bf997c1e1fea6de642a70d6ae70d11102f75f6807fb8b500bc5ee",
+    "d8e43599c3c8dcc247bbe8688af8a3c9473219bf20b3f649cd9e1c79a1b23d9c",
+    "df2ccf6ff80effbcf6a1202d5b44e48d0a3fde18fbe3ebeb458e570c389b7fab",
+    "fbcb2554d9dd8c0f56a0cc19cfa8dfcb3b5be9bf73c49010b5fe49c9c3df2775",
+    "ff21d941689b96ed9817fafebea9ba51786fbf979caa544da2379adf8bff8aa6"
+  ],
+  "source_shard_frozen_commit": "e066558f8d0e02e3b4fe5c19d7d67d8142e5795f"
+}

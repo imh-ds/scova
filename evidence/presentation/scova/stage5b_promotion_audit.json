@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "protocol": "stage5b-promotion-audit-v1",
+  "artifact_schema_version": 2,
+  "derivation_version": "regularized-transport-eif-v1",
+  "public_verdict": "experimental",
+  "inference_scope": "conditional-on-locked-design-geometry",
+  "assumptions": [
+    "finite_declared_outcome_bounds",
+    "graph_supported_pairwise_contrast",
+    "positive_finite_transport_tilts",
+    "transport_effective_sample_size_gate",
+    "cross_fitted_outcome_and_propensity_nuisances",
+    "nuisance_product_rate_condition",
+    "no_clipping_boundary_mass"
+  ],
+  "endpoint_channels": [
+    "b1_estimated_tilt",
+    "frozen_geometry_query",
+    "gaussian_transport_tilt",
+    "augmented_outcome_residual",
+    "imbens_manski_endpoint_pair"
+  ],
+  "unresolved_limitations": [
+    "The Lipschitz budget is an untestable extrapolation assumption.",
+    "Passing simulations is not a proof of asymptotic validity.",
+    "No B2 result may emit certified, certified-overlap-only, or a Gamma certificate."
+  ]
+}

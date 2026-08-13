@@ -1,0 +1,181 @@
+{
+  "anova": {
+    "f_statistic": 2199.0597503710205,
+    "p_value": 0.0
+  },
+  "constructs": {
+    "covariate": "baseline preparation, observed for every student",
+    "nonlinear_structure": "both assignment probability and outcome depend on preparation squared",
+    "simulation_truth": "The direct accelerated-minus-standard effect is +3.0 everywhere.",
+    "support_design": "both tracks occur throughout [-1, 1]"
+  },
+  "flexible_scova_aipw": {
+    "confidence_interval": [
+      2.7551385623798232,
+      3.0992965180028484
+    ],
+    "contrast": "accelerated - standard",
+    "estimate": 2.927217540191336,
+    "nuisance_models": {
+      "nuisance_strategy": "adaptive",
+      "outcome_model": "adaptive",
+      "propensity_model": "adaptive",
+      "selection": {
+        "criterion": {
+          "outcome": "mean_squared_error",
+          "propensity": "log_loss"
+        },
+        "inner_folds": 3,
+        "outcome": {
+          "accelerated": [
+            {
+              "fold": 0,
+              "scores": {
+                "HistGradientBoostingRegressor": 9.302116410503086,
+                "Ridge": 22.46384424823117
+              },
+              "selected": "HistGradientBoostingRegressor"
+            },
+            {
+              "fold": 1,
+              "scores": {
+                "HistGradientBoostingRegressor": 9.272240059694072,
+                "Ridge": 22.948262768743984
+              },
+              "selected": "HistGradientBoostingRegressor"
+            },
+            {
+              "fold": 2,
+              "scores": {
+                "HistGradientBoostingRegressor": 9.558786086266219,
+                "Ridge": 23.152782665867647
+              },
+              "selected": "HistGradientBoostingRegressor"
+            },
+            {
+              "fold": 3,
+              "scores": {
+                "HistGradientBoostingRegressor": 9.141483015023804,
+                "Ridge": 22.518458401989236
+              },
+              "selected": "HistGradientBoostingRegressor"
+            },
+            {
+              "fold": 4,
+              "scores": {
+                "HistGradientBoostingRegressor": 9.40212561740459,
+                "Ridge": 22.76929353523451
+              },
+              "selected": "HistGradientBoostingRegressor"
+            }
+          ],
+          "standard": [
+            {
+              "fold": 0,
+              "scores": {
+                "HistGradientBoostingRegressor": 9.282262409308482,
+                "Ridge": 17.513081809475505
+              },
+              "selected": "HistGradientBoostingRegressor"
+            },
+            {
+              "fold": 1,
+              "scores": {
+                "HistGradientBoostingRegressor": 9.314951019624306,
+                "Ridge": 17.919388608598744
+              },
+              "selected": "HistGradientBoostingRegressor"
+            },
+            {
+              "fold": 2,
+              "scores": {
+                "HistGradientBoostingRegressor": 9.18404565816658,
+                "Ridge": 17.465758508525457
+              },
+              "selected": "HistGradientBoostingRegressor"
+            },
+            {
+              "fold": 3,
+              "scores": {
+                "HistGradientBoostingRegressor": 9.079912228414925,
+                "Ridge": 17.784921528308207
+              },
+              "selected": "HistGradientBoostingRegressor"
+            },
+            {
+              "fold": 4,
+              "scores": {
+                "HistGradientBoostingRegressor": 9.239933766579991,
+                "Ridge": 17.503339479971316
+              },
+              "selected": "HistGradientBoostingRegressor"
+            }
+          ]
+        },
+        "propensity": [
+          {
+            "fold": 0,
+            "scores": {
+              "HistGradientBoostingClassifier": 0.6225217795544055,
+              "LogisticRegression": 0.6790185985748822
+            },
+            "selected": "HistGradientBoostingClassifier"
+          },
+          {
+            "fold": 1,
+            "scores": {
+              "HistGradientBoostingClassifier": 0.6222691524751495,
+              "LogisticRegression": 0.6785553879461679
+            },
+            "selected": "HistGradientBoostingClassifier"
+          },
+          {
+            "fold": 2,
+            "scores": {
+              "HistGradientBoostingClassifier": 0.6273121666467871,
+              "LogisticRegression": 0.6786018395383615
+            },
+            "selected": "HistGradientBoostingClassifier"
+          },
+          {
+            "fold": 3,
+            "scores": {
+              "HistGradientBoostingClassifier": 0.6309866858068314,
+              "LogisticRegression": 0.678588070438096
+            },
+            "selected": "HistGradientBoostingClassifier"
+          },
+          {
+            "fold": 4,
+            "scores": {
+              "HistGradientBoostingClassifier": 0.6145892729450885,
+              "LogisticRegression": 0.6789976916837561
+            },
+            "selected": "HistGradientBoostingClassifier"
+          }
+        ]
+      },
+      "source": "cross-fitted"
+    }
+  },
+  "interpretation": "Here SCOVA's flexible, cross-fitted AIPW estimator improves on a misspecified linear ANCOVA while the outcome-blind graph confirms common support.",
+  "linear_ancova": {
+    "confidence_interval": [
+      5.23170319361482,
+      5.688225149661967
+    ],
+    "contrast": "accelerated - standard",
+    "estimate": 5.4599641716383935,
+    "model": "achievement_score ~ track + baseline_preparation (linear)",
+    "omitted_structure": "baseline_preparation squared"
+  },
+  "scova_graph": {
+    "refused_pairs": [],
+    "supported_pairwise_edges": [
+      [
+        "accelerated",
+        "standard"
+      ]
+    ]
+  }
+}

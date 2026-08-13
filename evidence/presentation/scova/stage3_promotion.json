@@ -1,0 +1,37 @@
+{
+  "schema_version": 2,
+  "candidate_version": "0.3.0.dev0",
+  "stable_version": "0.3.0",
+  "validation_level": "directional",
+  "theory": {
+    "numerical_identity_suite_passed": true,
+    "orthogonality_suite_passed": true,
+    "endpoint_reductions_passed": true,
+    "public_assumptions_aligned": true
+  },
+  "protocol": {
+    "specification": "benchmarks/specs/stage3_release.json",
+    "threshold_candidates": "benchmarks/specs/stage3_threshold_candidates.json"
+  },
+  "artifacts": {
+    "thresholds": "release/artifacts/stage3-directional-thresholds.json",
+    "packaged_thresholds": "src/scova/experimental/data/stage3_thresholds.json",
+    "calibration_shards": "release/artifacts/calibration-shards-manifest.json",
+    "validation_shards": "release/artifacts/validation-shards-manifest.json",
+    "robustness_shards": "release/artifacts/robustness-shards-manifest.json",
+    "validation_summary": "release/artifacts/stage3-directional-validation.json",
+    "robustness_summary": "release/artifacts/stage3-directional-robustness.json",
+    "jax_minimum": "release/artifacts/jax-0.4.38.json",
+    "jax_maximum": "release/artifacts/jax-0.10.2.json",
+    "memory": "release/artifacts/stage3-memory.json",
+    "coverage": "release/artifacts/coverage.json",
+    "build": "release/artifacts/build.json",
+    "evidence": "release/artifacts/stage3-evidence.json"
+  },
+  "quality": {
+    "minimum_critical_branch_coverage": 0.95,
+    "minimum_package_branch_coverage": 0.92,
+    "minimum_jax_cases_per_version": 2000,
+    "required_jax_versions": ["0.4.38", "0.10.2"]
+  }
+}
