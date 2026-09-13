@@ -3,7 +3,7 @@ from hashlib import sha256
 
 import pytest
 
-from scova import (
+from scova.experimental import (
     DesignDeclaration,
     PairwiseDiagnosticInput,
     SubsetDiagnosticInput,

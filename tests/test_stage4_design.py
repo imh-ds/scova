@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from sklearn.ensemble import RandomForestRegressor
 
-from scova import (
+from scova.experimental import (
     DesignDeclaration,
     DesignLock,
     OutcomeFreeDesignData,

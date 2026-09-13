@@ -20,7 +20,7 @@ source documents and artifacts.
 | Stage 3 overlap path | Use an estimated-target, finite-grid smooth-overlap path with its own influence-function correction and reliability gates. | Experimental; no stable or certified verdict | [`reproducibility/stage3_stabilization.md`](reproducibility/stage3_stabilization.md), [`theory/stage3_appendix.md`](theory/stage3_appendix.md) |
 | Stage 4 comparability | Select supported pairwise/subset graph structure from outcome-free design data, lock it, then analyze outcomes only on the complementary split. | Experimental; graph support is not a causal certificate | [`api/stage4_statistical_api_contract.md`](api/stage4_statistical_api_contract.md) |
 | Stage 5B bounds | Report anchored endpoint experiments only under locked graph geometry and declared bounds; do not issue a Gamma certificate. | Experimental | [`archive/README.md`](archive/README.md) |
-| SCOVA-CF randomized profile | The explicitly selected `cf-randomized-continuous-aipw-unnormalized-v9-promoted` profile may produce `qualified` output when its gates pass. | Promoted, regime-limited | [`api/scova_cf.md`](api/scova_cf.md), [`../src/scova/cf/data/support_profiles.json`](../src/scova/cf/data/support_profiles.json) |
+| SCOVA-CF randomized profile | The explicitly selected `cf-randomized-continuous-aipw-unnormalized-v9-promoted` profile may produce `qualified` output when its gates pass and the running source/evidence identity has been refreshed. | Promoted evidence; current checkout requires revalidation | [`api/scova_cf.md`](api/scova_cf.md), [`../src/scova/cf/data/support_profiles.json`](../src/scova/cf/data/support_profiles.json), [`../validation_archive/cf-v9/README.md`](../validation_archive/cf-v9/README.md) |
 | SCOVA-CF observational use | Observational-causal results remain assumption-dependent and `unqualified`; the observational qualification program is retired. | Active product boundary; qualification route retired | [`contracts/scova_cf_methodological_contract.md`](contracts/scova_cf_methodological_contract.md), [`archive/README.md`](archive/README.md) |
 | Comparative methods evidence | v2 and v3 are completed descriptive simulation studies with separate evidence sets. They do not create a support profile or causal certification. | Completed methods evidence | [`../evidence/presentation/scova-cf/README.md`](../evidence/presentation/scova-cf/README.md) |
 
@@ -282,6 +282,11 @@ promoted it.
 **Consequence.** A randomized known-constant profile cannot vouch for an
 observational analysis. The package remains fail-closed if the selected profile
 or its evidence identity does not match.
+
+The retained v9 evidence was frozen before the current checkout's later
+numerical and governance changes. Publishing this checkout with a qualified
+claim therefore requires rerunning or formally rebinding the v9 campaign
+against the exact release source and pinned dependency stack.
 
 **Sources:** [`api/scova_cf.md`](api/scova_cf.md),
 [`../src/scova/cf/data/support_profiles.json`](../src/scova/cf/data/support_profiles.json),

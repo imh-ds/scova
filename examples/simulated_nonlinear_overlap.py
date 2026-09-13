@@ -17,14 +17,8 @@ import pandas as pd
 from scipy.special import expit
 from scipy.stats import f_oneway, t
 
-from scova import (
-    SCOVA,
-    ContrastSpec,
-    DesignDeclaration,
-    OutcomeFreeDesignData,
-    SCOVADeclaration,
-    SCOVADesign,
-)
+from scova import SCOVA, ContrastSpec, SCOVADeclaration
+from scova.experimental import DesignDeclaration, OutcomeFreeDesignData, SCOVADesign
 from scova.experimental.gates import DiagnosticThresholds
 
 

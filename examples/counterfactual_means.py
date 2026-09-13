@@ -1,7 +1,13 @@
 """Randomized SCOVA-CF population-counterfactual mean example."""
 
 from scova import ContrastSpec
-from scova.cf import SCOVACF, AnalysisMode, KnownAssignment, SCOVACFDeclaration
+from scova.cf import (
+    SCOVACF,
+    AnalysisMode,
+    KnownAssignment,
+    SCOVACFDeclaration,
+    SupportPolicy,
+)
 from scova.simulate import generate_data
 
 
@@ -28,6 +34,10 @@ def main() -> None:
             ("x3", "baseline prognostic factor"),
         ),
         assignment=KnownAssignment(probabilities=(("g0", 1 / 3), ("g1", 1 / 3), ("g2", 1 / 3))),
+        support_policy=SupportPolicy.packaged(
+            "cf-randomized-continuous-aipw-unnormalized-v9-promoted"
+        ),
+        stability_seeds=(1, 2, 3, 4, 5),
         contrasts=(
             ContrastSpec("g0 - g1", (("g0", 1.0), ("g1", -1.0))),
             ContrastSpec("g2 - g1", (("g2", 1.0), ("g1", -1.0))),

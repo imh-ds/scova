@@ -3,9 +3,10 @@
 **Support-aware Covariate Overlap and Variance Analysis**
 
 SCOVA is an early-stage Python methodology and package for honest comparisons
-among naturally occurring groups. The stable `0.2.0` core implements a
-fixed-study-population (`h(x) = 1`), cross-fitted, multi-group AIPW estimator
-for continuous outcomes with simultaneous finite-family inference.
+among naturally occurring groups. The fixed-target core in this `0.5.0`
+release implements a fixed-study-population (`h(x) = 1`), cross-fitted,
+multi-group AIPW estimator for continuous outcomes with simultaneous
+finite-family inference.
 
 SCOVA-CF is a distinct, opt-in feature under `scova.cf`. It uses flexible,
 cross-fitted AIPW standardization to estimate group means for a common declared
@@ -20,8 +21,8 @@ The completed two-group comparative methods evidence is indexed in
 It is descriptive simulation research: it compares estimators within frozen
 DGPs and cannot dispatch or supply an observational qualification lane.
 
-The `0.5.0` source tree also contains an experimental finite-grid smooth
-overlap path. It remains experimental pending the frozen directional calibration,
+This release also contains an experimental finite-grid smooth overlap path. It
+remains experimental pending the frozen directional calibration,
 held-out validation, and pinned-gradient runs. Its production-stabilization machinery and remaining
 release blockers are tracked in
 [`docs/reproducibility/stage3_stabilization.md`](docs/reproducibility/stage3_stabilization.md). The executable
@@ -106,6 +107,11 @@ A complete three-group workflow is available in
 [`examples/three_group.py`](examples/three_group.py).
 The separate SCOVA-CF workflow is demonstrated in
 [`examples/counterfactual_means.py`](examples/counterfactual_means.py).
+
+The fixed-target API is documented in
+[`docs/api/scova.md`](docs/api/scova.md). Stage 3–5 design, graph, and anchor
+APIs are available only under `scova.experimental` and are not stable public
+interfaces.
 An annotated nonlinear comparison against ANOVA-style and linear-ANCOVA
 benchmarks is in
 [`examples/scova_cf_nonlinear_benefit.py`](examples/scova_cf_nonlinear_benefit.py).

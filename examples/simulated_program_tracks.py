@@ -16,13 +16,11 @@ import numpy as np
 import pandas as pd
 from scipy.stats import f_oneway, t
 
-from scova import (
-    SCOVA,
+from scova import SCOVA, ContrastSpec, SCOVADeclaration
+from scova.experimental import (
     AnchoredBoundsDeclaration,
-    ContrastSpec,
     DesignDeclaration,
     OutcomeFreeDesignData,
-    SCOVADeclaration,
     SCOVADesign,
     SupportGeometryDeclaration,
 )

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from scova import (
+from scova.experimental import (
     AnchoredBoundsDeclaration,
     DesignDeclaration,
     OutcomeFreeDesignData,

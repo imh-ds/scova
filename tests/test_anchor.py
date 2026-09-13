@@ -3,7 +3,12 @@
 import numpy as np
 import pytest
 
-from scova import (
+from scova.anchor import (
+    bounded_pairwise_anchor,
+    lipschitz_pairwise_anchor,
+    scaled_harmonic_overlap_and_gradient,
+)
+from scova.experimental import (
     AnchoredBoundsDeclaration,
     AnchoredBoundsResult,
     DesignDeclaration,
@@ -11,11 +16,6 @@ from scova import (
     OutcomeFreeDesignData,
     SCOVADesign,
     SupportGeometryDeclaration,
-)
-from scova.anchor import (
-    bounded_pairwise_anchor,
-    lipschitz_pairwise_anchor,
-    scaled_harmonic_overlap_and_gradient,
 )
 from scova.experimental.gates import DiagnosticThresholds
 from scova.geometry import fit_support_geometry, gaussian_reference_transport, soft_k_nearest

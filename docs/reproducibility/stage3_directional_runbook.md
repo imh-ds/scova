@@ -122,7 +122,9 @@ argument, then run:
 python scripts/check_stage3_release.py
 ```
 
-Only a zero exit status authorizes version promotion and top-level API exports.
+Only a zero exit status authorizes Stage 3 promotion or moving its APIs into
+the stable namespace. The current Stage 3, Stage 4, and Stage 5 surfaces remain
+under `scova.experimental`.
 
 ## 4. Publication campaign
 

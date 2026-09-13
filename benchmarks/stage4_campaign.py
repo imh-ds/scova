@@ -23,7 +23,7 @@ import numpy as np
 import scipy
 
 import scova
-from scova import DesignDeclaration, OutcomeFreeDesignData, SCOVADesign
+from scova.experimental import DesignDeclaration, OutcomeFreeDesignData, SCOVADesign
 from scova.experimental.gates import DiagnosticThresholds
 
 Scenario = Literal[

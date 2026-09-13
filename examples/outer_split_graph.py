@@ -1,6 +1,6 @@
 """Stage 4 outcome-blind design followed by graph-conditional inference."""
 
-from scova import DesignDeclaration, OutcomeFreeDesignData, SCOVADesign
+from scova.experimental import DesignDeclaration, OutcomeFreeDesignData, SCOVADesign
 from scova.simulate import generate_data
 
 simulation = generate_data("observational", n=1_000, seed=42)

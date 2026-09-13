@@ -111,7 +111,7 @@ outcome-analysis call. `OutcomeFreeDesignData` contains only covariates, group
 labels, and row identifiers; `prepare_design` does not receive outcomes.
 
 ```python
-from scova import DesignDeclaration, OutcomeFreeDesignData, SCOVADesign
+from scova.experimental import DesignDeclaration, OutcomeFreeDesignData, SCOVADesign
 
 data = OutcomeFreeDesignData.from_arrays(X, A, row_ids=row_ids)
 declaration = DesignDeclaration(

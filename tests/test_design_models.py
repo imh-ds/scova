@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from scova import DesignDeclaration, DesignLock, OutcomeFreeDesignData
+from scova.experimental import DesignDeclaration, DesignLock, OutcomeFreeDesignData
 
 
 def declaration(seed: int = 7) -> DesignDeclaration:

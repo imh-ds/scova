@@ -1,7 +1,12 @@
 """Inspect a graph where pairwise support need not justify a K-way claim."""
 
-from scova import DesignDeclaration, OutcomeFreeDesignData, SCOVADesign
-from scova.experimental import StabilizationSpec, generate_stabilization_data
+from scova.experimental import (
+    DesignDeclaration,
+    OutcomeFreeDesignData,
+    SCOVADesign,
+    StabilizationSpec,
+    generate_stabilization_data,
+)
 
 generated = generate_stabilization_data(
     StabilizationSpec(

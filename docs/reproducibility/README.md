@@ -11,3 +11,8 @@ root and preserve the generated artifacts; local outputs are ignored by Git.
 
 The decision log records why the campaign is directional and what remains
 required before any stable or confirmatory claim.
+
+The retained SCOVA-CF v9 evidence is bound to its frozen source commit. A
+release built from a later checkout must rerun or formally rebind that campaign
+against the exact release source and pinned dependency stack before making a
+current `qualified` claim.

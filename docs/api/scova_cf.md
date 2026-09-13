@@ -11,7 +11,14 @@ defines the estimand, assumptions, diagnostics, and qualification boundary.
 This page is the practical API guide.
 
 <!-- CF_REFERENCE_PROFILE_STATUS_START -->
-The randomized continuous unnormalized-AIPW profile `cf-randomized-continuous-aipw-unnormalized-v9-promoted` remains promoted. Its packaged profile checksum is `cc52d5e0fe3b8470d101e6572bbeafeb2ec6752f4545961f505c3d53351b1991`; it can yield `qualified` output only when explicitly selected and its gates pass.
+The randomized continuous unnormalized-AIPW profile
+`cf-randomized-continuous-aipw-unnormalized-v9-promoted` is retained as the
+promoted v9 evidence profile. Its packaged profile checksum is
+`cc52d5e0fe3b8470d101e6572bbeafeb2ec6752f4545961f505c3d53351b1991`; it can
+yield `qualified` output only when explicitly selected and its gates pass.
+Because the v9 evidence predates later numerical changes on the current
+checkout, it must be refreshed against the exact release source before a
+current package release makes a qualification claim.
 <!-- CF_REFERENCE_PROFILE_STATUS_END -->
 
 ## Quick start
@@ -23,7 +30,13 @@ workflow in [`examples/counterfactual_means.py`](../../examples/counterfactual_m
 
 ```python
 from scova import ContrastSpec
-from scova.cf import AnalysisMode, KnownAssignment, SCOVACF, SCOVACFDeclaration
+from scova.cf import (
+    AnalysisMode,
+    KnownAssignment,
+    SCOVACF,
+    SCOVACFDeclaration,
+    SupportPolicy,
+)
 from scova.simulate import generate_data
 
 simulation = generate_data("randomized", n=600, seed=42)
@@ -48,6 +61,10 @@ declaration = SCOVACFDeclaration(
     assignment=KnownAssignment(
         probabilities=(("g0", 1 / 3), ("g1", 1 / 3), ("g2", 1 / 3))
     ),
+    support_policy=SupportPolicy.packaged(
+        "cf-randomized-continuous-aipw-unnormalized-v9-promoted"
+    ),
+    stability_seeds=(1, 2, 3, 4, 5),
     contrasts=(
         ContrastSpec("g0 - g1", (("g0", 1.0), ("g1", -1.0))),
     ),
@@ -69,6 +86,11 @@ columns. It returns an `SCOVACFResult` when numerical analysis completes or an
 `SCOVACFRefusal` with machine-readable details when the declared analysis
 cannot be completed. A custom propensity and outcome model must be supplied
 together when using a custom nuisance strategy.
+
+The quick start explicitly selects the only packaged promoted profile and
+declares five stability refits because those are prerequisites for its
+qualification gate. Omitting the packaged policy produces a valid numerical
+result, but it remains `unqualified`.
 
 ## What the declaration controls
 

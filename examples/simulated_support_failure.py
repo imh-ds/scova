@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import f_oneway, t
 
-from scova import (
+from scova.experimental import (
     AnchoredBoundsDeclaration,
     DesignDeclaration,
     OutcomeFreeDesignData,

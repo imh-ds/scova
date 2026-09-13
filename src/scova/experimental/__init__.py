@@ -1,5 +1,37 @@
 """Experimental APIs whose statistical contracts are not yet stable."""
 
+from ..anchor import (
+    AnchoredBoundsResult,
+    AnchoredContrastResult,
+    LipschitzAnchorResult,
+    LipschitzContrastResult,
+    bounded_pairwise_anchor,
+    lipschitz_pairwise_anchor,
+    scaled_harmonic_overlap_and_gradient,
+)
+from ..declaration import (
+    AnchoredBoundsDeclaration,
+    DesignDeclaration,
+    SupportGeometryDeclaration,
+)
+from ..design import (
+    DesignLock,
+    OutcomeFreeDesignData,
+    SCOVADesign,
+    SCOVADesignResult,
+    SCOVAGraphResult,
+    graph_from_dict,
+    graph_to_dict,
+)
+from ..graph import (
+    ComparabilityGraphResult,
+    PairwiseDiagnosticInput,
+    PairwiseEdge,
+    SubsetDiagnosticInput,
+    SubsetHyperedge,
+    build_comparability_graph,
+    build_pairwise_comparability_graph,
+)
 from .gates import (
     DiagnosticThresholds,
     GateDecision,
@@ -27,9 +59,15 @@ from .path import (
 from .simulation import StabilizationData, StabilizationSpec, generate_stabilization_data
 
 __all__ = [
+    "AnchoredBoundsDeclaration",
+    "AnchoredBoundsResult",
+    "AnchoredContrastResult",
+    "ComparabilityGraphResult",
     "ContrastPathResult",
     "DriftProfile",
     "DiagnosticThresholds",
+    "DesignDeclaration",
+    "DesignLock",
     "GateDecision",
     "GateMetric",
     "GateStatus",
@@ -41,11 +79,29 @@ __all__ = [
     "make_learner_profile",
     "StabilizationData",
     "StabilizationSpec",
+    "OutcomeFreeDesignData",
+    "PairwiseDiagnosticInput",
+    "PairwiseEdge",
+    "SCOVADesign",
+    "SCOVADesignResult",
+    "SCOVAGraphResult",
     "generate_stabilization_data",
+    "SupportGeometryDeclaration",
+    "SubsetDiagnosticInput",
+    "SubsetHyperedge",
+    "LipschitzAnchorResult",
+    "LipschitzContrastResult",
     "PathDeclaration",
     "PathInferenceResult",
     "SCOVAPathResult",
     "SignCertificate",
     "StabilityCertificate",
+    "build_comparability_graph",
+    "build_pairwise_comparability_graph",
+    "bounded_pairwise_anchor",
     "fit_path",
+    "graph_from_dict",
+    "graph_to_dict",
+    "lipschitz_pairwise_anchor",
+    "scaled_harmonic_overlap_and_gradient",
 ]
