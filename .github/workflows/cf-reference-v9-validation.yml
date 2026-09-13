@@ -24,10 +24,7 @@ on:
       freeze_tag:
         description: Tag that freezes the exact source checkout for this campaign
         required: true
-        default: scova-cf-reference-v9-current-freeze-r1
-      development_run_id:
-        description: Rejected v6 aggregate run used as the frozen v9 development source
-        required: false
+        default: scova-cf-reference-v9-current-freeze-r2
       calibration_run_id:
         description: Run containing the checksum-bound v9 candidate profile artifact
         required: false
@@ -379,18 +376,15 @@ jobs:
       - run: python -m pip install -r benchmarks/requirements-cf-validation.txt
       - run: python -m pip install -e . --no-deps
       - run: python -m scripts.check_cf_validation_environment --spec "$SPEC"
-      - uses: actions/download-artifact@v6
-        with:
-          name: cf-release-evidence
-          path: source
-          run-id: ${{ inputs.development_run_id }}
-          github-token: ${{ github.token }}
       - shell: bash
         run: |
+          mkdir -p evidence
+          cp validation_archive/cf-v9/release-evidence/cf-reference-calibration-campaign.json.gz \
+            evidence/cf-reference-calibration-campaign.json.gz
           python - <<'PY'
           import gzip, json, subprocess
           from scova.cf import CFValidationProtocol
-          with gzip.open("source/cf-reference-validation-campaign.json.gz", "rt") as stream:
+          with gzip.open("evidence/cf-reference-calibration-campaign.json.gz", "rt") as stream:
               evidence = json.load(stream)
           protocol = CFValidationProtocol.load("benchmarks/specs/cf_reference_v9.json")
           source = protocol.calibration_source
@@ -400,9 +394,6 @@ jobs:
           assert evidence["evidence_checksum"] == source["evidence_checksum"]
           assert evidence["git_commit"] == source["git_commit"]
           PY
-          mkdir -p evidence
-          cp source/cf-reference-validation-campaign.json.gz \
-            evidence/cf-reference-calibration-campaign.json.gz
       - run: >-
           python scripts/calibrate_cf_support.py --spec "$SPEC"
           --calibration-evidence evidence/cf-reference-calibration-campaign.json.gz

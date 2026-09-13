@@ -28,8 +28,9 @@ Create a new freeze tag on the exact release source checkout, then dispatch
 `.github/workflows/cf-reference-v9-validation.yml` in this order:
 
 1. `freeze_check` — verify the tag, lock, data sources, and campaign entry points.
-2. `calibrate_support` — use the frozen v6 development source to produce a new
-   v9 candidate under the current implementation.
+2. `calibrate_support` — use the tracked frozen v6 development source in
+   `validation_archive/cf-v9/release-evidence/` to produce a new v9 candidate
+   under the current implementation.
 3. `external_agreement` — rerun all v9 external-comparison cells on the current
    implementation.
 4. `simultaneous_inference` — rerun all 64 inference shards on the current
