@@ -1,5 +1,11 @@
 # Stage 3 theory-to-code notation map
 
+This map connects the symbols in the [finite-grid theory appendix](stage3_appendix.md)
+to the implementation. The theory uses one-based group indices; NumPy arrays
+and package code use zero-based indices. These names are implementation
+locations for the current experimental API, not a promise that internal module
+paths are stable.
+
 | Theory | Meaning | Implementation |
 |---|---|---|
 | $e_j(X)$ | generalized propensity | `propensity[:, j]` |
@@ -15,6 +21,12 @@
 | multiplier maximum | joint grid statistic | `SCOVAPathResult.infer` |
 | target drift | population shift | `DriftProfile` |
 | gate decision | reliability classification | `GateDecision` |
+
+Key source locations are `src/scova/experimental/tilts.py` for the tilt and
+analytic gradient, `src/scova/experimental/path.py` for declarations, fitted
+paths, and path inference, and `src/scova/experimental/gates.py` for
+reliability decisions. The public entry point is `scova.experimental`; inspect
+the serialized result rather than depending on private helper functions.
 
 The implementation uses zero-based group and array indices; theoretical group
 indices are one-based. `denominator` is the sample sum of the tilt, whereas

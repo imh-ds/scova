@@ -12,4 +12,4 @@ This folder is a convenient, versioned copy of the compact release artifacts alr
 
 ## Limits
 
-The finite-grid, graph, and transport paths remain experimental. Their preserved artifacts demonstrate the stated simulated behavior and engineering checks; they do not turn untestable causal or extrapolation assumptions into facts. See [the stabilization status](../../../docs/stage3_stabilization.md) and [the Stage 5B audit](../../../docs/stage5b_promotion_audit.md).
+The finite-grid, graph, and transport paths remain experimental. Their preserved artifacts demonstrate the stated simulated behavior and engineering checks; they do not turn untestable causal or extrapolation assumptions into facts. See [the stabilization status](../../../docs/reproducibility/stage3_stabilization.md) and the [decision log](../../../docs/methodology_decision_log.md) for the Stage 5B boundary.

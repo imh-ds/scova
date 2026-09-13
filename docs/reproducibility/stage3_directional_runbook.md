@@ -10,6 +10,10 @@ whether the calibration criteria passed or the provisional fallback was used.
 This runbook produces engineering-directional evidence for `0.3.0`. It does not
 produce publication-ready validation.
 
+Run every command below from the repository root. The release manifest and
+artifact checker are the source of truth for promotion; a successful local
+pilot or a manually edited threshold file is not sufficient.
+
 ## Recommended GitHub Actions path
 
 Run **Stage 3 directional release validation** manually from the Actions tab.

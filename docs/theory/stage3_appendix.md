@@ -4,6 +4,18 @@ Status: **candidate derivation undergoing automated directional validation**.
 Stable claims require the numerical identity, orthogonality, reduction, and
 held-out simulation gates recorded by the Stage 3 promotion manifest.
 
+## Reader guide
+
+This appendix explains the candidate influence function for the experimental
+finite-grid overlap path. `A` is the observed group or treatment, `e_j` is its
+generalized propensity for group `j`, and `m_j` is the group-specific outcome
+regression. A finite grid means that the same predeclared list of lambda values
+is analyzed jointly; it does not mean that every value in the interval is
+covered. “Target drift” is the change in the standardized population as the
+tilt moves from the study target toward overlap. The result is directional
+engineering theory under validation, not a stable theorem, continuum claim,
+or causal certification.
+
 ## A. Model, target, and assumptions
 
 Let $O=(X,A,Y)\sim P$, where $A\in\{1,\ldots,K\}$. Define

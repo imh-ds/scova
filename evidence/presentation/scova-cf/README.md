@@ -17,4 +17,4 @@ The v2 Markdown report is the audited rendering: it preserves the frozen JSON bu
 
 SCOVA-CF was stable and near-unbiased in both frozen evidence sets. It was particularly strong when linear functional-form assumptions were wrong. These results are descriptive performance evidence within the named DGPs only. They neither certify observational causal identification nor establish that all AIPW/DR learners behave similarly in applied data.
 
-Coverage is interpretable only for SCOVA-CF, independent AIPW, and model-based ANCOVA. The PSM and DRLearner adapters do not provide valid ATE/ATT sampling standard errors in these studies, so their coverage fields are not a comparison metric. See [the inference audit](../../../docs/scova_cf_comparative_inference_audit.md).
+Coverage is interpretable only for SCOVA-CF, independent AIPW, and model-based ANCOVA. The PSM and DRLearner adapters do not provide valid ATE/ATT sampling standard errors in these studies, so their coverage fields are not a comparison metric. The methodological interpretation and decision boundary are consolidated in the [decision log](../../../docs/methodology_decision_log.md).

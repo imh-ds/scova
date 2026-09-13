@@ -1,5 +1,12 @@
 # Stage 3 positioning
 
+Stage 3 is an experimental finite-grid target-path feature. It combines
+familiar overlap-weighting ingredients into a declared process with an
+estimated-target correction; it does not claim a new weighting family or a
+causal certificate. Stable promotion remains blocked until the release
+artifacts and gates described in the [stabilization status](../reproducibility/stage3_stabilization.md)
+pass.
+
 SCOVA does not claim that balancing weights, overlap populations,
 multi-treatment overlap weights, smooth trimming, or multiplier bands are new.
 The Stage 3 contribution is their integration into a single declared target
@@ -22,4 +29,3 @@ The distinctive outputs are:
 
 The initial default is a common K-way path. Pairwise and subset paths are
 separate analyses and cannot be combined into a common-target global claim.
-

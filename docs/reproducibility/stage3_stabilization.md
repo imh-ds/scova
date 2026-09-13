@@ -1,8 +1,13 @@
 # Stage 3 stabilization status
 
-Stage 3 remains experimental. Stable promotion is controlled by
+As of the current repository snapshot, Stage 3 remains experimental. Stable
+promotion is controlled by
 `release/stage3_promotion.json` and `scripts/check_stage3_release.py`; version
 numbers or manually edited booleans cannot bypass the artifact checks.
+
+This page describes release gating, not a user-facing claim of validity. Read
+the [theory overview](../theory/README.md) for the derivation and the
+[directional runbook](stage3_directional_runbook.md) for reproduction steps.
 
 Implemented infrastructure:
 

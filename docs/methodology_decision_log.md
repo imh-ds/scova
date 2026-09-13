@@ -5,21 +5,23 @@ decisions recorded across `docs/` and the repository history. It is a
 navigation and decision record, not a replacement for the normative contracts,
 theory appendices, runbooks, or machine-readable manifests linked below.
 
-The log reflects the repository at commit `761c577` (2026-08-13). A short
-commit reference identifies the history entry where the decision was made or
-materially revised. Detailed numerical values, schemas, and execution
-instructions remain authoritative in the linked source documents and artifacts.
+The historical decision records were consolidated from the repository through
+commit `761c577` (2026-08-13). A short commit reference identifies the history
+entry where the decision was made or materially revised. The current public
+path layout is indexed by [`docs/README.md`](README.md); detailed numerical
+values, schemas, and execution instructions remain authoritative in the linked
+source documents and artifacts.
 
 ## Current operating position
 
 | Area | Current decision | Status | Primary authority |
 | --- | --- | --- | --- |
-| Core SCOVA target | Estimate standardized group means over the declared eligible study population; retain declared contrasts and fixed finite-family simultaneous inference. | Active | [`statistical_contract.md`](statistical_contract.md) |
-| Stage 3 overlap path | Use an estimated-target, finite-grid smooth-overlap path with its own influence-function correction and reliability gates. | Experimental; no stable or certified verdict | [`stage3_stabilization.md`](stage3_stabilization.md), [`theory/stage3_appendix.md`](theory/stage3_appendix.md) |
-| Stage 4 comparability | Select supported pairwise/subset graph structure from outcome-free design data, lock it, then analyze outcomes only on the complementary split. | Experimental; graph support is not a causal certificate | [`stage4_statistical_api_contract.md`](stage4_statistical_api_contract.md) |
-| Stage 5B bounds | Report anchored endpoint experiments only under locked graph geometry and declared bounds; do not issue a Gamma certificate. | Experimental | [`stage5b_promotion_audit.md`](stage5b_promotion_audit.md) |
-| SCOVA-CF randomized profile | The explicitly selected `cf-randomized-continuous-aipw-unnormalized-v9-promoted` profile may produce `qualified` output when its gates pass. | Promoted, regime-limited | [`scova_cf.md`](scova_cf.md), [`../src/scova/cf/data/support_profiles.json`](../src/scova/cf/data/support_profiles.json) |
-| SCOVA-CF observational use | Observational-causal results remain assumption-dependent and `unqualified`; the observational qualification program is retired. | Active product boundary; qualification route retired | [`scova_cf_methodological_contract.md`](scova_cf_methodological_contract.md), [`scova_cf_observational_calibration_v2.md`](scova_cf_observational_calibration_v2.md) |
+| Core SCOVA target | Estimate standardized group means over the declared eligible study population; retain declared contrasts and fixed finite-family simultaneous inference. | Active | [`contracts/statistical_contract.md`](contracts/statistical_contract.md) |
+| Stage 3 overlap path | Use an estimated-target, finite-grid smooth-overlap path with its own influence-function correction and reliability gates. | Experimental; no stable or certified verdict | [`reproducibility/stage3_stabilization.md`](reproducibility/stage3_stabilization.md), [`theory/stage3_appendix.md`](theory/stage3_appendix.md) |
+| Stage 4 comparability | Select supported pairwise/subset graph structure from outcome-free design data, lock it, then analyze outcomes only on the complementary split. | Experimental; graph support is not a causal certificate | [`api/stage4_statistical_api_contract.md`](api/stage4_statistical_api_contract.md) |
+| Stage 5B bounds | Report anchored endpoint experiments only under locked graph geometry and declared bounds; do not issue a Gamma certificate. | Experimental | [`archive/README.md`](archive/README.md) |
+| SCOVA-CF randomized profile | The explicitly selected `cf-randomized-continuous-aipw-unnormalized-v9-promoted` profile may produce `qualified` output when its gates pass. | Promoted, regime-limited | [`api/scova_cf.md`](api/scova_cf.md), [`../src/scova/cf/data/support_profiles.json`](../src/scova/cf/data/support_profiles.json) |
+| SCOVA-CF observational use | Observational-causal results remain assumption-dependent and `unqualified`; the observational qualification program is retired. | Active product boundary; qualification route retired | [`contracts/scova_cf_methodological_contract.md`](contracts/scova_cf_methodological_contract.md), [`archive/README.md`](archive/README.md) |
 | Comparative methods evidence | v2 and v3 are completed descriptive simulation studies with separate evidence sets. They do not create a support profile or causal certification. | Completed methods evidence | [`../evidence/presentation/scova-cf/README.md`](../evidence/presentation/scova-cf/README.md) |
 
 ## Status vocabulary
@@ -56,7 +58,7 @@ implicit trimming, clipping, retargeting, or hidden extrapolation.
 consistency, exchangeability, positivity, and design assumptions. The package
 reports computational inference status separately from causal interpretation.
 
-**Sources:** [`statistical_contract.md`](statistical_contract.md); commits
+**Sources:** [`contracts/statistical_contract.md`](contracts/statistical_contract.md); commits
 `4ebba6e`, `5f16e31`.
 
 ### D-02 — Make the estimated-target overlap path finite-grid and experimental
@@ -82,9 +84,9 @@ confidence-band, adaptive-grid, or causal-certification claim is allowed.
 
 **Sources:** [`theory/stage3_appendix.md`](theory/stage3_appendix.md),
 [`theory/stage3_notation_map.md`](theory/stage3_notation_map.md),
-[`estimated_tilt_eif.md`](estimated_tilt_eif.md),
-[`stage3_directional_runbook.md`](stage3_directional_runbook.md),
-[`stage3_stabilization.md`](stage3_stabilization.md); commits `cbcbada`,
+[`theory/estimated_tilt_eif.md`](theory/estimated_tilt_eif.md),
+[`reproducibility/stage3_directional_runbook.md`](reproducibility/stage3_directional_runbook.md),
+[`reproducibility/stage3_stabilization.md`](reproducibility/stage3_stabilization.md); commits `cbcbada`,
 `d8ef0bf`, `abb0a67`, `cb0b51c`.
 
 ### D-03 — Enforce outcome-free Stage 4 design selection and graph claims
@@ -105,12 +107,12 @@ package from silently filling target-path gaps or inferring a K-way claim from
 several unrelated edges.
 
 **Consequence.** Post-lock target or contrast changes are exploratory-only.
-Invalid locks, unsupported edges, and alignment failures produce typed
-refusals. Even if directional gates pass, Stage 4 remains experimental and its
-graph support is not a causal certificate.
+Invalid locks, unsupported edges, and alignment failures produce explicit
+refusal reasons or errors. Even if directional gates pass, Stage 4 remains
+experimental and its graph support is not a causal certificate.
 
-**Sources:** [`stage4_statistical_api_contract.md`](stage4_statistical_api_contract.md),
-[`stage4_campaign_runbook.md`](stage4_campaign_runbook.md); commits `8bd4822`,
+**Sources:** [`api/stage4_statistical_api_contract.md`](api/stage4_statistical_api_contract.md),
+the archived `stage4_campaign_runbook.md` (see [`archive/README.md`](archive/README.md)); commits `8bd4822`,
 `0297c9f`, `2a16a46`, `87f64b8`, `e5b858a`, `371dac1`, `bba4a1a`.
 
 ### D-04 — Keep Stage 5B anchored bounds conditional and experimental
@@ -133,7 +135,7 @@ experimental evidence only. Stage 5B cannot emit `certified`,
 `certified-overlap-only`, or a Gamma certificate; B3 and Holder variants are
 outside the release boundary.
 
-**Sources:** [`stage5b_promotion_audit.md`](stage5b_promotion_audit.md); commits
+**Sources:** the archived `stage5b_promotion_audit.md` (see [`archive/README.md`](archive/README.md)); commits
 `d237500`, `e79c54d`, `74b4e22`, `5580376`, `28ed7d0`.
 
 ### D-05 — Add SCOVA-CF as an opt-in standardized-mean estimator
@@ -155,8 +157,8 @@ matching, while preserving an explicit estimand and nonclaim boundary.
 standardized-associational modes are distinct. The mode controls interpretation;
 diagnostics do not upgrade an associational result into a causal result.
 
-**Sources:** [`scova_cf.md`](scova_cf.md),
-[`scova_cf_methodological_contract.md`](scova_cf_methodological_contract.md);
+**Sources:** [`api/scova_cf.md`](api/scova_cf.md),
+[`contracts/scova_cf_methodological_contract.md`](contracts/scova_cf_methodological_contract.md);
 commit `2b8c9b8`.
 
 ### D-06 — Treat protocol identity, source identity, and freeze state as evidence
@@ -179,9 +181,8 @@ Protocol v3 adopted the pinned environment's source identities and new seed
 namespaces. Failed tags and evidence remain auditable but are inadmissible for
 v3 promotion.
 
-**Sources:** [`cf_reference_v2_blocking_report.md`](cf_reference_v2_blocking_report.md),
-[`cf_reference_validation.md`](cf_reference_validation.md),
-[`scova_cf_reference_runbook.md`](scova_cf_reference_runbook.md); commits
+**Sources:** archived `cf_reference_v2_blocking_report.md`,
+`cf_reference_validation.md`, and `scova_cf_reference_runbook.md` (see [`archive/README.md`](archive/README.md)); commits
 `5ccb189`, `b020267`, `025c822`, `b68f65c`.
 
 ### D-07 — Narrow the randomized reference profile rather than weaken gates
@@ -205,9 +206,8 @@ response; post-hoc threshold relaxation was not.
 focused inference and later amendments had to honor the candidate's declared
 scope; evidence outside it was not allowed to authorize promotion.
 
-**Sources:** [`scova_cf_v4_reference_runbook.md`](scova_cf_v4_reference_runbook.md),
-[`scova_cf_v5_reference_runbook.md`](scova_cf_v5_reference_runbook.md),
-[`cf_reference_v5_inference_blocking_report.md`](cf_reference_v5_inference_blocking_report.md);
+**Sources:** archived `scova_cf_v4_reference_runbook.md`,
+`scova_cf_v5_reference_runbook.md`, and `cf_reference_v5_inference_blocking_report.md` (see [`archive/README.md`](archive/README.md));
 commits `2abca27`, `0d226ea`, `858f91a`.
 
 ### D-08 — Correct inference-gate semantics without changing the estimator
@@ -231,9 +231,8 @@ bound upstream evidence, introduced fresh inference seeds, retained untouched
 validation seeds, and made no estimator, target, support-policy, or threshold
 change.
 
-**Sources:** [`cf_reference_v5_inference_blocking_report.md`](cf_reference_v5_inference_blocking_report.md),
-[`cf_reference_v6_inference_gate_erratum.md`](cf_reference_v6_inference_gate_erratum.md),
-[`scova_cf_v6_inference_runbook.md`](scova_cf_v6_inference_runbook.md); commits
+**Sources:** archived `cf_reference_v5_inference_blocking_report.md`,
+`cf_reference_v6_inference_gate_erratum.md`, and `scova_cf_v6_inference_runbook.md` (see [`archive/README.md`](archive/README.md)); commits
 `4f1cb38`, `8410504`.
 
 ### D-09 — Use calibration-side robustness and family-wise error control for v9
@@ -260,8 +259,8 @@ profile was packaged and promoted. This does not extend the profile to
 observational assignment, unknown regimes, other outcomes, or unsupported
 group/sample configurations.
 
-**Sources:** [`scova_cf_v7_recalibration_runbook.md`](scova_cf_v7_recalibration_runbook.md),
-[`scova_cf.md`](scova_cf.md), [`cf_reference_validation.md`](cf_reference_validation.md);
+**Sources:** archived `scova_cf_v7_recalibration_runbook.md` and `cf_reference_validation.md` (see [`archive/README.md`](archive/README.md)),
+[`api/scova_cf.md`](api/scova_cf.md);
 commits `73e6760`, `33492c4`, `d094a0f`, `2cc8a3a`.
 
 ### D-10 — Package the v9 profile and preserve its evidence
@@ -284,7 +283,7 @@ promoted it.
 observational analysis. The package remains fail-closed if the selected profile
 or its evidence identity does not match.
 
-**Sources:** [`scova_cf.md`](scova_cf.md),
+**Sources:** [`api/scova_cf.md`](api/scova_cf.md),
 [`../src/scova/cf/data/support_profiles.json`](../src/scova/cf/data/support_profiles.json),
 [`../validation_archive/cf-v9/README.md`](../validation_archive/cf-v9/README.md);
 commits `2cc8a3a`, `d0f1946`.
@@ -309,9 +308,8 @@ misleading evidence for a confounded assignment regime.
 historical development records. They do not change the current randomized
 profile and cannot be treated as a second qualification route.
 
-**Sources:** [`historical/workflows/cf-reference-v10-validation.yml`](historical/workflows/cf-reference-v10-validation.yml),
-[`historical/workflows/cf-reference-v11-validation.yml`](historical/workflows/cf-reference-v11-validation.yml),
-[`historical/scova_cf_methodological_contract_v1.md`](historical/scova_cf_methodological_contract_v1.md);
+**Sources:** archived `cf-reference-v10-validation.yml`,
+`cf-reference-v11-validation.yml`, and `scova_cf_methodological_contract_v1.md` (see [`archive/README.md`](archive/README.md));
 commits `30c07d8`, `0b71286`, `776b4a8`, `1b87bbd`, `b4894af`.
 
 ### D-12 — Make qualification status and methods evidence explicit
@@ -335,9 +333,9 @@ Observational `linear` and `custom` nuisance strategies remain
 assumption-conditional, and diagnostics cannot upgrade their structural
 assumptions or claim class.
 
-**Sources:** [`scova_cf_methodological_contract.md`](scova_cf_methodological_contract.md),
-[`historical/scova_cf_methodological_contract_v1.md`](historical/scova_cf_methodological_contract_v1.md),
-[`scova_cf.md`](scova_cf.md); commits `11759c5`, `f0c4372`, `8776d2e`,
+**Sources:** [`contracts/scova_cf_methodological_contract.md`](contracts/scova_cf_methodological_contract.md),
+archived `scova_cf_methodological_contract_v1.md` (see [`archive/README.md`](archive/README.md)),
+[`api/scova_cf.md`](api/scova_cf.md); commits `11759c5`, `f0c4372`, `8776d2e`,
 `ed9c504`.
 
 ### D-13 — Govern scope changes through checksum-bound decisions and approval
@@ -364,8 +362,8 @@ exchangeability, positivity, causal validity, or applied-data nuisance
 adequacy. Existing evidence retains its original status and cannot be
 relabeled after a scope decision.
 
-**Sources:** [`scova_cf_scope_decisions.md`](scova_cf_scope_decisions.md),
-[`scova_cf_methodological_contract.md`](scova_cf_methodological_contract.md),
+**Sources:** archived `scova_cf_scope_decisions.md` (see [`archive/README.md`](archive/README.md)),
+[`contracts/scova_cf_methodological_contract.md`](contracts/scova_cf_methodological_contract.md),
 [`../src/scova/cf/data/scope_decisions.json`](../src/scova/cf/data/scope_decisions.json);
 commits `7b6e907`, `c4095b8`, `b2e00d3`.
 
@@ -388,8 +386,8 @@ after seeing the result.
 methods study only. It cannot create, promote, or imply an observational
 support profile.
 
-**Sources:** [`scova_cf_observational_calibration_v2.md`](scova_cf_observational_calibration_v2.md),
-[`historical/workflows/cf-observational-qualification.yml`](historical/workflows/cf-observational-qualification.yml);
+**Sources:** archived `observational_calibration_v2.md` and
+`cf-observational-qualification.yml` (see [`archive/README.md`](archive/README.md));
 commits `934f97b`, `2efbd0e`.
 
 ### D-15 — Retire observational qualification and preserve it as provenance
@@ -412,9 +410,8 @@ standardized-associational outputs are `ineligible` for causal qualification.
 Future comparative methods work may describe performance but cannot reopen the
 retired qualification route.
 
-**Sources:** [`scova_cf_methodological_contract.md`](scova_cf_methodological_contract.md),
-[`scova_cf.md`](scova_cf.md), [`historical/`](historical/),
-[`scova_cf_observational_calibration_v2.md`](scova_cf_observational_calibration_v2.md);
+**Sources:** [`contracts/scova_cf_methodological_contract.md`](contracts/scova_cf_methodological_contract.md),
+[`api/scova_cf.md`](api/scova_cf.md), and archived qualification material (see [`archive/README.md`](archive/README.md));
 commit `3611469`.
 
 ### D-16 — Freeze comparative methods studies with separate estimand panels
@@ -438,8 +435,8 @@ uncertainty, and label smoke/pilot denominators as incomplete. The studies do
 not alter the SCOVA-CF estimator, support policy, result taxonomy, or
 observational interpretation.
 
-**Sources:** [`scova_cf_comparative_methods.md`](scova_cf_comparative_methods.md),
-[`superpowers/plans/2026-08-10-two-group-comparative-methods-study.md`](superpowers/plans/2026-08-10-two-group-comparative-methods-study.md);
+**Sources:** archived `scova_cf_comparative_methods.md` and
+`2026-08-10-two-group-comparative-methods-study.md` (see [`archive/README.md`](archive/README.md));
 commits `e256c69`, `f97746f`, `ec1b86b`, `db12c50`, `43cf437`, `15aa29d`,
 `4771d9e`, `fe978e4`, `8e140d8`, `d55158b`.
 
@@ -462,8 +459,8 @@ inferential ranking without changing the underlying artifact.
 suppresses the invalid coverage comparisons. A corrected DRLearner inferential
 implementation requires a new protocol and separate evidence set.
 
-**Sources:** [`scova_cf_comparative_inference_audit.md`](scova_cf_comparative_inference_audit.md),
-[`scova_cf_comparative_methods.md`](scova_cf_comparative_methods.md); commit
+**Sources:** archived `scova_cf_comparative_inference_audit.md` and
+`scova_cf_comparative_methods.md` (see [`archive/README.md`](archive/README.md)); commit
 `3072c66`.
 
 ### D-18 — Freeze v3 as a separate functional-form stress study
@@ -486,8 +483,8 @@ artifact with 1,000 replications per cell. It remains methods evidence only;
 no result creates an observational support profile, promoted regime, or causal
 validity claim.
 
-**Sources:** [`superpowers/specs/2026-08-12-v3-comparative-stress-study-design.md`](superpowers/specs/2026-08-12-v3-comparative-stress-study-design.md),
-[`scova_cf_comparative_methods.md`](scova_cf_comparative_methods.md),
+**Sources:** archived `2026-08-12-v3-comparative-stress-study-design.md` and
+`scova_cf_comparative_methods.md` (see [`archive/README.md`](archive/README.md)),
 [`../evidence/presentation/scova-cf/README.md`](../evidence/presentation/scova-cf/README.md);
 commits `7b85731`, `e066558`, `84d15b5`, `761c577`.
 
@@ -511,7 +508,7 @@ completed simulation evidence. Historical archives remain available for audit
 without serving as release or manuscript evidence.
 
 **Sources:** [`../evidence/README.md`](../evidence/README.md),
-[`superpowers/plans/2026-08-13-evidence-organization.md`](superpowers/plans/2026-08-13-evidence-organization.md),
+archived `2026-08-13-evidence-organization.md` (see [`archive/README.md`](archive/README.md)),
 [`../validation_archive/historical/README.md`](../validation_archive/historical/README.md);
 commit `761c577`.
 
@@ -520,19 +517,19 @@ commit `761c577`.
 The log intentionally records the current state when older documents and later
 artifacts use different release language:
 
-1. [`cf_reference_validation.md`](cf_reference_validation.md) describes the
-   earlier v3 empty-manifest state. The current packaged profile and
-   [`scova_cf.md`](scova_cf.md) supersede that release-state paragraph for the
+1. The archived `cf_reference_validation.md` describes the earlier v3
+   empty-manifest state. The current packaged profile and
+   [`api/scova_cf.md`](api/scova_cf.md) supersede that release-state paragraph for the
    repository snapshot recorded here; v3 remains historical protocol evidence.
-2. [`historical/scova_cf_methodological_contract_v1.md`](historical/scova_cf_methodological_contract_v1.md)
-   is retained for provenance. The normative contract is the current
-   [`scova_cf_methodological_contract.md`](scova_cf_methodological_contract.md),
+2. Archived `scova_cf_methodological_contract_v1.md` is retained for
+   provenance. The normative contract is the current
+   [`contracts/scova_cf_methodological_contract.md`](contracts/scova_cf_methodological_contract.md),
    version 2.0, effective 2026-08-10.
-3. [`scova_cf_comparative_methods.md`](scova_cf_comparative_methods.md) contains
+3. Archived `scova_cf_comparative_methods.md` contains
    wording written while v3 was still the next study. The current completion
    state and final checksums are recorded in
    [`evidence/presentation/scova-cf/README.md`](../evidence/presentation/scova-cf/README.md).
-4. The scope-decision Markdown file describes the registry; the registry at
+4. The archived scope-decision Markdown file describes the registry; the registry at
    [`../src/scova/cf/data/scope_decisions.json`](../src/scova/cf/data/scope_decisions.json)
    is the machine-readable authority for resolved prospective scope decisions.
 

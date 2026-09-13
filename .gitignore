@@ -197,3 +197,11 @@ scova_cf_methodology_plan.md
 PREFLIGHT.md
 HANDOFF.md
 outline/
+
+# Historical and internal methodology documents are retained locally under
+# docs/archive/ and summarized in docs/methodology_decision_log.md. The index
+# remains tracked; archive contents are intentionally excluded from public
+# checkouts.
+docs/archive/historical/**
+docs/archive/experimental/**
+docs/archive/planning/**

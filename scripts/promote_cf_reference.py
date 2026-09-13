@@ -145,7 +145,7 @@ def main() -> None:
     )
     parser.add_argument("--pyproject", type=Path, default=Path("pyproject.toml"))
     parser.add_argument("--readme", type=Path, default=Path("README.md"))
-    parser.add_argument("--documentation", type=Path, default=Path("docs/scova_cf.md"))
+    parser.add_argument("--documentation", type=Path, default=Path("docs/api/scova_cf.md"))
     args = parser.parse_args()
     promote(
         evidence_root=args.evidence_root,

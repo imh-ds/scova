@@ -12,20 +12,21 @@ cross-fitted AIPW standardization to estimate group means for a common declared
 population; it does not replace base SCOVA or identify person-specific missing
 outcomes. Observational causal results are assumption-dependent and are never
 software-certified. Its target and limits are defined in the
-[SCOVA-CF estimator contract](docs/scova_cf_methodological_contract.md).
+[SCOVA-CF estimator contract](docs/contracts/scova_cf_methodological_contract.md).
 The randomized continuous-outcome reference slice, current limitations, and a
-full example are documented in [`docs/scova_cf.md`](docs/scova_cf.md).
-The manual-only [two-group comparative methods study](docs/scova_cf_comparative_methods.md)
-is descriptive simulation research: it compares estimators within frozen DGPs and cannot
-dispatch or supply an observational qualification lane.
+full example are documented in [`docs/api/scova_cf.md`](docs/api/scova_cf.md).
+The completed two-group comparative methods evidence is indexed in
+[`evidence/presentation/scova-cf/README.md`](evidence/presentation/scova-cf/README.md).
+It is descriptive simulation research: it compares estimators within frozen
+DGPs and cannot dispatch or supply an observational qualification lane.
 
 The `0.5.0` source tree also contains an experimental finite-grid smooth
 overlap path. It remains experimental pending the frozen directional calibration,
 held-out validation, and pinned-gradient runs. Its production-stabilization machinery and remaining
 release blockers are tracked in
-[`docs/stage3_stabilization.md`](docs/stage3_stabilization.md). The executable
+[`docs/reproducibility/stage3_stabilization.md`](docs/reproducibility/stage3_stabilization.md). The executable
 campaign sequence is in the
-[`Stage 3 directional runbook`](docs/stage3_directional_runbook.md).
+[`Stage 3 directional runbook`](docs/reproducibility/stage3_directional_runbook.md).
 The manually triggered `Stage 3 directional release validation` GitHub Actions
 workflow performs the complete sharded validation and evidence aggregation.
 
@@ -49,9 +50,10 @@ The current vertical slice provides:
 
 TMLE, comparability graphs, partial identification, sensitivity surfaces, and
 continuum-uniform path inference are intentionally deferred. The finite-grid
-overlap path is available experimentally. See
-[the methodology plan](scova_methodology_plan.md) and
-[statistical contract](docs/statistical_contract.md).
+overlap path is available experimentally. See the
+[documentation index](docs/README.md), the
+[methodology decision log](docs/methodology_decision_log.md), and the
+[statistical contract](docs/contracts/statistical_contract.md).
 
 ## Installation
 
@@ -136,8 +138,8 @@ An experimental target-path workflow is available in
 `PathDeclaration` and `fit_path` from `scova.experimental`, jointly controls a
 declared 21-point grid, and reports sign, stability, and target-drift output.
 The mathematical contract and novelty boundary are documented in
-[`estimated_tilt_eif.md`](docs/estimated_tilt_eif.md) and
-[`stage3_positioning.md`](docs/stage3_positioning.md).
+[`estimated_tilt_eif.md`](docs/theory/estimated_tilt_eif.md) and
+[`stage3_positioning.md`](docs/theory/stage3_positioning.md).
 
 ## Interpretation
 

@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-Stage 4 implements **design-certified multi-group comparability** and an
+Stage 4 implements **design-gated multi-group comparability** and an
 outcome-blind design/analysis firewall.  It depends on the Stage 3 finite-grid
 smooth-overlap-path implementation.  Until the Stage 3 directional validation
 artifact is locked and verified, all Stage 4 outputs are experimental and
@@ -106,41 +106,54 @@ convenience interface and is not a Stage 4 firewall path.
 Names below are the required public contract; internal module organization may
 evolve without changing these semantics.
 
+The implemented entry point is deliberately split into a design object and an
+outcome-analysis call. `OutcomeFreeDesignData` contains only covariates, group
+labels, and row identifiers; `prepare_design` does not receive outcomes.
+
 ```python
-design = SCOVADesign(
-    propensity_model=...,  # scikit-learn compatible
-    design_fraction=0.50,
+from scova import DesignDeclaration, OutcomeFreeDesignData, SCOVADesign
+
+data = OutcomeFreeDesignData.from_arrays(X, A, row_ids=row_ids)
+declaration = DesignDeclaration(
+    group="group",
+    covariates=("x1", "x2", "x3"),
+    interpretation="descriptive",
+    random_state=42,
 )
 
-locked = design.prepare_design(
-    covariates=X,
-    groups=A,
-    declaration=design_declaration,
-    row_ids=row_ids,
-)
-
-result = design.analyze_outcomes(
+engine = SCOVADesign()
+locked = engine.prepare_design(data, declaration)
+# Supply only outcomes for these locked estimation rows, in any order; the
+# row_ids argument identifies each value.
+Y_estimation = ...
+result = engine.analyze_outcomes(
     locked,
     outcomes=Y_estimation,
-    row_ids=row_ids_estimation,
-    outcome_model=...,  # scikit-learn compatible
+    row_ids=locked.lock.estimation_row_ids,
 )
 ```
 
-`DesignDeclaration` is frozen and includes: base/path target, lambda grid,
-declared contrasts and candidate subsets, gate thresholds, FWER confidence
-level, seed, design fraction, and learner-profile identifiers.  It has a
-canonical `to_dict()` and `declaration_hash`.
+`SCOVADesign()` accepts optional compatible `propensity_model` and
+`outcome_model` objects. `prepare_design(data, declaration)` returns an
+`SCOVADesignResult`; `analyze_outcomes(design, outcomes, *, row_ids, ...)`
+returns an `SCOVAGraphResult`. The outcome vector must be aligned to the locked
+estimation row identifiers. See the Python signatures in `src/scova/design.py`
+for optional arguments and their defaults.
 
-`SCOVADesignResult` exposes `design_lock`, `graph`, `supported_family`,
-`refusals`, `diagnostics`, `split_assignments`, and `design_report()`.  It is
-serializable without pickle.  `ComparabilityGraphResult` exposes nodes, edges,
-hyperedges, maximal cliques, supported lambdas, and gate evidence.
+`DesignDeclaration` is frozen and records the target, lambda grid, declared
+contrasts and candidate subsets, gate policy, confidence level, seed,
+design/estimation fraction, and learner-profile settings. The estimator's
+`thresholds` argument supplies the calibrated diagnostic thresholds; the
+result records their version and calibration state. The declaration provides
+canonical `to_dict()` output and a declaration hash.
 
-`SCOVAGraphResult` (the return from `analyze_outcomes`) exposes point estimates
-and graph-conditional simultaneous inference only for `supported_family`.
-It retains all requested-but-refused contrasts and their typed reasons in its
-report payload.
+`SCOVADesignResult` provides the declaration, outcome-free design data, lock,
+graph, selected family, diagnostics, `design_report()`, and non-pickle
+`save()`/`load()` helpers. `SCOVAGraphResult` provides the locked design,
+interpretation, reliability and inference payloads, plus `report()` and
+serialization helpers. Unsupported requested contrasts are recorded in its
+`refused` tuple; malformed inputs or lock mismatches raise an error. Callers
+must inspect the report rather than infer support from a missing estimate.
 
 ## Verdicts and reporting
 
@@ -148,11 +161,13 @@ Stage 4 returns one verdict per requested contrast:
 
 - `certified-overlap-only` only when Stage 3 thresholds are calibrated, the
   design lock is valid, a subset is graph-supported, and graph-conditional
-  inference completes.  This says nothing about the study-population target.
+  inference completes. This is an experimental, conditional overlap result;
+  it is not a causal certificate and says nothing about the fixed
+  study-population target.
 - `exploratory-only` for any post-lock target or contrast change, or for a
   same-sample experimental selection mode.
-- `refused(reason)` when no supporting subset/grid point passes, the lock is
-  invalid, or outcome data fail alignment checks.
+- `refused` in the graph report when no supporting subset/grid point passes;
+  invalid locks or outcome alignment raise an error before inference.
 - existing `descriptive-only` interpretation language continues to apply when
   the analyst has not declared causal assumptions.
 

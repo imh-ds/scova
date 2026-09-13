@@ -1,8 +1,18 @@
 # Estimated-tilt influence function and release gate
 
-This note fixes the statistical contract for SCOVA's experimental finite-grid
-overlap path. It is an implementation derivation, not yet an externally
-reviewed theorem. Consequently the API remains under `scova.experimental`.
+This note fixes the candidate statistical contract for SCOVA's experimental
+finite-grid overlap path. It is an implementation derivation, not yet an
+externally reviewed theorem. Consequently the API remains under
+`scova.experimental`.
+
+## Reader summary
+
+Use this document to understand why the path has an additional assignment
+correction when its target is estimated from propensities. The path interpolates
+between the fixed study target (`lambda=0`) and an overlap-weighted target
+(`lambda=1`) on a finite, predeclared grid. It reports target drift alongside
+effect estimates. The derivation does not authorize adaptive-grid inference,
+continuum confidence bands, or causal claims.
 
 ## Parameter
 

@@ -1,7 +1,20 @@
 # Fixed-target statistical contract
 
-The first SCOVA milestone targets the observed study covariate distribution,
-so the target tilt is fixed at \(h(x)=1\). For group \(k\),
+This is the normative contract for the stable fixed-target SCOVA estimator.
+For a practical overview, see the [documentation index](../README.md). The
+public entry point is `SCOVA().fit(data, declaration)`, where `data` is a
+pandas `DataFrame` and `SCOVADeclaration` names the outcome, group, baseline
+covariates, cross-fitting policy, and declared contrasts.
+
+## Plain-language target
+
+The analysis target is the observed study covariate distribution: the target
+tilt is fixed at (h(x)=1). In plain language, SCOVA estimates what the mean
+outcome would be for each declared group if the same eligible study population
+were compared under every group, subject to the assumptions below.
+
+Here `X` is the baseline covariate vector, `A` is the observed group or
+treatment, and `Y` is the outcome. For group `k`,
 
 \[
 \psi_k = E\{m_k(X)\}, \qquad
@@ -16,12 +29,11 @@ Z_{ik}=\widehat m_k(X_i)+
 \{Y_i-\widehat m_k(X_i)\}.
 \]
 
-Its estimated influence value is \(\widehat\phi_{ik}=Z_{ik}-\widehat\psi_k\).
-SCOVA estimates the covariance of \(\widehat\psi\) with the sample covariance
-of the influence rows divided by \(n\). For a declared zero-sum contrast
-\(c\), \(\widehat\theta_c=c^T\widehat\psi\), its influence values are
-\(\widehat\Phi c\), and pointwise Wald inference uses the corresponding
-diagonal of \(c^T\widehat\Sigma c\).
+`fit()` returns a result containing group means, declared contrasts,
+diagnostics, and influence values. Call `result.infer()` to obtain pointwise
+and finite-family simultaneous inference for the fitted contrast family.
+
+## Assumptions and input policy
 
 The descriptive interpretation requires consistency of the observed
 conditional means, i.i.d. sampling, and support for every requested group on
@@ -33,7 +45,18 @@ verify them.
 This milestone never silently clips propensity predictions, trims rows,
 changes the target, or extrapolates. Missing or non-finite analysis values,
 invalid probability vectors, unsupported groups, and invalid contrasts are
-errors rather than implicit analytic choices.
+errors rather than implicit analytic choices. Diagnostics can identify warning
+signs but do not establish causal validity.
+
+## Estimand and influence values
+
+The estimated influence value is
+\(\widehat\phi_{ik}=Z_{ik}-\widehat\psi_k\). SCOVA estimates the covariance
+of `\(\widehat\psi\)` with the sample covariance of the influence rows divided
+by `n`. For a declared zero-sum contrast `c`,
+\(\widehat\theta_c=c^T\widehat\psi\), its influence values are
+\(\widehat\Phi c\), and pointwise Wald inference uses the corresponding
+diagonal of \(c^T\widehat\Sigma c\).
 
 ## Simultaneous inference
 
