@@ -16,3 +16,6 @@ The retained SCOVA-CF v9 evidence is bound to its frozen source commit. A
 release built from a later checkout must rerun or formally rebind that campaign
 against the exact release source and pinned dependency stack before making a
 current `qualified` claim.
+
+The current-source sequence is documented in the
+[SCOVA-CF v9 revalidation runbook](cf_v9_release_runbook.md).
