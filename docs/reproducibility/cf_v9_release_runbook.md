@@ -35,11 +35,21 @@ Create a new freeze tag on the exact release source checkout, then dispatch
    implementation.
 4. `simultaneous_inference` — rerun all 64 inference shards on the current
    implementation.
-5. `validation_preflight` — execute a one-cell held-out smoke check with the
+5. `inference_cell_audit` — when a focused inference cell misses a coverage
+   gate, rerun that cell on an independent seed range and retain per-replication
+   simultaneous critical values. This is diagnostic evidence only; it cannot
+   authorize promotion or relax a frozen gate.
+6. `validation_preflight` — execute a one-cell held-out smoke check with the
    new candidate and current external/inference evidence.
-6. `validation` — run all 128 held-out shards and aggregate them.
-7. `aggregate` — bind calibration, external agreement, inference, and held-out
+7. `validation` — run all 128 held-out shards and aggregate them.
+8. `aggregate` — bind calibration, external agreement, inference, and held-out
    validation into a new self-verifying release-evidence bundle.
+
+The v9 cell audit defaults to cell index `4`, seed start `4500000000`, `2048`
+independent replications, and `999` bootstrap replications per fit. Override
+these dispatch inputs only when the audit question requires a preregistered
+alternative. The resulting `cf-inference-cell-audit` artifact is not release
+evidence and must be interpreted alongside the frozen inference result.
 
 The dispatch inputs must refer to artifacts from the corresponding current
 freeze-tagged run. Do not substitute the historical v5/v6 external or inference
